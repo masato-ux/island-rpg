@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 async function x(page){return Number(await page.locator('canvas').getAttribute('data-player-x'));}
 test('描画、キー移動、衝突、リセット',async({page})=>{
- const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/');
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/');await page.getByRole('button',{name:'最初から',exact:true}).click();
  await expect(page.locator('canvas')).toHaveAttribute('data-ready','true');
  const pixels=await page.locator('canvas').evaluate(c=>{const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let lit=0;const colors=new Set();for(let i=0;i<d.length;i+=4){if(d[i]+d[i+1]+d[i+2]>100)lit++;colors.add(`${d[i]},${d[i+1]},${d[i+2]}`);}return {lit,colors:colors.size};});
  expect(pixels.lit).toBeGreaterThan(50000);expect(pixels.colors).toBeGreaterThan(15);
@@ -10,7 +10,7 @@ test('描画、キー移動、衝突、リセット',async({page})=>{
  await page.getByRole('button',{name:'スタート位置へ'}).click();expect(await x(page)).toBe(392);expect(errors).toEqual([]);
 });
 test('タッチ操作、キャンセル、回転、復帰',async({page},testInfo)=>{
- await page.goto('/');await expect(page.locator('canvas')).toHaveAttribute('data-ready','true');
+ await page.goto('/');await page.getByRole('button',{name:'最初から',exact:true}).click();await expect(page.locator('canvas')).toHaveAttribute('data-ready','true');
  const button=page.getByRole('button',{name:'右に移動'});await button.scrollIntoViewIfNeeded();
  if(testInfo.project.name==='mobile'){
  const session=await page.context().newCDPSession(page);const box=await button.boundingBox();
@@ -28,7 +28,7 @@ test('タッチ操作、キャンセル、回転、復帰',async({page},testInfo
 });
 test('Canvas初期化失敗時に案内を表示',async({page})=>{await page.addInitScript(()=>{HTMLCanvasElement.prototype.getContext=()=>null;});await page.goto('/');await expect(page.locator('#notice')).toContainText('ゲームを起動できませんでした');});
 test('北口で草原へ移動し南口から帰還する',async({page})=>{
- await page.goto('/');const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-map','VIL');
+ await page.goto('/');await page.getByRole('button',{name:'最初から',exact:true}).click();const canvas=page.locator('canvas');await expect(canvas).toHaveAttribute('data-map','VIL');
  await expect(canvas).toHaveAttribute('width','320');await expect(canvas).toHaveAttribute('height','180');
  await page.keyboard.down('Shift');await page.keyboard.down('ArrowUp');
  await expect(canvas).toHaveAttribute('data-map','GRASS',{timeout:10000});await page.keyboard.up('ArrowUp');await page.waitForTimeout(200);

@@ -21,5 +21,6 @@ export class World {
   }
   this.moving=this.x!==beforeX||this.y!==beforeY;if(this.moving)this.animation+=dt;
  }
+ get transitioning(){return this.next!==null;}
  get fade(){return this.next?1-Math.abs(this.transition/(FADE_SECONDS/2)-1):0;}
 }

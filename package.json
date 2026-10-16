@@ -9,7 +9,7 @@
     "test": "npm run test:unit && playwright test",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --experimental-strip-types --test --test-isolation=none tests/state.test.ts"
+    "test:unit": "node --experimental-strip-types --test --test-isolation=none tests/*.test.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
