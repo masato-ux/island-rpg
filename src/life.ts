@@ -328,6 +328,32 @@ export class Life {
       Math.min(social.categories.length >= 2 ? 100 : 59, social.trust + delta),
     );
   }
+  canInteract() {
+    return (
+      this.session.screen === "field" &&
+      !this.session.battle &&
+      !this.action &&
+      this.session.gathering <= 0 &&
+      !this.session.world.transitioning
+    );
+  }
+  private personAtHand(npc: string) {
+    const person = people.find((p) => p.id === npc);
+    if (!person || !this.available(person, false)) {
+      this.session.message = "相手の近くで、起きている間に話しかけてください。";
+      this.interaction = null;
+      return null;
+    }
+    return person;
+  }
+  closeDistantConversation() {
+    if (this.interaction?.kind !== "person") return;
+    const person = people.find((p) => p.id === this.interaction!.id);
+    if (!person || !this.available(person, false)) {
+      this.interaction = null;
+      this.session.message = "相手から離れたため、会話を終えた。";
+    }
+  }
   availableTopics(npc: string) {
     const social = this.data.social[npc],
       p = people.find((p) => p.id === npc)!,
@@ -343,6 +369,7 @@ export class Life {
     );
   }
   topic(npc: string, id: string) {
+    if (!this.personAtHand(npc)) return;
     const p = people.find((p) => p.id === npc)!,
       social = this.data.social[npc],
       d = dialogues.find((d) => d.id === id && d.speaker === npc);
@@ -386,6 +413,7 @@ export class Life {
     return people.filter((p) => this.data.notes.some((n) => n.npc === p.id));
   }
   offer(npc: string) {
+    if (!this.personAtHand(npc)) return;
     const p = people.find((p) => p.id === npc)!;
     if (p.child) {
       this.session.message = "子供の依頼は遊びです。";
@@ -418,6 +446,7 @@ export class Life {
     return time;
   }
   accept(npc: string) {
+    if (!this.personAtHand(npc)) return;
     const p = people.find((p) => p.id === npc)!;
     if (
       p.child ||
@@ -468,6 +497,7 @@ export class Life {
     this.session.message = `依頼を完了し${q.reward}銅貨を受け取った。`;
   }
   decline(npc: string) {
+    if (!this.personAtHand(npc)) return;
     const q = this.data.quests.find(
       (q) => q.giver === npc && q.state === "accepted",
     );
@@ -481,25 +511,25 @@ export class Life {
     const m = Math.floor(at / 60);
     return `${Math.floor(m / 1440) + 1}日 ${String(Math.floor(m / 60) % 24).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   }
+  private matchesItem(id: string, name: string) {
+    const rawFish =
+      Object.hasOwn(fishPrices, id.split("・")[0]) &&
+      items[id]?.category === "material";
+    return (
+      id === name ||
+      (rawFish &&
+        (name === "魚" || (name === "アジ" && id.startsWith("アジ・"))))
+    );
+  }
   count(name: string) {
     return Object.entries(this.session.inventory)
-      .filter(
-        ([id]) =>
-          id === name ||
-          (name === "魚" && id.includes("・")) ||
-          (name === "アジ" && id.startsWith("アジ・")),
-      )
+      .filter(([id]) => this.matchesItem(id, name))
       .reduce((sum, [, n]) => sum + n, 0);
   }
   take(name: string, n: number) {
     if (this.count(name) < n) return false;
     for (const id of Object.keys(this.session.inventory)) {
-      if (
-        id !== name &&
-        !(name === "魚" && id.includes("・")) &&
-        !(name === "アジ" && id.startsWith("アジ・"))
-      )
-        continue;
+      if (!this.matchesItem(id, name)) continue;
       const used = Math.min(n, this.session.inventory[id]);
       this.session.inventory[id] -= used;
       n -= used;
@@ -525,6 +555,7 @@ export class Life {
       this.session.inventory[name] = (this.session.inventory[name] || 0) + n;
   }
   gift(npc: string, item: string) {
+    if (!this.personAtHand(npc)) return;
     const p = people.find((p) => p.id === npc)!,
       social = this.data.social[npc];
     if (social.giftDay === this.day) {
@@ -537,6 +568,7 @@ export class Life {
     this.session.message = `${p.name}に${item}を渡した。`;
   }
   available(p: Person, shop = true) {
+    if (!this.canInteract()) return false;
     const pos = this.position(p);
     return (
       !pos.sleeping &&
@@ -652,6 +684,7 @@ export class Life {
     this.session.message = `選んだ品を${total}銅貨で売却した。`;
   }
   craft(id: string) {
+    if (!this.canInteract()) return;
     const r = recipes.find((r) => r.id === id);
     if (!r) return;
     if (r.crafter === "HOME" && this.session.world.mapId !== "HOME") return;
@@ -861,6 +894,7 @@ export class Life {
     return name;
   }
   identify(npc: string) {
+    if (!this.personAtHand(npc)) return;
     const names =
       npc === "N10"
         ? ["鉄鉱石", "希少鉱石"]
@@ -895,7 +929,7 @@ export class Life {
         entries.every(
           ([name, n]) =>
             (r.ingredients[name] ??
-              (name.includes("・") ? r.ingredients["魚"] : 0)) === n,
+              (this.matchesItem(name, "魚") ? r.ingredients["魚"] : 0)) === n,
         ),
     );
     if (recipe) {
@@ -996,6 +1030,18 @@ export class Life {
       this.session.message = `${hours}時間休んだ。満腹度${Math.floor(this.data.hunger)}。`;
   }
   enter(interior: MapId) {
+    const world = this.session.world,
+      building = maps.VIL.buildings.find((b) => b.interior === interior);
+    if (
+      !this.canInteract() ||
+      world.mapId !== "VIL" ||
+      !building ||
+      Math.hypot(
+        world.x - (building.x + building.w / 2) * 16 - 8,
+        world.y - (building.y + building.h) * 16 - 8,
+      ) >= 48
+    )
+      return;
     if (interior === "HOME" && !this.session.story.rescued) return;
     this.session.world.travel(interior, 88, 96);
     this.interaction = null;
@@ -1095,18 +1141,8 @@ export class Life {
         };
         return true;
       }
-    if (
-      fishByMap[w.mapId] &&
-      near(
-        w.mapId === "VIL"
-          ? 34 * 16 + 8
-          : w.mapId === "WEST"
-            ? 8 * 16 + 8
-            : w.map.width * 8 + 3 * 16,
-        w.mapId === "VIL" ? 35 * 16 + 8 : w.map.height * 8,
-        48,
-      )
-    ) {
+    const spot = this.fishingSpot();
+    if (spot && near(spot.x, spot.y, 48)) {
       this.interaction = {
         kind: "fishing",
         id: w.mapId,
@@ -1142,7 +1178,7 @@ export class Life {
     );
   }
   gather(id: string, toolId?: string) {
-    if (this.action || this.session.battle) return;
+    if (!this.canInteract()) return;
     const node = this.nodeList(this.session.world.mapId).find(
       (n) => n.id === id,
     );
@@ -1183,7 +1219,23 @@ export class Life {
     this.interaction = null;
     this.session.message = "採集中…危険な場合は中断できる。";
   }
+  fishingSpot(mapId: MapId = this.session.world.mapId) {
+    if (!fishByMap[mapId]) return null;
+    const map = maps[mapId];
+    return {
+      x: mapId === "VIL" ? 552 : mapId === "WEST" ? 136 : map.width * 8 + 48,
+      y: mapId === "VIL" ? 568 : map.height * 8,
+    };
+  }
   fish(toolId: string, bait: string) {
+    const spot = this.fishingSpot(),
+      world = this.session.world;
+    if (!this.canInteract()) return;
+    if (!spot || Math.hypot(spot.x - world.x, spot.y - world.y) >= 48) {
+      this.session.message = "釣り場の近くで竿を使ってください。";
+      this.interaction = null;
+      return;
+    }
     if (
       this.action ||
       this.session.battle ||

@@ -181,14 +181,10 @@ export class Renderer {
                 : "#4d7850",
           );
         }
-      if (["VIL", "SFOREST", "WEST", "EAST"].includes(world.mapId)) {
-        const fx =
-            world.mapId === "VIL"
-              ? 34 * 16 + 8
-              : world.mapId === "WEST"
-                ? 8 * 16 + 8
-                : world.map.width * 8 + 48,
-          fy = world.mapId === "VIL" ? 35 * 16 + 8 : world.map.height * 8;
+      const fishingSpot = session.life.fishingSpot();
+      if (fishingSpot) {
+        const fx = fishingSpot.x,
+          fy = fishingSpot.y;
         rect(fx - 7 - camX, fy + 1 - camY, 14, 3, "#aa8a58");
         ctx.font = "7px sans-serif";
         ctx.fillStyle = "#fff3ce";

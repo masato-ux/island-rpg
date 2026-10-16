@@ -244,6 +244,7 @@ export class Session {
     const dt = Math.max(0, Math.min(seconds, 0.1));
     this.advance(dt * 10);
     if (this.screen !== "field") return;
+    this.life.closeDistantConversation();
     this.life.reveal();
     this.life.updatePlay(dt);
     this.escapeGrace = Math.max(0, this.escapeGrace - dt);

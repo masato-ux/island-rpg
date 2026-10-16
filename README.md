@@ -61,7 +61,7 @@ npx playwright install chromium
 npm test
 ```
 
-クラウド環境では `/usr/bin/chromium` を利用するため追加のブラウザインストールは不要です。`CHROMIUM_PATH` で任意の実行ファイルを指定できます。テストは単体30件とPC／iPhone相当のChromiumによるブラウザ38件です。ブラウザテストはビルド済み `dist/` を5180番で配信するため、先にビルドしてください。結果とスクリーンショットは `test-results/` に生成されます。
+クラウド環境では `/usr/bin/chromium` を利用するため追加のブラウザインストールは不要です。`CHROMIUM_PATH` で任意の実行ファイルを指定できます。テストは単体35件とPC／iPhone相当のChromiumによるブラウザ40件です。ブラウザテストはビルド済み `dist/` を5180番で配信するため、先にビルドしてください。結果とスクリーンショットは `test-results/` に生成されます。
 
 GitHub Actionsにも同じビルド・テストを定義しています。クラウドでの検証とGitHub Actions上の実行結果は別です。
 

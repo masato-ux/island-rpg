@@ -273,3 +273,26 @@ test("採集中でも保存し、途中経過から再開できる", async ({ pa
     timeout: 6000,
   });
 });
+test("住人から離れると会話が閉じ、釣り場を離れても餌を失わない", async ({
+  page,
+}) => {
+  await load(page, fixture("VIL", 344, 408));
+  await inspect(page);
+  await expect(page.locator("#interaction-panel")).toContainText("ガルム");
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(900);
+  await page.keyboard.up("ArrowLeft");
+  await expect(page.locator("#interaction-panel")).toBeHidden();
+  const s = fixture("VIL", 552, 568);
+  s.life.gain("木竿");
+  s.life.gain("ミミズ", 2);
+  await load(page, s);
+  await inspect(page);
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(1000);
+  await page.keyboard.up("ArrowLeft");
+  await page.getByRole("button", { name: "木竿＋ミミズ" }).click();
+  await expect(page.locator("#action-info")).toContainText("釣り場の近く");
+  await page.getByRole("button", { name: "メニュー", exact: true }).click();
+  await expect(page.locator("#inventory")).toContainText("ミミズ ×2");
+});

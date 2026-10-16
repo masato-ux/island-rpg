@@ -25,6 +25,7 @@ test("会話96話題・メモ任意・削除で人物情報再計算・未記録
   assert.equal(dialogues.length, 96);
   const s = game(),
     l = s.life;
+  meet(s, "N07");
   l.topic("N07", "N07-0");
   assert.equal(l.data.notes.length, 0);
   l.memo(false);
@@ -34,6 +35,7 @@ test("会話96話題・メモ任意・削除で人物情報再計算・未記録
   assert.equal(l.personInfo[0].name, "ダン");
   l.removeNote(l.data.notes[0].id);
   assert.equal(l.personInfo.length, 0);
+  meet(s, "N04");
   l.accept("N04");
   l.memo(false);
   l.offer("N04");
@@ -61,6 +63,7 @@ test("依頼期限・直接納品・メモ連動・贈り物の上限と複数�
   assert.equal(l.data.social.N04.trust, 59);
   l.trust("N04", 8, "quest");
   assert.equal(l.data.social.N04.trust, 67);
+  meet(s, "N11");
   l.accept("N11");
   s.advance(3 * 86400);
   assert.equal(l.data.quests[1].state, "failed");
@@ -177,6 +180,8 @@ test("釣り中断・失敗時の餌/耐久、魔法強化と耐久1の成功後
   l.gain("木竿");
   l.gain("ミミズ", 3);
   const rod = l.data.gear.at(-1)!;
+  s.world.x = 552;
+  s.world.y = 568;
   l.fish(rod.id, "ミミズ");
   assert.equal(l.count("ミミズ"), 2);
   l.cancelAction();
@@ -371,6 +376,8 @@ test("通常と強化した竿は同じ成功シードで魚種・サイズが�
       const g = l.data.gear.at(-1)!;
       if (boost) g.enhancedUntil = s.clock + 3600;
       s.rngSeed = seed;
+      s.world.x = 552;
+      s.world.y = 568;
       l.fish(g.id, "ミミズ");
       l.actionUpdate(3);
       result.push(
