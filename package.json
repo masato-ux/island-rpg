@@ -1,0 +1,1 @@
+{"name":"island-rpg","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"node scripts/server.mjs","start":"node scripts/server.mjs","test":"playwright test","build":"node scripts/build.mjs"},"devDependencies":{"@playwright/test":"1.61.1"}}
