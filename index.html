@@ -7,6 +7,22 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <meta name="theme-color" content="#142f32" />
+    <script>
+      addEventListener(
+        "error",
+        (event) => {
+          if (event.target instanceof HTMLScriptElement) {
+            const notice = document.getElementById("notice");
+            if (notice) {
+              notice.hidden = false;
+              notice.textContent =
+                "ゲームのファイルを読み込めませんでした。通信状態を確認して、ページを再読み込みしてください。";
+            }
+          }
+        },
+        true,
+      );
+    </script>
     <title>無詠唱の漂流者</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
@@ -14,7 +30,7 @@
     <main>
       <header>
         <a class="brand" href="./">ISLAND <span>RPG</span></a
-        ><span class="badge">VERSION · 0.2</span>
+        ><span class="badge">VERSION · 0.3</span>
       </header>
       <section class="intro">
         <p class="eyebrow">THE SILENT CASTAWAY</p>

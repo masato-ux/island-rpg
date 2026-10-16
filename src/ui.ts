@@ -87,7 +87,10 @@ export class Interface {
       document.querySelector<HTMLElement>("#menu-panel")!.hidden = false;
       l.interaction = null;
     }
-    if (action === "trial") l.cookTrial(this.sale);
+    if (action === "trial") {
+      l.cookTrial(this.sale);
+      this.sale = {};
+    }
     if (action === "sell-confirm") {
       l.sell(this.seller, this.sale);
       this.sale = {};
@@ -106,7 +109,7 @@ export class Interface {
     if (action === "medicine") l.medicine(id);
     if (action === "enter") l.enter(id as MapId);
     if (action === "sleep") l.sleep(Number(id));
-    if (action === "water") l.gain("水");
+    if (action === "water") l.water();
     if (action === "leave") l.leave();
     if (action === "gather") {
       const [node, tool] = id.split("|");
@@ -146,6 +149,10 @@ export class Interface {
       s.inventory,
       d.money,
       d.gear,
+      d.social,
+      d.known,
+      s.hp,
+      s.mp,
       d.equipment,
       d.notes,
       d.quests,
@@ -163,13 +170,38 @@ export class Interface {
       document.activeElement instanceof HTMLInputElement &&
       interaction.contains(document.activeElement);
     if (typing) return;
+    const focused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const focusAction = focused?.dataset.life;
+    const focusId = focused?.dataset.id;
+    const focusScope =
+      focused && interaction.contains(focused)
+        ? interaction
+        : focused && detail.contains(focused)
+          ? detail
+          : null;
+    const restoreFocus = () => {
+      if (!focusScope || !focusAction) return;
+      const target = [
+        ...focusScope.querySelectorAll<HTMLElement>("[data-life]"),
+      ].find(
+        (el) =>
+          el.dataset.life === focusAction &&
+          el.dataset.id === focusId &&
+          !(el instanceof HTMLButtonElement && el.disabled),
+      );
+      target?.focus({ preventScroll: true });
+    };
     const expanded = new Set(
       [...interaction.querySelectorAll("details[open]")].map(
         (n) => n.querySelector("summary")?.textContent,
       ),
     );
     interaction.replaceChildren();
-    interaction.hidden = !l.interaction && !l.pendingMemo && !l.action;
+    interaction.hidden =
+      s.screen !== "field" || (!l.interaction && !l.pendingMemo && !l.action);
     if (l.pendingMemo) {
       this.paragraph(interaction, "メモを取りますか？");
       this.button(interaction, "はい", "memo", "yes");
@@ -311,17 +343,11 @@ export class Interface {
           }
           if (p.id === "N10")
             for (const g of d.gear) {
-              const item = items[g.name],
-                cost = Math.max(
-                  5,
-                  Math.floor(
-                    item.price * (1 - g.durability / item.durability!) * 0.25,
-                  ),
-                );
-              if (g.durability < item.durability!)
+              const quote = l.repairQuote(g.id);
+              if (quote)
                 this.button(
                   shop,
-                  `${g.name}を修理（${cost}銅貨＋素材1）`,
+                  `${g.name}を修理（${quote.cost}銅貨＋${quote.material}1）`,
                   "repair",
                   g.id,
                   !l.available(p),
@@ -427,7 +453,10 @@ export class Interface {
       ))
         this.button(tools, g.name + "を強化", "boost", g.id);
     }
-    if (menu.hidden) return;
+    if (menu.hidden) {
+      restoreFocus();
+      return;
+    }
     const focus = document.activeElement;
     if (focus instanceof HTMLInputElement && detail.contains(focus)) return;
     detail.replaceChildren();
@@ -468,7 +497,7 @@ export class Interface {
           );
         this.paragraph(
           row,
-          `${Object.values(d.equipment).includes(g.id) ? "装備中 " : ""}${g.name} 耐久${g.durability}/${item.durability}${g.enhancedUntil > s.clock ? " ★" : ""}${g.element ? " " + g.element : ""}`,
+          `${Object.values(d.equipment).includes(g.id) ? "装備中 " : ""}${g.name} 耐久${g.durability}/${item.durability}${g.enhancedUntil > s.clock ? " ★" : ""}${g.element ? " " + { fire: "火", water: "水", thunder: "雷" }[g.element] : ""}`,
         );
         if (item.slot) this.button(row, "装備", "equip", g.id);
         this.button(row, "通常強化", "boost", g.id);
@@ -508,7 +537,7 @@ export class Interface {
           q = d.quests.find((q) => q.id === note.quest);
         this.paragraph(
           detail,
-          `${p?.name || note.npc} ${l.date(note.at)}：${note.text}${q ? `［${q.state}：${l.count(q.item)}/${q.quantity}］` : ""}`,
+          `${p?.name || note.npc} ${l.date(note.at)}：${note.text}${q ? `［${{ accepted: "受諾中", completed: "完了", failed: "期限切れ", declined: "辞退" }[q.state]}：${l.count(q.item)}/${q.quantity}］` : ""}`,
         );
         this.button(detail, "このメモを削除", "delete-note", String(note.id));
       }
@@ -574,6 +603,7 @@ export class Interface {
       );
       this.button(detail, "この総額で売却する", "sell-confirm");
     }
+    restoreFocus();
   }
   open(tab: string) {
     this.tab = tab;
@@ -594,6 +624,7 @@ export class Interface {
     const c = canvas.getContext("2d")!;
     c.fillStyle = "#102c30";
     c.fillRect(0, 0, canvas.width, canvas.height);
+    const labels: string[] = [];
     if (island) {
       const points: Record<string, [number, number]> = {
         VIL: [160, 220],
@@ -624,6 +655,17 @@ export class Interface {
         c.font = "8px sans-serif";
         c.textAlign = "center";
         c.fillText(m.name, x, y + 19);
+        const stake = s.life.data.stakes[m.id];
+        if (stake) {
+          c.fillStyle = "#e9ab75";
+          c.fillRect(
+            x - 28 + (stake.x / (m.width * 16)) * 56,
+            y - 10 + (stake.y / (m.height * 16)) * 20,
+            3,
+            3,
+          );
+          labels.push(m.name + "の転移杭");
+        }
         if (s.world.mapId === m.id) {
           c.fillStyle = "#efc06d";
           c.fillRect(
@@ -648,6 +690,32 @@ export class Interface {
                 : "#9bb073";
             c.fillRect(x * 2, y * 2, 2, 2);
           }
+      const landmarks = [
+        ...m.buildings.map((b) => ({
+          x: b.x + b.w / 2,
+          y: b.y + b.h,
+          name: b.name,
+        })),
+        ...(["SFOREST", "EAST"].includes(m.id)
+          ? [
+              {
+                x: m.width / 2 + 7,
+                y: Math.floor(m.height / 2),
+                name: "橋・浅瀬",
+              },
+            ]
+          : []),
+        ...(m.id === "NORTH"
+          ? [{ x: m.width / 2, y: 8, name: "沈黙の祭壇" }]
+          : []),
+      ];
+      for (const at of landmarks) {
+        if (mask[Math.floor(at.y) * m.width + Math.floor(at.x)] !== "1")
+          continue;
+        c.fillStyle = "#d6c7ad";
+        c.fillRect(at.x * 2 - 2, at.y * 2 - 2, 4, 4);
+        labels.push(at.name);
+      }
       c.fillStyle = "#fff0b3";
       c.fillRect(s.world.x / 8 - 2, s.world.y / 8 - 2, 4, 4);
       for (const stake of Object.entries(s.life.data.stakes).filter(
@@ -658,6 +726,10 @@ export class Interface {
       }
     }
     parent.append(canvas);
+    this.paragraph(
+      parent,
+      "発見済みの目印：" + (labels.join("／") || "まだありません"),
+    );
     this.paragraph(
       parent,
       "未踏部分は暗く表示。敵・採集地点は表示されません。地図中も時間は進みます。",

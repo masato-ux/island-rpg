@@ -365,7 +365,10 @@ export class Life {
         (d.kind !== "trust60" || social.trust >= 60) &&
         (!d.kind.startsWith("trust") || !social.seen.includes(d.id)) &&
         (d.kind !== "time" || hour < 9 || hour >= 17) &&
-        (d.kind !== "location" || this.session.world.mapId === p.home),
+        (d.kind !== "location" || this.session.world.mapId === p.home) &&
+        (!p.child ||
+          d.kind !== "info" ||
+          (social.trust >= 25 && !social.seen.includes(d.id))),
     );
   }
   topic(npc: string, id: string) {
@@ -381,6 +384,10 @@ export class Life {
       return;
     if (d.kind.startsWith("trust") && social.seen.includes(id)) return;
     if (d.kind.startsWith("trust")) social.seen.push(id);
+    if (p.child && d.kind === "info") {
+      if (social.trust < 25 || social.seen.includes(d.id)) return;
+      social.seen.push(d.id);
+    }
     const rumor = Object.entries(this.data.social).find(
       ([id, person]) => id !== npc && person.trust >= 25,
     );
@@ -564,7 +571,14 @@ export class Life {
     }
     if (items[item]?.category === "key" || !this.take(item, 1)) return;
     social.giftDay = this.day;
-    this.trust(npc, item === p.likes ? 4 : 1, "gift");
+    this.trust(
+      npc,
+      item === p.likes ||
+        (items[item]?.category === "food" && item.split("・")[0] === p.likes)
+        ? 4
+        : 1,
+      "gift",
+    );
     this.session.message = `${p.name}に${item}を渡した。`;
   }
   available(p: Person, shop = true) {
@@ -683,7 +697,7 @@ export class Life {
     this.data.money += total;
     this.session.message = `選んだ品を${total}銅貨で売却した。`;
   }
-  craft(id: string) {
+  craft(id: string, selected?: Record<string, number>) {
     if (!this.canInteract()) return;
     const r = recipes.find((r) => r.id === id);
     if (!r) return;
@@ -699,10 +713,19 @@ export class Life {
       this.session.message = "材料または銅貨が足りない。";
       return;
     }
-    const fishUsed = Object.keys(this.session.inventory).find(
-      (name) => name.includes("・") && fishPrices[name.split("・")[0]],
+    const material = selected
+      ? structuredClone(selected)
+      : structuredClone(r.ingredients);
+    if (
+      selected &&
+      Object.entries(selected).some(
+        ([name, n]) => !Number.isInteger(n) || n < 1 || this.count(name) < n,
+      )
+    )
+      return;
+    const fishUsed = Object.keys(selected || this.session.inventory).find(
+      (name) => this.matchesItem(name, "魚"),
     );
-    const material = structuredClone(r.ingredients);
     for (const [name, n] of Object.entries(material)) this.take(name, n);
     this.data.money -= r.price;
     if (r.crafter === "HOME") {
@@ -777,6 +800,34 @@ export class Life {
     this.data.jobs = this.data.jobs.filter((j) => j.id !== id);
     this.session.message = "完成品を受け取った。";
   }
+  repairQuote(id: string) {
+    const gear = this.data.gear.find((g) => g.id === id);
+    if (
+      !gear ||
+      gear.durability <= 0 ||
+      this.data.jobs.some((j) => j.gear === id)
+    )
+      return null;
+    const item = items[gear.name];
+    if (gear.durability >= item.durability!) return null;
+    const material =
+      /鉄|鋼/.test(gear.name) || (item.tier || 0) > 1
+        ? "鉄鉱石"
+        : /革/.test(gear.name)
+          ? "皮"
+          : /石/.test(gear.name)
+            ? "石"
+            : "木材";
+    return {
+      material,
+      cost: Math.max(
+        5,
+        Math.floor(
+          item.price * (1 - gear.durability / item.durability!) * 0.25,
+        ),
+      ),
+    };
+  }
   repair(id: string) {
     const gear = this.data.gear.find((g) => g.id === id),
       p = people.find((p) => p.id === "N10")!;
@@ -787,19 +838,9 @@ export class Life {
       this.data.jobs.some((j) => j.gear === id)
     )
       return;
-    const item = items[gear.name],
-      cost = Math.max(
-        5,
-        Math.floor(
-          item.price * (1 - gear.durability / item.durability!) * 0.25,
-        ),
-      ),
-      material =
-        item.slot === "body"
-          ? "皮"
-          : item.tier && item.tier > 1
-            ? "鉄鉱石"
-            : "木材";
+    const quote = this.repairQuote(id);
+    if (!quote) return;
+    const { cost, material } = quote;
     if (this.data.money < cost || !this.take(material, 1)) return;
     this.data.money -= cost;
     for (const slot of Object.keys(this.data.equipment))
@@ -823,7 +864,12 @@ export class Life {
     if (slot) this.data.equipment[slot] = id;
   }
   boost(id: string, element: "fire" | "water" | "thunder" | null = null) {
-    if (this.action) return;
+    if (
+      this.action ||
+      this.session.screen !== "field" ||
+      (this.session.battle && this.session.battle.inputTimer > 0)
+    )
+      return;
     const g = this.data.gear.find((g) => g.id === id);
     if (
       !g ||
@@ -844,6 +890,7 @@ export class Life {
               ? 13
               : 15;
     if (this.session.mp < cost) return;
+    if (this.session.battle) this.session.battle.inputTimer = 0.4;
     this.session.mp -= cost;
     this.xp("mp", cost / 5);
     if (element) {
@@ -909,7 +956,7 @@ export class Life {
     this.session.message = "持ち込んだ素材の正体を教わった。";
   }
   cookTrial(selection: Record<string, number>) {
-    if (this.session.world.mapId !== "HOME" || this.session.battle) return;
+    if (this.session.world.mapId !== "HOME" || !this.canInteract()) return;
     const entries = Object.entries(selection).filter(([, n]) => n > 0);
     if (
       !entries.length ||
@@ -933,7 +980,7 @@ export class Life {
         ),
     );
     if (recipe) {
-      this.craft(recipe.id);
+      this.craft(recipe.id, Object.fromEntries(entries));
       return;
     }
     for (const [name, n] of entries) this.take(name, n);
@@ -976,11 +1023,14 @@ export class Life {
     this.session.message = `${name}を食べた。`;
   }
   medicine(name: string) {
-    if (!["回復薬", "風邪薬"].includes(name) || !this.take(name, 1)) return;
-    if (this.session.battle && this.session.battle.inputTimer > 0) {
-      this.gain(name);
+    if (
+      this.session.screen !== "field" ||
+      this.action ||
+      (this.session.battle && this.session.battle.inputTimer > 0) ||
+      !["回復薬", "風邪薬"].includes(name) ||
+      !this.take(name, 1)
+    )
       return;
-    }
     if (this.session.battle) this.session.battle.inputTimer = 0.4;
     if (name === "回復薬")
       this.session.hp = Math.min(this.maxHp, this.session.hp + 40);
@@ -991,10 +1041,14 @@ export class Life {
     }
     this.session.message = `${name}を使った。`;
   }
+  water() {
+    if (this.canInteract() && this.session.world.mapId === "HOME")
+      this.gain("水");
+  }
   sleep(hours: number) {
     if (
       this.session.world.mapId !== "HOME" ||
-      this.session.battle ||
+      !this.canInteract() ||
       !Number.isInteger(hours) ||
       hours < 1 ||
       hours > 7
@@ -1270,7 +1324,7 @@ export class Life {
       this.session.message = "行動を中断した。経過した時間は戻らない。";
     }
   }
-  actionUpdate(dt: number) {
+  actionElapsed(dt: number) {
     const a = this.action;
     if (!a) return 0;
     const danger = this.session.activeEnemies.some(
@@ -1281,6 +1335,12 @@ export class Life {
       ),
       rate = danger ? 10 : Math.max(10, (a.minutes * 60) / 3),
       elapsed = Math.min(a.remaining, dt * rate);
+    return elapsed;
+  }
+  actionUpdate(dt: number) {
+    const a = this.action;
+    if (!a) return 0;
+    const elapsed = this.actionElapsed(dt);
     a.remaining -= elapsed;
     if (a.kind === "gather") {
       const tool = a.tool ? this.tool(a.tool) : null,
@@ -1407,12 +1467,18 @@ export class Life {
   }
   placeStake() {
     const w = this.session.world;
-    if (w.map.interior || w.mapId === "VIL" || !this.take("転移杭", 1)) return;
+    if (
+      !this.canInteract() ||
+      w.map.interior ||
+      w.mapId === "VIL" ||
+      !this.take("転移杭", 1)
+    )
+      return;
     this.data.stakes[w.mapId] = { x: w.x, y: w.y };
     this.session.message = "転移杭を設置した。以前の位置は消えた。";
   }
   teleport(id: string) {
-    if (this.session.battle || this.action) return;
+    if (!this.canInteract()) return;
     const here = this.data.stakes[this.session.world.mapId],
       there = this.data.stakes[id];
     if (
@@ -1427,7 +1493,14 @@ export class Life {
     this.interaction = null;
   }
   end(choice: "released" | "silent") {
-    if (this.interaction?.kind !== "altar") return;
+    const w = this.session.world;
+    if (
+      !this.canInteract() ||
+      this.interaction?.kind !== "altar" ||
+      w.mapId !== "NORTH" ||
+      Math.hypot(w.x - w.map.width * 8, w.y - 128) >= 48
+    )
+      return;
     this.data.ending = choice;
     this.session.message =
       choice === "released"
@@ -1553,6 +1626,16 @@ export class Life {
       d.cold = 1;
       d.coldAt = to;
     }
+    if (
+      outdoors &&
+      d.weather !== "rain" &&
+      tileAt(
+        s.world.map,
+        Math.floor(s.world.x / 16),
+        Math.floor(s.world.y / 16),
+      ) !== "wet"
+    )
+      d.wet = Math.max(0, d.wet - elapsed);
     if (d.cold && from < d.protectedUntil)
       d.coldAt += Math.max(0, Math.min(to, d.protectedUntil) - from);
     if (d.cold && to > d.protectedUntil) {
@@ -1598,7 +1681,8 @@ export class Life {
       if (
         g.enhancedUntil > from &&
         g.enhancedUntil <= to &&
-        Object.values(d.equipment).includes(g.id)
+        (Object.values(d.equipment).includes(g.id) ||
+          this.action?.tool === g.id)
       )
         s.message = `${g.name}の魔法強化が切れた。`;
       if (g.elementUntil <= to) g.element = null;
@@ -1607,6 +1691,10 @@ export class Life {
       s.screen = "dead";
       s.battle = null;
       s.message = "命が尽きた。";
+      this.action = null;
+      this.interaction = null;
+      this.pendingMemo = null;
+      return;
     }
     if (!sleeping && this.awakeHours >= 24) {
       if (s.world.mapId === "VIL" || s.world.map.interior) {

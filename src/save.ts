@@ -1,4 +1,4 @@
-import { people, items, recipes, resources, fishByMap } from "./data.ts";
+import { people, items, recipes, resourceIndices, fishByMap } from "./data.ts";
 import { defaults } from "./life.ts";
 import { maps } from "./maps.ts";
 import type { Snapshot } from "./session.ts";
@@ -153,6 +153,17 @@ export function validateSnapshot(v: unknown): Snapshot {
   if (
     !number(systems.money, 0, 1e9) ||
     !number(systems.hunger, 0, 100) ||
+    !Number.isSafeInteger(systems.nextId) ||
+    systems.nextId < 1 ||
+    !number(systems.awakeSince, 0, Number(v.clock)) ||
+    !number(systems.wet, 0, 3600) ||
+    !Number.isInteger(systems.cold) ||
+    !number(systems.cold, 0, 3) ||
+    !number(systems.coldAt, 0, 1e12) ||
+    !number(systems.protectedUntil, 0, 1e12) ||
+    !number(systems.weatherUntil, 0, 1e12) ||
+    !number(systems.shoeMinutes, 0, 100) ||
+    ![null, "released", "silent"].includes(systems.ending) ||
     !["clear", "rain", "fog"].includes(systems.weather) ||
     !["sword", "magic", "hp", "mp"].every(
       (k) =>
@@ -167,6 +178,36 @@ export function validateSnapshot(v: unknown): Snapshot {
     throw new Error("生活データの数値が不正です。");
   const peopleIds = new Set(people.map((p) => p.id)),
     gearIds = new Set(systems.gear.map((g) => g.id));
+  if (
+    Object.keys(v.inventory).some(
+      (id) =>
+        !Object.hasOwn(items, id) ||
+        (v.version !== 1 && items[id].category === "gear"),
+    )
+  )
+    throw new Error("所持品の種類が不正です。");
+  if (
+    Object.keys(systems.social).some((id) => !peopleIds.has(id)) ||
+    Object.entries(systems.fish).some(
+      ([id, f]) =>
+        !Object.hasOwn(fishByMap, id) ||
+        !Number.isInteger(f.stock) ||
+        !number(f.stock, 0, 5) ||
+        !number(f.at, 0, 1e12),
+    ) ||
+    Object.entries(systems.stocks).some(([key, n]) => {
+      const [npc, item] = key.split(":");
+      return (
+        !(
+          people.find((p) => p.id === npc)?.shop?.includes(item) ||
+          (npc === "N01" && item === "転移杭")
+        ) ||
+        !Number.isInteger(n) ||
+        !number(n, 0, 10)
+      );
+    })
+  )
+    throw new Error("人物・在庫データが不正です。");
   if (
     gearIds.size !== systems.gear.length ||
     systems.gear.some(
@@ -193,6 +234,7 @@ export function validateSnapshot(v: unknown): Snapshot {
   if (
     systems.notes.some(
       (n) =>
+        (n.quest !== undefined && typeof n.quest !== "string") ||
         !peopleIds.has(n.npc) ||
         n.text.length > 10000 ||
         !number(n.at, 0, 1e12),
@@ -200,10 +242,13 @@ export function validateSnapshot(v: unknown): Snapshot {
     systems.quests.some(
       (q) =>
         !peopleIds.has(q.giver) ||
-        (!Object.hasOwn(items, q.item) && q.item !== "アジ") ||
+        (!Object.hasOwn(items, q.item) &&
+          q.item !== "アジ" &&
+          q.item !== "魚") ||
         !Number.isInteger(q.quantity) ||
         !number(q.quantity, 1, 1e6) ||
         !number(q.deadline, 0, 1e12) ||
+        !number(q.reward, 0, 1e9) ||
         !["accepted", "completed", "failed", "declined"].includes(q.state),
     )
   )
@@ -215,7 +260,22 @@ export function validateSnapshot(v: unknown): Snapshot {
         !items[j.result] ||
         !["queued", "working", "ready"].includes(j.state) ||
         !number(j.remaining, 0, 1e6) ||
-        (j.gear && !gearIds.has(j.gear)),
+        !number(j.price, 0, 1e9) ||
+        !Number.isSafeInteger(j.id) ||
+        Object.entries(j.ingredients).some(
+          ([id, n]) =>
+            !Object.hasOwn(items, id) ||
+            !Number.isInteger(n) ||
+            !number(n, 1, 1e6),
+        ) ||
+        (j.gear
+          ? !gearIds.has(j.gear) || j.recipe !== "repair" || j.npc !== "N10"
+          : !recipes.some(
+              (r) =>
+                r.id === j.recipe &&
+                r.crafter === j.npc &&
+                r.result === j.result,
+            )),
     )
   )
     throw new Error("作業データが不正です。");
@@ -240,7 +300,9 @@ export function validateSnapshot(v: unknown): Snapshot {
     const [map, index] = key.split(":");
     if (
       !Object.hasOwn(maps, map) ||
-      !resources[Number(index)] ||
+      !resourceIndices[map as keyof typeof resourceIndices]?.includes(
+        Number(index),
+      ) ||
       !Number.isInteger(node.left) ||
       !number(node.left, 0, 3) ||
       !number(node.respawnAt, 0, 1e12)
@@ -274,7 +336,10 @@ export function validateSnapshot(v: unknown): Snapshot {
       !number(e.hp, 0, species[e.kind as keyof typeof species].hp) ||
       !number(e.respawnAt, 0, 1e12) ||
       !number(e.heading, -100, 100) ||
-      !number(e.aiTimer, -1, 10)
+      !number(e.aiTimer, -1, 10) ||
+      (e.spawnX !== undefined && !number(e.spawnX, 0, 1920)) ||
+      (e.spawnY !== undefined && !number(e.spawnY, 0, 1664)) ||
+      (e.spawnX === undefined) !== (e.spawnY === undefined)
     )
       throw new Error("魔物データが不正です。");
     ids.add(e.id);
@@ -315,7 +380,12 @@ export function validateSnapshot(v: unknown): Snapshot {
     }) ||
       !people.some(
         (p) => p.id === (activity.play as { npc: string }).npc && p.child,
-      ))
+      ) ||
+      !object(activity.play) ||
+      !["tag", "hide"].includes(String(activity.play.kind)) ||
+      !number(activity.play.until, 0, 1e12) ||
+      !number(activity.play.x, 0, 768) ||
+      !number(activity.play.y, 0, 640))
   )
     throw new Error("遊びの保存データが不正です。");
   if (
@@ -337,9 +407,20 @@ export function validateSnapshot(v: unknown): Snapshot {
     const a = activity.action;
     if (a.kind === "gather") {
       const [map, index] = String(a.id).split(":");
-      if (!Object.hasOwn(maps, map) || !resources[Number(index)])
+      if (
+        map !== v.mapId ||
+        !resourceIndices[map as keyof typeof resourceIndices]?.includes(
+          Number(index),
+        )
+      )
         throw new Error("採集中の対象が不正です。");
-    } else if (!Object.hasOwn(fishByMap, String(a.id)))
+    } else if (
+      a.id !== v.mapId ||
+      !Object.hasOwn(fishByMap, String(a.id)) ||
+      !gearIds.has(String(a.tool)) ||
+      items[systems.gear.find((g) => g.id === a.tool)!.name].tool !== "rod" ||
+      items[String(a.bait)]?.category !== "bait"
+    )
       throw new Error("釣り場が不正です。");
   }
   if (object(activity.interaction)) {
@@ -348,7 +429,18 @@ export function validateSnapshot(v: unknown): Snapshot {
       !["person", "resource", "fishing", "home", "stake", "altar"].includes(
         String(i.kind),
       ) ||
-      (i.kind === "person" && !peopleIds.has(String(i.id)))
+      (i.kind === "person" && !peopleIds.has(String(i.id))) ||
+      (i.kind === "resource" &&
+        (() => {
+          const [map, index] = String(i.id).split(":");
+          return !resourceIndices[
+            map as keyof typeof resourceIndices
+          ]?.includes(Number(index));
+        })()) ||
+      (i.kind === "fishing" && !Object.hasOwn(fishByMap, String(i.id))) ||
+      (i.kind === "stake" && !Object.hasOwn(systems.stakes, String(i.id))) ||
+      (i.kind === "home" && i.id !== "HOME") ||
+      (i.kind === "altar" && i.id !== "altar")
     )
       throw new Error("会話相手が不正です。");
   }

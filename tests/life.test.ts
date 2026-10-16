@@ -269,6 +269,9 @@ test("転移杭・全世界保存・探索霧・結末後も生活継続", () =>
   l.data.notes.push({ id: 44, npc: "N07", at: 0, text: "temp" });
   s.restore(store.load()!);
   assert.deepEqual(s.snapshot(), before);
+  s.world.mapId = "NORTH";
+  s.world.x = 896;
+  s.world.y = 128;
   s.life.interaction = { kind: "altar", id: "altar", title: "", text: "" };
   s.life.end("silent");
   assert.equal(s.life.data.ending, "silent");

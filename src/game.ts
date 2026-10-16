@@ -93,11 +93,19 @@ try {
     $("#menu-panel").hidden = !$("#menu-panel").hidden;
     clear();
   }
+  function back() {
+    if (!$("#menu-panel").hidden) $("#menu-panel").hidden = true;
+    else if (session.life.action) session.life.cancelAction();
+    else {
+      session.life.interaction = null;
+      session.life.memo(false);
+    }
+    clear();
+  }
   addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.metaKey || e.target instanceof HTMLInputElement) return;
     if (e.key === "Escape" || e.key.toLowerCase() === "x") {
-      $("#menu-panel").hidden = true;
-      clear();
+      back();
       return;
     }
     if (e.key.toLowerCase() === "m") {
@@ -398,14 +406,54 @@ try {
             ) ?? null)
           : null,
       );
+      const panel = [
+        $("#title-panel"),
+        $("#death-panel"),
+        $("#menu-panel"),
+        $("#interaction-panel"),
+        $("#battle-panel"),
+      ].find((p) => !p.hidden);
+      const choices = panel
+        ? [
+            ...panel.querySelectorAll<HTMLElement>(
+              "button:not(:disabled), summary, input",
+            ),
+          ].filter((el) => el.getClientRects().length > 0)
+        : [];
+      if (choices.length) {
+        const direction = [...pad.directions].find(
+          (d) => !padDirections.has(d),
+        );
+        if (direction) {
+          const current = choices.indexOf(
+            document.activeElement as HTMLElement,
+          );
+          const step = direction === "up" || direction === "left" ? -1 : 1;
+          choices[
+            current < 0 ? 0 : (current + step + choices.length) % choices.length
+          ].focus();
+        }
+        if (pad.pressed.has(0) && !padButtons.has(0)) {
+          const active = document.activeElement;
+          (choices.includes(active as HTMLElement)
+            ? (active as HTMLElement)
+            : choices[0]
+          ).click();
+        }
+      } else if (
+        session.screen === "field" &&
+        pad.pressed.has(0) &&
+        !padButtons.has(0)
+      )
+        session.interact();
+      const previousDirections = padDirections;
       padDirections = pad.directions;
       refresh();
+      if (choices.length)
+        for (const dir of previousDirections) held.delete(dir);
+      if (choices.length) for (const dir of padDirections) held.delete(dir);
       if (session.screen === "field") {
-        if (pad.pressed.has(0) && !padButtons.has(0)) session.interact();
-        if (pad.pressed.has(1) && !padButtons.has(1)) {
-          $("#menu-panel").hidden = true;
-          session.life.interaction = null;
-        }
+        if (pad.pressed.has(1) && !padButtons.has(1)) back();
         if (pad.pressed.has(2) && !padButtons.has(2)) toggleMenu();
         if (pad.pressed.has(3) && !padButtons.has(3)) ui.open("map");
       }

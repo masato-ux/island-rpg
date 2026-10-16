@@ -1,6 +1,6 @@
 {
   "name": "island-rpg",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,8 +10,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test:unit": "node --experimental-strip-types --test --test-isolation=none tests/*.test.ts",
-    "format": "prettier --write src tests scripts index.html style.css *.json *.ts *.js README.md docs/validation.md .github/workflows/test.yml",
-    "format:check": "prettier --check src tests scripts index.html style.css *.json *.ts *.js README.md docs/validation.md .github/workflows/test.yml",
+    "format": "prettier --write src tests scripts index.html style.css *.json *.ts *.js README.md docs/validation.md docs/acceptance.md .github/workflows/test.yml",
+    "format:check": "prettier --check src tests scripts index.html style.css *.json *.ts *.js README.md docs/validation.md docs/acceptance.md .github/workflows/test.yml",
     "test:webkit": "TEST_WEBKIT=1 playwright test --project=webkit-mobile"
   },
   "devDependencies": {

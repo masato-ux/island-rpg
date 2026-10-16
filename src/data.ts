@@ -26,7 +26,7 @@ export const people: Person[] = [
     home: "CHIEF",
     x: 29,
     y: 17,
-    shop: ["転移杭"],
+    shop: [],
     quest: "木材",
     quantity: 3,
     days: 3,
@@ -222,7 +222,7 @@ export const people: Person[] = [
     x: 31,
     y: 35,
     shop: ["ミミズ", "虫", "小魚", "エビ", "木竿", "丈夫な竿", "名工竿"],
-    quest: "アジ",
+    quest: "魚",
     quantity: 2,
     days: 1,
     reward: 45,
@@ -446,7 +446,7 @@ for (const [name, item] of Object.entries(items))
             : "木材"]: item.tier || 2,
       },
       price: Math.floor(item.price * 0.5),
-      minutes: 60 * (item.tier || 2),
+      minutes: 60 * (item.tier === 3 ? 4 : item.tier || 2),
       result: name,
     });
 export interface ResourceDef {

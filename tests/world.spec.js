@@ -296,3 +296,80 @@ test("住人から離れると会話が閉じ、釣り場を離れても餌を�
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
   await expect(page.locator("#inventory")).toContainText("ミミズ ×2");
 });
+test("試作で選んだ魚だけを調理し、取得順の別の魚を残す", async ({ page }) => {
+  const s = fixture("HOME", 88, 56);
+  s.life.gain("アジ・小");
+  s.life.gain("タイ・大");
+  s.life.gain("木の枝");
+  await load(page, s);
+  await inspect(page);
+  await page.getByText("材料を選んで試作する", { exact: true }).click();
+  for (const [name, n] of [
+    ["タイ・大", 1],
+    ["木の枝", 1],
+  ])
+    await page
+      .locator("#interaction-panel label")
+      .filter({ hasText: name })
+      .locator("input")
+      .fill(String(n));
+  await page.getByRole("button", { name: "試作する", exact: true }).click();
+  await page.getByRole("button", { name: "メニュー", exact: true }).click();
+  await expect(page.locator("#inventory")).toContainText("アジ・小 ×1");
+  await expect(page.locator("#inventory")).toContainText("焼き魚・大 ×1");
+  await expect(page.locator("#inventory")).not.toContainText("タイ・大");
+});
+test("詳細地図は発見した建物だけを表示する", async ({ page }) => {
+  const s = fixture("VIL", 344, 408);
+  s.life.reveal();
+  await load(page, s);
+  await page.keyboard.press("m");
+  await expect(page.locator("#detail")).toContainText("発見済みの目印：");
+  await expect(page.locator("#detail")).toContainText("鍛冶屋");
+  await expect(page.locator("#detail")).not.toContainText("村長宅");
+});
+test("ゲームパッドだけでタイトル開始と会話の選択・取消しができる", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.testPad = {
+      connected: true,
+      axes: [0, 0],
+      buttons: Array.from({ length: 16 }, () => ({ pressed: false })),
+    };
+    Object.defineProperty(navigator, "getGamepads", {
+      value: () => [window.testPad],
+    });
+  });
+  const press = async (n) => {
+    await page.evaluate((n) => {
+      window.testPad.buttons[n].pressed = true;
+    }, n);
+    await page.waitForTimeout(100);
+    await page.evaluate((n) => {
+      window.testPad.buttons[n].pressed = false;
+    }, n);
+    await page.waitForTimeout(100);
+  };
+  await page.goto("/");
+  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
+  await press(0);
+  await expect(page.locator("canvas")).toHaveAttribute("data-screen", "field");
+  await load(page, fixture());
+  await press(0);
+  await expect(page.locator("#interaction-panel")).toContainText("ダン");
+  await press(13);
+  await press(0);
+  await expect(page.locator("#interaction-panel")).toContainText(
+    "メモを取りますか",
+  );
+  await press(1);
+  await expect(page.locator("#interaction-panel")).toBeHidden();
+});
+test("ゲームのJS読込失敗でも再読み込みの案内が出る", async ({ page }) => {
+  await page.route("**/assets/*.js", (route) => route.abort());
+  await page.goto("/");
+  await expect(page.locator("#notice")).toContainText(
+    "ゲームのファイルを読み込めませんでした",
+  );
+});

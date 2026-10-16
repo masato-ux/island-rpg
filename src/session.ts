@@ -260,8 +260,10 @@ export class Session {
       return;
     }
     if (this.life.action) {
-      const elapsed = this.life.actionUpdate(dt);
+      const elapsed = this.life.actionElapsed(dt);
       this.advance(Math.max(0, elapsed - dt * 10));
+      if (this.screen !== "field") return;
+      this.life.actionUpdate(dt);
       this.world.moving = false;
       this.updateEnemies(dt * Math.max(1, elapsed / Math.max(0.001, dt * 10)));
       return;
@@ -289,7 +291,11 @@ export class Session {
       return;
     }
     if (this.life.play) this.world.mode = "walk";
-    this.world.update(dt, held);
+    this.world.update(
+      dt,
+      held,
+      this.life.play ? 1 : 1 + this.life.stat("spd") / 100,
+    );
     this.updateEnemies(dt);
   }
   private updateEnemies(dt: number) {
@@ -413,10 +419,32 @@ export class Session {
     };
     this.message = `${species[enemy.kind].name}と遭遇した。選択中も敵は攻撃する。`;
   }
-  private hit(atk: number, def: number, spd: number, targetSpd: number) {
+  get dangerMultiplier() {
+    const danger =
+      (
+        {
+          VIL: 1,
+          GRASS: 1,
+          SFOREST: 2,
+          CFOREST: 3,
+          WEST: 4,
+          EAST: 4,
+          MOUNT: 5,
+          NORTH: 6,
+        } as Record<string, number>
+      )[this.world.mapId] || 1;
+    return [1, 1.3, 1.8, 2.5, 3.4, 5][danger - 1];
+  }
+  private hit(
+    atk: number,
+    def: number,
+    spd: number,
+    targetSpd: number,
+    accuracyPenalty = 0,
+  ) {
     if (
       this.random() * 100 >=
-      Math.min(95, Math.max(55, 85 + (spd - targetSpd) * 1.5))
+      Math.min(95, Math.max(55, 85 + (spd - targetSpd) * 1.5)) - accuracyPenalty
     )
       return 0;
     const critical = this.random() < 0.05 ? 1.6 : 1;
@@ -432,6 +460,7 @@ export class Session {
       this.life.stat("def"),
       s.spd,
       this.life.stat("spd"),
+      this.life.fatigue >= 15 ? -10 : 0,
     );
     const armor = ["body", "shield"]
       .map((slot) =>
@@ -446,11 +475,10 @@ export class Session {
       damage = Math.ceil(damage * 0.5);
       this.battle!.defending = false;
     }
-    if (
-      damage &&
-      this.random() < (this.life.data.equipment.shield ? 0.06 : 0.04)
-    )
-      damage = Math.ceil(damage * 0.5);
+    const ironWall =
+      damage > 0 &&
+      this.random() < (this.life.data.equipment.shield ? 0.06 : 0.04);
+    if (ironWall) damage = Math.ceil(damage * 0.5);
     for (const slot of ["head", "body", "shield"])
       if (
         damage &&
@@ -459,10 +487,10 @@ export class Session {
       )
         this.life.wear(this.life.data.equipment[slot]);
     if (damage && armor.some((g) => g.enhancedUntil > this.clock))
-      this.life.xp("magic", 1);
+      this.life.xp("magic", this.dangerMultiplier);
     this.hp = Math.max(0, this.hp - damage);
     this.message = damage
-      ? `${s.name}の攻撃。${damage}ダメージ。`
+      ? `${s.name}の攻撃。${damage}ダメージ。${ironWall ? "鉄壁の守りが発動。" : ""}`
       : `${s.name}の攻撃をかわした。`;
     if (!this.hp) {
       if (e.kind === "fowl") {
@@ -509,28 +537,30 @@ export class Session {
     let damage = this.hit(
       this.life.stat("atk"),
       s.def,
-      this.life.stat("spd") - this.life.fatigue / 1.5,
+      this.life.stat("spd"),
       s.spd,
+      this.life.fatigue,
     );
     const weapon = this.life.data.gear.find(
       (g) => g.id === this.life.data.equipment.weapon,
     );
-    if (weapon?.element && weapon.elementUntil > this.clock)
-      damage = Math.floor(
-        damage *
-          (e.kind === "slime" && weapon.element === "fire"
-            ? 1.3
-            : e.kind === "lizard" && weapon.element === "water"
-              ? 0.7
-              : 1),
+    if (damage && weapon?.element && weapon.elementUntil > this.clock)
+      damage = Math.max(
+        1,
+        Math.floor(
+          damage *
+            (e.kind === "slime" && weapon.element === "fire"
+              ? 1.3
+              : e.kind === "lizard" && weapon.element === "water"
+                ? 0.7
+                : 1),
+        ),
       );
     if (damage) {
-      this.life.xp(
-        "sword",
-        2 * (e.kind === "rat" || e.kind === "slime" ? 1 : 2.5),
-      );
+      this.life.xp("sword", 2 * this.dangerMultiplier);
       if (weapon) {
-        if (weapon.enhancedUntil > this.clock) this.life.xp("magic", 1);
+        if (weapon.enhancedUntil > this.clock)
+          this.life.xp("magic", this.dangerMultiplier);
         this.life.wear(weapon.id);
       }
     }

@@ -490,3 +490,24 @@ summary {
   padding-left: 12px;
   color: #ffbc9e;
 }
+
+#interaction-panel label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+#interaction-panel input,
+#detail input {
+  min-height: 44px;
+  max-width: 100%;
+  font-size: 16px;
+}
+#interaction-panel input {
+  width: 85px;
+}
+.gamefoot,
+.gamebar {
+  flex-wrap: wrap;
+  gap: 6px;
+}

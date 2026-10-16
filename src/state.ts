@@ -55,7 +55,7 @@ export class World {
     this.next = { to, x, y, switched: false };
     this.transition = 0;
   }
-  update(seconds: number, held: ReadonlySet<Direction>) {
+  update(seconds: number, held: ReadonlySet<Direction>, speedMultiplier = 1) {
     const dt = Math.max(0, Math.min(seconds, 0.1));
     this.moving = false;
     if (this.next) {
@@ -88,7 +88,8 @@ export class World {
       speed =
         SPEED *
         (this.mode === "run" ? 1.6 : this.mode === "sneak" ? 0.5 : 1) *
-        wet;
+        wet *
+        speedMultiplier;
     const count = Math.max(1, Math.ceil((speed * dt) / 3)),
       beforeX = this.x,
       beforeY = this.y;
