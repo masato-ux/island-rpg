@@ -127,6 +127,18 @@ export class Terrain {
       edge(15, 0, 1, 16, "#d3ead6");
       edge(14, 1, 1, 14, tile === "sand" ? "#ece0ad" : "#587f6b");
     }
+    if (
+      tile === "grass" &&
+      map.id === "VIL" &&
+      y === 32 &&
+      (x < 22 || x > 26)
+    ) {
+      edge(1, 11, 13, 4, "#466e50");
+      edge(2, 8, 11, 5, "#638e50");
+      edge(4, 6, 7, 5, "#83a65c");
+      edge(4, 8, 3, 1, "#abc779");
+      edge(11, 12, 2, 2, "#314f43");
+    }
     if (tile === "grass" || tile === "wet") {
       if (path(-1, 0)) edge(0, 0, 1, 16, "#b2be7c");
       if (path(1, 0)) edge(15, 0, 1, 16, "#b2be7c");

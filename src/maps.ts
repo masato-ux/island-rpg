@@ -104,7 +104,15 @@ export function tileAt(map: GameMap, x: number, y: number): Tile {
   if (Math.abs(x - cx) <= 1 && (map.id !== "VIL" || y < 34)) return "path";
   if (map.id !== "VIL" && Math.abs(y - cy) <= 1) return "path";
   if (map.id === "VIL") {
-    if (y >= 37 || x < 2 || x >= 46) return "water";
+    // Extend previously impassable sea into two grassy headlands. Existing land stays walkable.
+    if (x < 2 || x >= 46) return "water";
+    if (y >= 37) {
+      const west =
+        (y === 37 && x >= 15 && x <= 21) || (y === 38 && x >= 16 && x <= 18);
+      const east =
+        (y === 37 && x >= 28 && x <= 35) || (y === 38 && x >= 29 && x <= 33);
+      return west || east ? "grass" : "water";
+    }
     if (y >= 33) return "sand";
     if (
       map.buildings.some(
@@ -123,8 +131,18 @@ export function tileAt(map: GameMap, x: number, y: number): Tile {
       x > cx + 4 &&
       x < cx + 11 &&
       Math.abs(y - cy) < 7
-    )
+    ) {
+      // Trim the old rectangular water corners into stepped coves, without blocking old saves.
+      const dx = x - cx,
+        dy = y - cy;
+      if (
+        (dx === 5 && (Math.abs(dy) >= 5 || dy === -2)) ||
+        (dx === 10 && Math.abs(dy) >= 4) ||
+        (dy === -6 && dx <= 6)
+      )
+        return "grass";
       return "water";
+    }
     if (map.id === "EAST" && x > map.width * 0.7 && y > 20 && y < 50)
       return "water";
     if (map.id === "WEST" && x < 5) return "water";
