@@ -12,7 +12,9 @@ export type Tile =
   | "house"
   | "wet"
   | "rock"
-  | "floor";
+  | "floor"
+  | "cliff"
+  | "stairs";
 export interface Building {
   x: number;
   y: number;
@@ -92,7 +94,7 @@ connect("WEST", "up", "MOUNT", "left");
 connect("EAST", "up", "MOUNT", "right");
 connect("MOUNT", "up", "NORTH", "down");
 export const outdoors = Object.values(maps).filter((m) => !m.interior);
-export function tileAt(map: GameMap, x: number, y: number): Tile {
+export function legacyTileAt(map: GameMap, x: number, y: number): Tile {
   if (x < 0 || y < 0 || x >= map.width || y >= map.height) return "water";
   if (map.interior)
     return x === 0 || y === 0 || x === map.width - 1 || y === map.height - 1
@@ -156,6 +158,249 @@ export function tileAt(map: GameMap, x: number, y: number): Tile {
   }
   return "grass";
 }
+export const TERRAIN_VERSION = 3;
+export interface Terrace {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  level: number;
+}
+export function terracesFor(map: GameMap): Terrace[] {
+  if (map.interior) return [];
+  if (map.id === "VIL") return [{ x: 28, y: 27, w: 12, h: 6, level: 1 }];
+  const cx = map.width / 2,
+    cy = Math.floor(map.height / 2);
+  if (map.id === "MOUNT" || map.id === "NORTH")
+    return [
+      { x: cx - 21, y: cy - 20, w: 18, h: 16, level: 1 },
+      { x: cx - 18, y: cy - 17, w: 10, h: 8, level: 2 },
+      { x: cx + 14, y: cy + 8, w: 15, h: 12, level: 1 },
+    ];
+  return [
+    { x: cx - 17, y: cy - 14, w: 12, h: 10, level: 1 },
+    { x: cx + 17, y: cy + 9, w: 13, h: 9, level: 1 },
+  ];
+}
+function insideTerrace(t: Terrace, x: number, y: number) {
+  const dx = x - t.x,
+    dy = y - t.y;
+  if (dx < 0 || dy < 0 || dx >= t.w || dy >= t.h) return false;
+  // Two stepped corners break the rectangular outline of the raised ground.
+  return !(dx + dy < 2 || t.w - 1 - dx + (t.h - 1 - dy) < 2);
+}
+export function elevationAt(map: GameMap, x: number, y: number) {
+  let level = 0;
+  for (const t of terracesFor(map))
+    if (insideTerrace(t, x, y)) level = Math.max(level, t.level);
+  return level;
+}
+const roads = new WeakMap<GameMap, Uint8Array>();
+export function roadAt(map: GameMap, x: number, y: number) {
+  if (map.interior || x < 0 || y < 0 || x >= map.width || y >= map.height)
+    return false;
+  let mask = roads.get(map);
+  if (!mask) {
+    mask = new Uint8Array(map.width * map.height);
+    const paint = (x: number, y: number) => {
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          const xx = x + dx,
+            yy = y + dy;
+          if (xx >= 0 && yy >= 0 && xx < map.width && yy < map.height)
+            mask![yy * map.width + xx] = 1;
+        }
+    };
+    const line = (points: number[][]) => {
+      for (let n = 1; n < points.length; n++) {
+        const [ax, ay] = points[n - 1],
+          [bx, by] = points[n],
+          steps = Math.max(Math.abs(bx - ax), Math.abs(by - ay));
+        for (let i = 0; i <= steps; i++)
+          paint(
+            Math.round(ax + ((bx - ax) * i) / (steps || 1)),
+            Math.round(ay + ((by - ay) * i) / (steps || 1)),
+          );
+      }
+    };
+    const cx = map.width / 2,
+      cy = Math.floor(map.height / 2);
+    if (map.id === "VIL") {
+      line([
+        [24, 0],
+        [24, 3],
+        [20, 7],
+        [21, 11],
+        [24, 17],
+        [24, 25],
+        [26, 29],
+        [24, 33],
+      ]);
+      line([
+        [8, 24],
+        [16, 24],
+        [18, 26],
+        [24, 25],
+        [31, 26],
+        [35, 24],
+        [39, 25],
+      ]);
+      line([
+        [24, 18],
+        [29, 17],
+      ]);
+      line([
+        [24, 32],
+        [27, 34],
+        [34, 34],
+        [34, 30],
+      ]);
+    } else {
+      line([
+        [cx, 0],
+        [cx, 3],
+        [cx - 5, 10],
+        [cx - 5, Math.floor(map.height * 0.3)],
+        [cx + 4, cy - 5],
+        [cx + 4, cy + 7],
+        [cx - 4, map.height - 12],
+        [cx, map.height - 4],
+        [cx, map.height - 1],
+      ]);
+      if (map.exits.left)
+        line([
+          [0, cy],
+          [4, cy],
+          [cx - 15, cy + 4],
+          [cx, cy],
+        ]);
+      if (map.exits.right)
+        line([
+          [cx, cy],
+          [cx + 15, cy - 5],
+          [map.width - 5, cy],
+          [map.width - 1, cy],
+        ]);
+      // A side trail forms a loop around the clearing instead of forcing a single route.
+      line([
+        [cx, cy],
+        [cx + 10, cy - 4],
+        [cx + 15, cy + 4],
+        [cx + 6, cy + 11],
+        [cx - 3, cy + 7],
+        [cx, cy],
+      ]);
+    }
+    for (const t of terracesFor(map)) {
+      const x = t.x + Math.floor(t.w / 2),
+        y = t.y + t.h - 1;
+      line([
+        [map.id === "VIL" ? 34 : cx, map.id === "VIL" ? 34 : cy],
+        [x, y + 3],
+        [x, y - 2],
+      ]);
+    }
+    roads.set(map, mask);
+  }
+  return mask[y * map.width + x] === 1;
+}
+function rawTileAt(map: GameMap, x: number, y: number): Tile {
+  const old = legacyTileAt(map, x, y);
+  if (map.interior || old === "house") return old;
+  const height = elevationAt(map, x, y);
+  if (height > 0) {
+    const rim = [
+      [0, 1],
+      [0, -1],
+      [1, 0],
+      [-1, 0],
+    ].some(([dx, dy]) => elevationAt(map, x + dx, y + dy) < height);
+    if (rim) return roadAt(map, x, y) ? "stairs" : "cliff";
+    return roadAt(map, x, y) ? "path" : "grass";
+  }
+  if (roadAt(map, x, y)) return "path";
+  if (map.id === "WEST" && x < 5 && y > 2 && y < map.height - 2) {
+    const edge = 3 + Math.floor(Math.sin(y * 0.34) + Math.sin(y * 0.13));
+    return x < edge ? "water" : x === edge ? "sand" : "grass";
+  }
+  // Retain an unmarked walkable strip where the old straight road was, for saved positions.
+  if (old === "path") return "grass";
+  if (map.id === "VIL" && y >= 33 && x >= 2 && x < 46) {
+    if (old === "grass") return old;
+    const edge =
+      37 + Math.floor((Math.sin(x * 0.48) + Math.sin(x * 0.19 + 1)) * 1.25);
+    if (y >= 37 && y < Math.min(39, Math.max(37, edge)))
+      return x % 9 < 5 ? "grass" : "sand";
+    return old;
+  }
+  if ((map.id === "SFOREST" || map.id === "EAST") && old === "water") {
+    const cx = map.width / 2,
+      cy = Math.floor(map.height / 2);
+    if (x > cx + 4 && x < cx + 11 && Math.abs(y - cy) < 7) {
+      if (x === cx + 5 + (Math.floor(y / 3) % 2) && y % 4 !== 0) return "grass";
+    }
+    if (map.id === "EAST" && x > map.width * 0.7 && y > 20 && y < 50) {
+      const edge =
+        Math.floor(map.width * 0.7) +
+        1 +
+        Math.floor((Math.sin(y * 0.36) + 1) * 2);
+      if (
+        x < edge ||
+        y < 23 + Math.floor(Math.sin(x * 0.6) + 1) ||
+        y > 47 - Math.floor(Math.cos(x * 0.5) + 1)
+      )
+        return "grass";
+    }
+  }
+  return old;
+}
+const fields = new WeakMap<GameMap, Tile[]>();
+export function tileAt(map: GameMap, x: number, y: number): Tile {
+  if (x < 0 || y < 0 || x >= map.width || y >= map.height) return "water";
+  let cells = fields.get(map);
+  if (!cells) {
+    cells = [];
+    for (let yy = 0; yy < map.height; yy++)
+      for (let xx = 0; xx < map.width; xx++) cells.push(rawTileAt(map, xx, yy));
+    fields.set(map, cells);
+  }
+  return cells[Math.floor(y) * map.width + Math.floor(x)];
+}
 export function isBlocked(map: GameMap, x: number, y: number) {
-  return ["water", "tree", "house", "rock"].includes(tileAt(map, x, y));
+  return ["water", "tree", "house", "rock", "cliff"].includes(
+    tileAt(map, x, y),
+  );
+}
+export function canStandOn(map: GameMap, x: number, y: number, legacy = false) {
+  const at = legacy ? legacyTileAt : tileAt;
+  return [
+    [-5, -5],
+    [5, -5],
+    [-5, 5],
+    [5, 5],
+  ].every(
+    ([dx, dy]) =>
+      !["water", "tree", "house", "rock", "cliff"].includes(
+        at(map, Math.floor((x + dx) / 16), Math.floor((y + dy) / 16)),
+      ),
+  );
+}
+export function safePosition(
+  map: GameMap,
+  x: number,
+  y: number,
+): { x: number; y: number } | null {
+  if (canStandOn(map, x, y)) return { x, y };
+  const tx = Math.floor(x / 16),
+    ty = Math.floor(y / 16);
+  for (let r = 1; r < Math.max(map.width, map.height); r++) {
+    for (let dy = -r; dy <= r; dy++)
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+        const xx = (tx + dx) * 16 + 8,
+          yy = (ty + dy) * 16 + 8;
+        if (canStandOn(map, xx, yy)) return { x: xx, y: yy };
+      }
+  }
+  return null;
 }

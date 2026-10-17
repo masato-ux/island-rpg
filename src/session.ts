@@ -4,6 +4,8 @@ import {
   maps,
   outdoors,
   isBlocked,
+  TERRAIN_VERSION,
+  safePosition,
   type MapId,
   type OutdoorId,
 } from "./maps.ts";
@@ -116,6 +118,7 @@ export interface Story {
 }
 export interface Snapshot {
   version: 2;
+  terrainVersion?: number;
   activity: Activity;
   life: LifeData;
   rngSeed: number;
@@ -208,6 +211,17 @@ export class Session {
       aiTimer: 0,
       respawnAt: 0,
     });
+    for (const e of this.enemies) {
+      const pos = safePosition(maps[e.mapId || "GRASS"], e.x, e.y);
+      if (pos) {
+        e.x = pos.x;
+        e.y = pos.y;
+        if (e.spawnX !== undefined) {
+          e.spawnX = pos.x;
+          e.spawnY = pos.y;
+        }
+      }
+    }
     this.checkpoint = this.snapshot();
   }
   get activeEnemies() {
@@ -677,6 +691,7 @@ export class Session {
   snapshot(): Snapshot {
     return structuredClone({
       version: 2,
+      terrainVersion: TERRAIN_VERSION,
       activity: this.life.snapshotActivity(),
       life: this.life.data,
       rngSeed: this.rngSeed,

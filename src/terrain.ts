@@ -1,4 +1,4 @@
-import { tileAt, type GameMap, type Tile } from "./maps.ts";
+import { elevationAt, tileAt, type GameMap, type Tile } from "./maps.ts";
 
 // Small original pixel tiles are painted once and reused. Decoration never changes collision.
 const hash = (x: number, y: number, salt = 0) =>
@@ -35,49 +35,96 @@ export class Terrain {
   ) {
     const tile = tileAt(map, x, y),
       variant = hash(x, y) % 8;
-    const image = this.sprite(`${tile}:${variant}`, 16, 16, (ctx) => {
-      const palette: Record<Tile, string[]> = {
-        grass: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
-        tree: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
-        rock: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
-        house: ["#b5a17a", "#c5b38c", "#a18d6b", "#cfbf97"],
-        path: ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
-        sand: ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
-        wet: ["#6e9980", "#81aa8b", "#5c8876", "#a0b794"],
-        water: ["#355678", "#3a5b7e", "#335476", "#426484"],
-        floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
-      };
-      const colors = palette[tile];
-      ctx.fillStyle = colors[0];
-      ctx.fillRect(0, 0, 16, 16);
-      for (let i = 0; i < (tile === "water" ? 6 : 14); i++) {
-        const seed = hash(i, variant, tile.length),
-          xx = seed % 16,
-          yy = (seed >>> 8) % 16;
-        ctx.fillStyle = colors[1 + ((seed >>> 16) % 3)];
-        ctx.fillRect(xx, yy, 1 + (seed % 2), 1);
-      }
-      if (tile === "floor") {
-        ctx.fillStyle = colors[2];
-        ctx.fillRect(0, 15, 16, 1);
-        ctx.fillRect(variant % 2 ? 12 : 4, 0, 1, 15);
-      }
-      if (tile === "grass" || tile === "wet" || tile === "tree") {
-        const xx = 3 + variant,
-          yy = 7 + (variant % 4);
-        ctx.fillStyle = tile === "wet" ? "#527e66" : "#648d57";
-        ctx.fillRect(xx, yy, 1, 3);
-        ctx.fillRect(xx - 2, yy - 1, 1, 2);
-        ctx.fillRect(xx + 2, yy, 1, 2);
-        if (variant === 3) {
-          ctx.fillStyle = "#e1d69c";
-          ctx.fillRect(12, 4, 2, 1);
-          ctx.fillStyle = "#d5dfc0";
-          ctx.fillRect(4, 11, 1, 1);
+    const image = this.sprite(
+      `${tile}:${variant}:${elevationAt(map, x, y)}`,
+      16,
+      16,
+      (ctx) => {
+        const palette: Record<Tile, string[]> = {
+          grass:
+            elevationAt(map, x, y) > 0
+              ? ["#9bb66d", "#aac67e", "#8ca664", "#c0cc86"]
+              : ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
+          cliff: ["#678982", "#83a49b", "#4d6f73", "#a8b7a0"],
+          stairs: ["#99aa8b", "#b8bea0", "#667f79", "#ccd0ad"],
+          tree: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
+          rock: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
+          house: ["#b5a17a", "#c5b38c", "#a18d6b", "#cfbf97"],
+          path: ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
+          sand: ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
+          wet: ["#6e9980", "#81aa8b", "#5c8876", "#a0b794"],
+          water: ["#355678", "#3a5b7e", "#335476", "#426484"],
+          floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
+        };
+        const colors = palette[tile];
+        ctx.fillStyle = colors[0];
+        ctx.fillRect(0, 0, 16, 16);
+        for (let i = 0; i < (tile === "water" ? 6 : 14); i++) {
+          const seed = hash(i, variant, tile.length),
+            xx = seed % 16,
+            yy = (seed >>> 8) % 16;
+          ctx.fillStyle = colors[1 + ((seed >>> 16) % 3)];
+          ctx.fillRect(xx, yy, 1 + (seed % 2), 1);
         }
-      }
-    });
+        if (tile === "floor") {
+          ctx.fillStyle = colors[2];
+          ctx.fillRect(0, 15, 16, 1);
+          ctx.fillRect(variant % 2 ? 12 : 4, 0, 1, 15);
+        }
+        if (tile === "grass" || tile === "wet" || tile === "tree") {
+          const xx = 3 + variant,
+            yy = 7 + (variant % 4);
+          ctx.fillStyle = tile === "wet" ? "#527e66" : "#648d57";
+          ctx.fillRect(xx, yy, 1, 3);
+          ctx.fillRect(xx - 2, yy - 1, 1, 2);
+          ctx.fillRect(xx + 2, yy, 1, 2);
+          if (variant === 3) {
+            ctx.fillStyle = "#e1d69c";
+            ctx.fillRect(12, 4, 2, 1);
+            ctx.fillStyle = "#d5dfc0";
+            ctx.fillRect(4, 11, 1, 1);
+          }
+        }
+      },
+    );
     c.drawImage(image, px, py);
+    if (tile === "cliff") {
+      const fill = (
+        xx: number,
+        yy: number,
+        w: number,
+        h: number,
+        color: string,
+      ) => {
+        c.fillStyle = color;
+        c.fillRect(px + xx, py + yy, w, h);
+      };
+      fill(0, 0, 16, 2, "#435f53");
+      fill(1, 0, 14, 1, "#bdcf8d");
+      fill(0, 2, 16, 2, "#789c5a");
+      fill(1, 4, 3, 9, "#8aa99d");
+      fill(5, 5, 1, 9, "#415f65");
+      fill(7, 4, 5, 8, "#789b91");
+      fill(13, 3, 2, 11, "#4c6f72");
+      fill(2, 5, 2, 2, "#afbeaa");
+      fill(8, 5, 3, 1, "#a6b9a3");
+      fill(7, 13, 5, 1, "#476a6d");
+      fill(0, 15, 16, 1, "#3b5b60");
+      return;
+    }
+    if (tile === "stairs") {
+      c.fillStyle = "#4e6d68";
+      c.fillRect(px, py, 16, 16);
+      for (let row = 0; row < 4; row++) {
+        c.fillStyle = "#c1c8a7";
+        c.fillRect(px + 2, py + row * 4, 12, 1);
+        c.fillStyle = "#96a98f";
+        c.fillRect(px + 2, py + row * 4 + 1, 12, 2);
+        c.fillStyle = "#627f77";
+        c.fillRect(px + 2, py + row * 4 + 3, 12, 1);
+      }
+      return;
+    }
     if (tile === "water") {
       const phase = Math.floor(time / 6),
         n = hash(x, y, phase);

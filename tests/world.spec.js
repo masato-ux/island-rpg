@@ -373,3 +373,46 @@ test("ゲームのJS読込失敗でも再読み込みの案内が出る", async 
     "ゲームのファイルを読み込めませんでした",
   );
 });
+test("階段で村の高台に上り、保存と再読込後も上に立てる", async ({ page }) => {
+  await load(page, fixture("VIL", 552, 552));
+  await page.keyboard.down("ArrowUp");
+  await page.waitForTimeout(950);
+  await page.keyboard.up("ArrowUp");
+  const y = Number(await page.locator("#world").getAttribute("data-player-y"));
+  expect(y).toBeLessThan(512);
+  expect(y).toBeGreaterThan(448);
+  await page.getByRole("button", { name: "メニュー", exact: true }).click();
+  await page.getByRole("button", { name: "魂の楔で保存" }).click();
+  await expect(page.locator("#action-info")).toContainText("保存した");
+  await page.reload();
+  await page.getByRole("button", { name: "続きから", exact: true }).click();
+  expect(
+    Number(await page.locator("#world").getAttribute("data-player-y")),
+  ).toBeCloseTo(y, 1);
+  await expect(page.locator(".badge")).toContainText("FIELD 03");
+});
+test("旧セーブが新しい崖に重なっても進行を保って読込できる", async ({
+  page,
+}) => {
+  const { checksum } = await import("../src/save.ts");
+  const s = fixture("VIL", 456, 488);
+  s.inventory["薬草"] = 7;
+  const data = s.snapshot();
+  delete data.terrainVersion;
+  const raw = JSON.stringify({
+    generation: 1,
+    checksum: checksum(JSON.stringify(data)),
+    data,
+  });
+  await page.goto("/");
+  await page.locator("#import-save").setInputFiles({
+    name: "old-field.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(raw),
+  });
+  await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
+  const pos = await page.locator("#world").getAttribute("data-player-x");
+  expect(Number(pos)).not.toBe(456);
+  await page.getByRole("button", { name: "メニュー", exact: true }).click();
+  await expect(page.locator("#inventory")).toContainText("薬草 ×7");
+});

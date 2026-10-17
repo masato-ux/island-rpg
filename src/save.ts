@@ -1,6 +1,6 @@
 import { people, items, recipes, resourceIndices, fishByMap } from "./data.ts";
 import { defaults } from "./life.ts";
-import { maps } from "./maps.ts";
+import { maps, TERRAIN_VERSION, canStandOn, safePosition } from "./maps.ts";
 import type { Snapshot } from "./session.ts";
 import { Session, species } from "./session.ts";
 import { World } from "./state.ts";
@@ -146,6 +146,15 @@ export function validateSnapshot(v: unknown): Snapshot {
     v.inventory["魂の楔"] !== 1
   )
     throw new Error("所持品データが不正です。");
+  if (
+    v.terrainVersion !== undefined &&
+    (!Number.isInteger(v.terrainVersion) ||
+      !number(v.terrainVersion, 1, TERRAIN_VERSION))
+  )
+    throw new Error("地形バージョンが不正です。");
+  const oldTerrain =
+    v.terrainVersion === undefined ||
+    Number(v.terrainVersion) < TERRAIN_VERSION;
   const life = v.version === 1 ? defaults() : v.life;
   if (!shape(life, lifeRule))
     throw new Error("生活・人物・探索の保存データが不正です。");
@@ -293,7 +302,10 @@ export function validateSnapshot(v: unknown): Snapshot {
       throw new Error("転移杭データが不正です。");
     const w = new World();
     w.mapId = map as keyof typeof maps;
-    if (!w.canStand(stake.x, stake.y))
+    if (
+      !w.canStand(stake.x, stake.y) &&
+      !(oldTerrain && canStandOn(w.map, stake.x, stake.y, true))
+    )
       throw new Error("転移杭の位置が不正です。");
   }
   for (const [key, node] of Object.entries(systems.nodes)) {
@@ -454,8 +466,39 @@ export function validateSnapshot(v: unknown): Snapshot {
   ) as unknown as Snapshot["activity"];
   const w = new World();
   w.mapId = result.mapId;
-  if (!w.canStand(result.x, result.y))
-    throw new Error("保存位置が通行できない場所です。");
+  if (!w.canStand(result.x, result.y)) {
+    if (!oldTerrain || !canStandOn(w.map, result.x, result.y, true))
+      throw new Error("保存位置が通行できない場所です。");
+    const pos = safePosition(w.map, result.x, result.y);
+    if (!pos) throw new Error("安全な保存位置が見つかりません。");
+    result.x = pos.x;
+    result.y = pos.y;
+    result.activity.action = null;
+    result.activity.interaction = null;
+  }
+  if (oldTerrain) {
+    for (const [id, stake] of Object.entries(result.life.stakes)) {
+      const pos = safePosition(maps[id as keyof typeof maps], stake.x, stake.y);
+      if (!pos) throw new Error("転移杭の安全な位置が見つかりません。");
+      result.life.stakes[id] = pos;
+    }
+    for (const e of result.enemies) {
+      const map = maps[e.mapId || "GRASS"],
+        pos = safePosition(map, e.x, e.y);
+      if (pos) {
+        e.x = pos.x;
+        e.y = pos.y;
+      }
+      if (e.spawnX !== undefined) {
+        const spawn = safePosition(map, e.spawnX, e.spawnY!);
+        if (spawn) {
+          e.spawnX = spawn.x;
+          e.spawnY = spawn.y;
+        }
+      }
+    }
+  }
+  result.terrainVersion = TERRAIN_VERSION;
   return result;
 }
 
