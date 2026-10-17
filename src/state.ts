@@ -6,7 +6,7 @@ import {
   vectors,
   type Direction,
 } from "./constants.ts";
-import { maps, isBlocked, tileAt, type MapId } from "./maps.ts";
+import { maps, isBlocked, tileAt, villagePoint, type MapId } from "./maps.ts";
 interface Transition {
   to: MapId;
   x: number;
@@ -15,8 +15,8 @@ interface Transition {
 }
 export class World {
   mapId: MapId = "VIL";
-  x = 392;
-  y = 552;
+  x = villagePoint(392, 552).x;
+  y = villagePoint(392, 552).y;
   facing: Direction = "down";
   moving = false;
   animation = 0;
@@ -28,8 +28,8 @@ export class World {
   }
   reset() {
     this.mapId = "VIL";
-    this.x = 392;
-    this.y = 552;
+    this.x = villagePoint(392, 552).x;
+    this.y = villagePoint(392, 552).y;
     this.next = null;
     this.transition = 0;
     this.moving = false;

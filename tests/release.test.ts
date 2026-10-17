@@ -1,3 +1,8 @@
+import {
+  villagePoint as vp,
+  compactPoint as cp,
+  maps as fieldMaps,
+} from "../src/maps.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Session } from "../src/session.ts";
@@ -91,7 +96,7 @@ test("祭壇から離れた古い選択で結末を確定できず、到着す�
   s.life.end("released");
   assert.equal(s.life.data.ending, null);
   s.world.mapId = "NORTH";
-  s.world.x = 896;
+  s.world.x = fieldMaps.NORTH.width * 8;
   s.world.y = 128;
   s.life.end("released");
   assert.equal(s.life.data.ending, "released");
@@ -144,8 +149,7 @@ test("閉店直前に受けた依頼は帰宅後でも期限内に全量納品�
 test("靴と魔法強化は歩行速度に反映し、子供の遊びでは装備速度を無効にする", () => {
   const distance = (gear: boolean, play: boolean) => {
     const s = game();
-    s.world.x = 392;
-    s.world.y = 400;
+    Object.assign(s.world, vp(392, 400));
     if (gear) {
       s.life.gain("革靴");
       const g = s.life.data.gear.at(-1)!;
@@ -229,8 +233,7 @@ test("漁師の依頼は魚種を限定せず、生魚2匹で完納できる", (
 });
 test("村から主道を通り祭壇に到着して結末後に保存・帰還できる", () => {
   const s = game();
-  s.world.x = 392;
-  s.world.y = 400;
+  Object.assign(s.world, vp(392, 400));
   s.world.mode = "run";
   // A late-game departure uses ordinary equipment and combat commands; enemies remain active.
   for (const name of ["鋼剣", "革帽", "革鎧", "革靴", "鉄盾"]) {

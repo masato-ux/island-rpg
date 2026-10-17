@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -9,6 +10,8 @@ import {
   isBlocked,
   canStandOn,
   TERRAIN_VERSION,
+  terracesFor,
+  villagePoint,
 } from "../src/maps.ts";
 import { World } from "../src/state.ts";
 import { Session } from "../src/session.ts";
@@ -58,17 +61,21 @@ test("全高台の通行可能セルに階段を経由して到達でき、山�
     assert.ok(top > 20);
     assert.ok(stairs >= 3);
   }
-  assert.equal(elevationAt(maps.MOUNT, 45, 38), 2);
+  assert.ok(terracesFor(maps.MOUNT).some((t) => t.level === 2));
 });
 test("崖へは進めず、階段から高台へ上り下りできる", () => {
   const w = new World();
-  w.x = 27 * 16 + 8;
-  w.y = 30 * 16 + 8;
-  assert.equal(tileAt(maps.VIL, 28, 30), "cliff");
+  let cliff: { x: number; y: number } | undefined;
+  for (let y = 1; y < maps.VIL.height && !cliff; y++)
+    for (let x = 2; x < maps.VIL.width && !cliff; x++)
+      if (tileAt(maps.VIL, x, y) === "cliff" && !isBlocked(maps.VIL, x - 1, y))
+        cliff = { x, y };
+  assert.ok(cliff);
+  w.x = (cliff.x - 1) * 16 + 8;
+  w.y = cliff.y * 16 + 8;
   for (let i = 0; i < 20; i++) w.update(0.1, new Set(["right"]));
-  assert.ok(w.x < 28 * 16 - 4);
-  w.x = 34 * 16 + 8;
-  w.y = 34 * 16 + 8;
+  assert.ok(w.x < cliff.x * 16 - 4);
+  Object.assign(w, villagePoint(552, 552));
   for (let i = 0; i < 12; i++) w.update(0.1, new Set(["up"]));
   assert.ok(elevationAt(w.map, Math.floor(w.x / 16), Math.floor(w.y / 16)) > 0);
   assert.ok(w.canStand(w.x, w.y));
@@ -79,8 +86,8 @@ test("崖へは進めず、階段から高台へ上り下りできる", () => {
   );
 });
 test("道は中央の直線から曲がり、ゲートと各建物の入口へ通れる", () => {
-  assert.equal(tileAt(maps.VIL, 20, 7), "path");
-  assert.notEqual(tileAt(maps.VIL, 24, 7), "path");
+  assert.equal(tileAt(maps.VIL, 17, 6), "path");
+  assert.notEqual(tileAt(maps.VIL, 20, 6), "path");
   for (const map of outdoors) {
     const seen = reached(map);
     for (const side of Object.keys(map.exits)) {
@@ -98,7 +105,7 @@ test("道は中央の直線から曲がり、ゲートと各建物の入口へ�
   }
   const seen = reached(maps.VIL);
   for (const b of maps.VIL.buildings)
-    assert.ok(seen.has(`${b.x + b.w / 2},${b.y + b.h}`));
+    assert.ok(seen.has(`${Math.floor(b.x + b.w / 2)},${b.y + b.h}`));
 });
 test("海岸は複数の位置で折れ、旧海岸の保存位置も安全を保つ", () => {
   const edges = new Set<number>();
@@ -112,44 +119,31 @@ test("海岸は複数の位置で折れ、旧海岸の保存位置も安全を�
     [392, 552],
     [552, 568],
     [264, 488],
-  ])
-    assert.ok(canStandOn(maps.VIL, x, y));
+  ]) {
+    const p = villagePoint(x, y);
+    assert.ok(canStandOn(maps.VIL, p.x, p.y));
+  }
 });
-test("旧地形の保存位置・転移杭・魔物を新しい崖から安全に補正し、進行を保持する", () => {
-  const s = game();
-  s.world.mapId = "GRASS";
-  const map = maps.GRASS;
-  let point: { x: number; y: number } | undefined;
-  for (let y = 1; y < map.height && !point; y++)
-    for (let x = 1; x < map.width && !point; x++)
-      if (
-        tileAt(map, x, y) === "cliff" &&
-        canStandOn(map, x * 16 + 8, y * 16 + 8, true)
-      )
-        point = { x: x * 16 + 8, y: y * 16 + 8 };
-  assert.ok(point);
-  s.world.x = point.x;
-  s.world.y = point.y;
-  s.life.data.stakes.GRASS = { ...point };
-  s.inventory["薬草"] = 7;
-  s.life.data.money = 123;
-  const v = s.snapshot();
-  delete v.terrainVersion;
-  v.enemies[0].x = point.x;
-  v.enemies[0].y = point.y;
-  const data = validateSnapshot(v);
-  assert.equal(data.terrainVersion, TERRAIN_VERSION);
-  assert.ok(canStandOn(map, data.x, data.y));
-  assert.notDeepEqual({ x: data.x, y: data.y }, point);
-  assert.ok(
-    canStandOn(map, data.life.stakes.GRASS.x, data.life.stakes.GRASS.y),
+test("旧地形の保存位置・探索霧を縮小し、進行を保持して再保存する", () => {
+  const raw = readFileSync(
+    new URL("./fixtures/field03-save.json", import.meta.url),
+    "utf8",
   );
-  assert.ok(canStandOn(map, data.enemies[0].x, data.enemies[0].y));
+  const original = JSON.parse(raw).data;
+  const store = new SaveStore({ getItem: () => null, setItem: () => {} }),
+    data = store.import(raw);
+  assert.equal(data.terrainVersion, TERRAIN_VERSION);
+  assert.ok(canStandOn(maps.VIL, data.x, data.y));
+  assert.ok(data.x < original.x);
+  assert.ok(data.y < original.y);
   assert.equal(data.inventory["薬草"], 7);
   assert.equal(data.life.money, 123);
-  assert.equal(data.clock, v.clock);
-  assert.deepEqual(v.life.stakes.GRASS, point);
-  const store = new SaveStore({ getItem: () => null, setItem: () => {} });
+  assert.equal(data.clock, original.clock);
+  assert.equal(data.life.fog.VIL.length, maps.VIL.width * maps.VIL.height);
+  assert.ok(data.life.fog.VIL.includes("1"));
+  assert.ok(
+    canStandOn(maps.VIL, data.life.stakes.VIL.x, data.life.stakes.VIL.y),
+  );
   assert.deepEqual(store.import(store.export(data)), data);
 });
 test("現在版の障害物内保存と未知の地形版を拒否し、正常な保存を完全復元する", () => {
@@ -157,10 +151,33 @@ test("現在版の障害物内保存と未知の地形版を拒否し、正常�
     v = s.snapshot();
   assert.deepEqual(validateSnapshot(v), v);
   assert.throws(() => validateSnapshot({ ...v, terrainVersion: 99 }));
+  let cliff: { x: number; y: number } | undefined;
+  for (let y = 0; y < maps.VIL.height && !cliff; y++)
+    for (let x = 0; x < maps.VIL.width && !cliff; x++)
+      if (tileAt(maps.VIL, x, y) === "cliff") cliff = { x, y };
+  assert.ok(cliff);
   assert.throws(() =>
-    validateSnapshot({ ...v, x: 28 * 16 + 8, y: 30 * 16 + 8 }),
+    validateSnapshot({ ...v, x: cliff.x * 16 + 8, y: cliff.y * 16 + 8 }),
   );
   assert.equal(legacyTileAt(maps.VIL, 28, 30), "grass");
   for (const e of s.enemies)
     assert.ok(canStandOn(maps[e.mapId || "GRASS"], e.x, e.y));
+});
+test("村と各屋外の実寸を縮小し、地形版のない保存も引き継げる", () => {
+  const old = JSON.parse(
+    readFileSync(
+      new URL("./fixtures/field03-save.json", import.meta.url),
+      "utf8",
+    ),
+  ).data;
+  delete old.terrainVersion;
+  const migrated = validateSnapshot(old);
+  assert.equal(maps.VIL.width, 40);
+  assert.equal(maps.VIL.height, 34);
+  assert.equal(maps.GRASS.width, 48);
+  assert.equal(maps.CFOREST.width, 80);
+  assert.equal(migrated.terrainVersion, TERRAIN_VERSION);
+  assert.ok(canStandOn(maps.VIL, migrated.x, migrated.y));
+  assert.equal(migrated.inventory["薬草"], 7);
+  assert.equal(migrated.life.money, 123);
 });

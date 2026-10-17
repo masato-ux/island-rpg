@@ -1,3 +1,8 @@
+import {
+  villagePoint as vp,
+  compactPoint as cp,
+  maps as fieldMaps,
+} from "../src/maps.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Session } from "../src/session.ts";
@@ -89,8 +94,7 @@ test("家禽だけ気絶、通常敵では死亡し時計停止", () => {
   training.story.trained = false;
   training.story.wedge = false;
   training.story.gathered = true;
-  training.world.x = 16 * 16 + 8;
-  training.world.y = 30 * 16 + 8;
+  Object.assign(training.world, vp(16 * 16 + 8, 30 * 16 + 8));
   training.interact();
   assert.equal(training.enemy!.kind, "fowl");
   training.hp = 1;
@@ -113,16 +117,13 @@ test("家禽だけ気絶、通常敵では死亡し時計停止", () => {
 test("プロローグの順序と楔の入手、採集は時間を圧縮して処理", () => {
   const s = new Session();
   s.start();
-  s.world.x = 29 * 16 + 8;
-  s.world.y = 17 * 16 + 8;
+  Object.assign(s.world, vp(29 * 16 + 8, 17 * 16 + 8));
   s.interact();
   assert.equal(s.story.wedge, false);
-  s.world.x = 25 * 16 + 8;
-  s.world.y = 34 * 16 + 8;
+  Object.assign(s.world, vp(25 * 16 + 8, 34 * 16 + 8));
   s.interact();
   assert.equal(s.inventory["紙とペン"], 1);
-  s.world.x = 24 * 16 + 8;
-  s.world.y = 30 * 16 + 8;
+  Object.assign(s.world, vp(24 * 16 + 8, 30 * 16 + 8));
   const start = s.clock;
   s.interact();
   assert.equal(s.story.gathered, false);
@@ -132,8 +133,7 @@ test("プロローグの順序と楔の入手、採集は時間を圧縮して�
   assert.equal(s.story.gathered, true);
   assert.ok(Math.abs(s.clock - start - 300) < 1e-6);
   s.story.trained = true;
-  s.world.x = 29 * 16 + 8;
-  s.world.y = 17 * 16 + 8;
+  Object.assign(s.world, vp(29 * 16 + 8, 17 * 16 + 8));
   s.interact();
   assert.equal(s.story.wedge, true);
   assert.equal(s.inventory["魂の楔"], 1);

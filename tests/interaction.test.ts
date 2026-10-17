@@ -1,3 +1,8 @@
+import {
+  villagePoint as vp,
+  compactPoint as cp,
+  maps as fieldMaps,
+} from "../src/maps.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Session } from "../src/session.ts";
@@ -57,8 +62,7 @@ test("釣り場を離れた操作では餌や竿を消費せず、釣り場な�
   assert.equal(l.action, null);
   assert.equal(l.count("ミミズ"), 2);
   assert.equal(rod.durability, 40);
-  s.world.x = 552;
-  s.world.y = 568;
+  Object.assign(s.world, vp(552, 568));
   l.fish(rod.id, "ミミズ");
   assert.equal(l.action!.kind, "fish");
   assert.equal(l.count("ミミズ"), 1);
@@ -84,8 +88,7 @@ test("開いた入口の操作を離れた場所で再使用しても入室で�
   const s = game();
   s.life.enter("HOME");
   assert.equal(s.world.transitioning, false);
-  s.world.x = 200;
-  s.world.y = 488;
+  Object.assign(s.world, vp(200, 488));
   s.life.enter("HOME");
   assert.equal(s.world.transitioning, true);
 });

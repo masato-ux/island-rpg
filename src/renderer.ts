@@ -1,7 +1,7 @@
 import { Terrain } from "./terrain.ts";
 import { people } from "./data.ts";
 import { WIDTH, HEIGHT, TILE } from "./constants.ts";
-import { tileAt } from "./maps.ts";
+import { tileAt, villagePoint } from "./maps.ts";
 import { species, type Session } from "./session.ts";
 import { World } from "./state.ts";
 export class Renderer {
@@ -114,11 +114,14 @@ export class Renderer {
       };
       if (world.mapId === "VIL" && !session.story.wedge) {
         const dan = session.story.rescued ? { x: 16, y: 30 } : { x: 25, y: 34 };
-        label(dan.x * 16 + 8 - camX, dan.y * 16 + 8 - camY, "ダン", "#a06d4e");
-        label(29 * 16 + 8 - camX, 17 * 16 + 8 - camY, "ロアン", "#687a9a");
+        const d = villagePoint(dan.x * 16 + 8, dan.y * 16 + 8),
+          chief = villagePoint(472, 280),
+          grass = villagePoint(392, 488);
+        label(d.x - camX, d.y - camY, "ダン", "#a06d4e");
+        label(chief.x - camX, chief.y - camY, "ロアン", "#687a9a");
         rect(
-          24 * 16 + 2 - camX,
-          30 * 16 + 4 - camY,
+          grass.x - 6 - camX,
+          grass.y - 4 - camY,
           12,
           8,
           session.story.gathered ? "#9b885d" : "#4d7850",
@@ -126,7 +129,7 @@ export class Renderer {
         ctx.textAlign = "center";
         ctx.font = "7px sans-serif";
         ctx.fillStyle = "#f9efc9";
-        ctx.fillText("草", 24 * 16 + 8 - camX, 30 * 16 - camY);
+        ctx.fillText("草", grass.x - camX, grass.y - 8 - camY);
       }
       if (session.story.wedge)
         for (const p of people) {

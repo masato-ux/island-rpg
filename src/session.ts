@@ -6,6 +6,7 @@ import {
   isBlocked,
   TERRAIN_VERSION,
   safePosition,
+  villagePoint,
   type MapId,
   type OutdoorId,
 } from "./maps.ts";
@@ -139,8 +140,8 @@ const initialEnemies = (): Enemy[] =>
   Array.from({ length: 6 }, (_, i) => ({
     id: `enemy-${i}`,
     kind: i % 2 ? "slime" : "rat",
-    x: (i % 2 ? 38 : 34) * 16 + 8,
-    y: (50 - i * 6) * 16 + 8,
+    x: (maps.GRASS.width / 2 + (i % 2 ? 2 : -2)) * 16 + 8,
+    y: (maps.GRASS.height - 6 - i * 4) * 16 + 8,
     hp: i % 2 ? 24 : 18,
     respawnAt: 0,
     heading: 0,
@@ -635,8 +636,10 @@ export class Session {
     )
       return;
     const w = this.world,
-      near = (x: number, y: number) =>
-        Math.hypot(w.x - x * 16 - 8, w.y - y * 16 - 8) < 36;
+      near = (x: number, y: number) => {
+        const p = villagePoint(x * 16 + 8, y * 16 + 8);
+        return Math.hypot(w.x - p.x, w.y - p.y) < 36;
+      };
     if (w.mapId === "VIL" && !this.story.wedge) {
       const dan = this.story.rescued ? { x: 16, y: 30 } : { x: 25, y: 34 };
       if (near(dan.x, dan.y)) {

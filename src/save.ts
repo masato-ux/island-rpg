@@ -1,6 +1,7 @@
+import * as oldField from "./legacy-maps.ts";
 import { people, items, recipes, resourceIndices, fishByMap } from "./data.ts";
 import { defaults } from "./life.ts";
-import { maps, TERRAIN_VERSION, canStandOn, safePosition } from "./maps.ts";
+import { maps, TERRAIN_VERSION, safePosition, compactPoint } from "./maps.ts";
 import type { Snapshot } from "./session.ts";
 import { Session, species } from "./session.ts";
 import { World } from "./state.ts";
@@ -292,8 +293,14 @@ export function validateSnapshot(v: unknown): Snapshot {
     if (
       !Object.hasOwn(maps, map) ||
       mask.length !==
-        maps[map as keyof typeof maps].width *
-          maps[map as keyof typeof maps].height ||
+        (oldTerrain
+          ? oldField.maps[map as keyof typeof maps]
+          : maps[map as keyof typeof maps]
+        ).width *
+          (oldTerrain
+            ? oldField.maps[map as keyof typeof maps]
+            : maps[map as keyof typeof maps]
+          ).height ||
       !/^[01]*$/.test(mask)
     )
       throw new Error("探索地図データが不正です。");
@@ -303,8 +310,14 @@ export function validateSnapshot(v: unknown): Snapshot {
     const w = new World();
     w.mapId = map as keyof typeof maps;
     if (
-      !w.canStand(stake.x, stake.y) &&
-      !(oldTerrain && canStandOn(w.map, stake.x, stake.y, true))
+      !(oldTerrain && v.version !== 1
+        ? oldField.canStandOn(
+            oldField.maps[map as keyof typeof maps],
+            stake.x,
+            stake.y,
+            v.terrainVersion !== 3,
+          )
+        : w.canStand(stake.x, stake.y))
     )
       throw new Error("転移杭の位置が不正です。");
   }
@@ -362,7 +375,6 @@ export function validateSnapshot(v: unknown): Snapshot {
     life: systems,
   }) as unknown as Snapshot;
   if (v.version === 1) {
-    result.enemies.push(...new Session().enemies.slice(6));
     delete result.inventory["流木"];
   }
   const activity = object(v.activity)
@@ -466,38 +478,86 @@ export function validateSnapshot(v: unknown): Snapshot {
   ) as unknown as Snapshot["activity"];
   const w = new World();
   w.mapId = result.mapId;
-  if (!w.canStand(result.x, result.y)) {
-    if (!oldTerrain || !canStandOn(w.map, result.x, result.y, true))
-      throw new Error("保存位置が通行できない場所です。");
-    const pos = safePosition(w.map, result.x, result.y);
+  if (oldTerrain) {
+    if (
+      !oldField.canStandOn(
+        oldField.maps[result.mapId],
+        result.x,
+        result.y,
+        v.terrainVersion !== 3,
+      )
+    )
+      throw new Error("旧地形の保存位置が不正です。");
+    const scaled = compactPoint(result.mapId, result.x, result.y),
+      pos = safePosition(w.map, scaled.x, scaled.y);
     if (!pos) throw new Error("安全な保存位置が見つかりません。");
     result.x = pos.x;
     result.y = pos.y;
     result.activity.action = null;
     result.activity.interaction = null;
-  }
-  if (oldTerrain) {
-    for (const [id, stake] of Object.entries(result.life.stakes)) {
-      const pos = safePosition(maps[id as keyof typeof maps], stake.x, stake.y);
-      if (!pos) throw new Error("転移杭の安全な位置が見つかりません。");
-      result.life.stakes[id] = pos;
+    if (result.activity.play) {
+      const p = compactPoint(
+        "VIL",
+        result.activity.play.x,
+        result.activity.play.y,
+      );
+      const target = safePosition(maps.VIL, p.x, p.y);
+      if (target) Object.assign(result.activity.play, target);
+      else result.activity.play = null;
+    }
+    if (v.version !== 1)
+      for (const [id, stake] of Object.entries(result.life.stakes)) {
+        const scaled = compactPoint(id as keyof typeof maps, stake.x, stake.y),
+          pos = safePosition(maps[id as keyof typeof maps], scaled.x, scaled.y);
+        if (!pos) throw new Error("転移杭の安全な位置が見つかりません。");
+        result.life.stakes[id] = pos;
+      }
+    for (const [id, mask] of Object.entries(result.life.fog)) {
+      const old = oldField.maps[id as keyof typeof maps],
+        map = maps[id as keyof typeof maps];
+      let compact = "";
+      for (let y = 0; y < map.height; y++)
+        for (let x = 0; x < map.width; x++) {
+          let found = false;
+          for (
+            let yy = Math.floor((y * old.height) / map.height);
+            yy < Math.ceil(((y + 1) * old.height) / map.height) && !found;
+            yy++
+          )
+            for (
+              let xx = Math.floor((x * old.width) / map.width);
+              xx < Math.ceil(((x + 1) * old.width) / map.width);
+              xx++
+            )
+              if (mask[yy * old.width + xx] === "1") {
+                found = true;
+                break;
+              }
+          compact += found ? "1" : "0";
+        }
+      result.life.fog[id] = compact;
     }
     for (const e of result.enemies) {
-      const map = maps[e.mapId || "GRASS"],
-        pos = safePosition(map, e.x, e.y);
+      const id = e.mapId || "GRASS",
+        map = maps[id],
+        scaled = compactPoint(id, e.x, e.y),
+        pos = safePosition(map, scaled.x, scaled.y);
       if (pos) {
         e.x = pos.x;
         e.y = pos.y;
       }
       if (e.spawnX !== undefined) {
-        const spawn = safePosition(map, e.spawnX, e.spawnY!);
-        if (spawn) {
-          e.spawnX = spawn.x;
-          e.spawnY = spawn.y;
+        const scaled = compactPoint(id, e.spawnX, e.spawnY!),
+          pos = safePosition(map, scaled.x, scaled.y);
+        if (pos) {
+          e.spawnX = pos.x;
+          e.spawnY = pos.y;
         }
       }
     }
-  }
+  } else if (!w.canStand(result.x, result.y))
+    throw new Error("保存位置が通行できない場所です。");
+  if (v.version === 1) result.enemies.push(...new Session().enemies.slice(6));
   result.terrainVersion = TERRAIN_VERSION;
   return result;
 }

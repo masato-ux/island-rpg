@@ -12,6 +12,8 @@ import {
 import dialogues from "./data/dialogues.json" with { type: "json" };
 import {
   maps,
+  villagePoint,
+  safePosition,
   outdoors,
   isBlocked,
   tileAt,
@@ -138,7 +140,7 @@ export function defaults(): LifeData {
     stockDay: 0,
     known: [],
     fog: {},
-    stakes: { VIL: { x: 24 * 16 + 8, y: 25 * 16 + 8 } },
+    stakes: { VIL: villagePoint(392, 408) },
     xp: { sword: 0, magic: 0, hp: 0, mp: 0 },
     levels: { sword: 1, magic: 1, hp: 1, mp: 1 },
     shoeMinutes: 0,
@@ -235,12 +237,12 @@ export class Life {
       hour = (s.clock / 3600) % 24;
     if (person.id === "N07" && !s.story.wedge)
       return {
-        ...(s.story.rescued ? { x: 264, y: 488 } : { x: 408, y: 552 }),
+        ...(s.story.rescued ? villagePoint(264, 488) : villagePoint(408, 552)),
         map: "VIL",
         sleeping: false,
       };
     if (person.id === "N01" && !s.story.wedge)
-      return { map: "VIL", x: 472, y: 280, sleeping: false };
+      return { map: "VIL", ...villagePoint(472, 280), sleeping: false };
     const sleep =
       person.id === "N12" ? hour >= 20 || hour < 3.5 : hour >= 21 || hour < 6;
     if (hour < person.open || hour >= person.close)
@@ -254,23 +256,20 @@ export class Life {
     const b = maps.VIL.buildings.find((b) => b.interior === person.home),
       door = b
         ? { x: (b.x + b.w / 2) * 16 + 8, y: (b.y + b.h) * 16 + 8 }
-        : { x: 392, y: 520 };
+        : villagePoint(392, 520);
     const progress = Math.min(
       1,
       (hour - person.open) * 4,
       (person.close - hour) * 4,
     );
-    const path = this.route(
-      door.x,
-      door.y,
-      person.x * 16 + 8,
-      person.y * 16 + 8,
-    );
+    const work = villagePoint(person.x * 16 + 8, person.y * 16 + 8);
+    const target = safePosition(maps.VIL, work.x, work.y) || work;
+    const path = this.route(door.x, door.y, target.x, target.y);
     const index = Math.min(
         path.length - 1,
         Math.floor(progress * (path.length - 1)),
       ),
-      at = path[index] || { x: person.x * 16 + 8, y: person.y * 16 + 8 };
+      at = path[index] || target;
     return { map: "VIL", ...at, sleeping: false };
   }
   private routes = new Map<string, { x: number; y: number }[]>();
@@ -1214,7 +1213,8 @@ export class Life {
         cx = m.width / 2,
         x = (map === "VIL" ? 20 + i * 2 : cx - 3 - i * 3) * 16 + 8,
         y = (map === "VIL" ? 30 : m.height / 2 + 3) * 16 + 8;
-      return { id: `${map}:${index}`, x, y, def: resources[index] };
+      const point = map === "VIL" ? villagePoint(x, y) : { x, y };
+      return { id: `${map}:${index}`, ...point, def: resources[index] };
     });
   }
   nodeState(id: string) {
@@ -1276,10 +1276,9 @@ export class Life {
   fishingSpot(mapId: MapId = this.session.world.mapId) {
     if (!fishByMap[mapId]) return null;
     const map = maps[mapId];
-    return {
-      x: mapId === "VIL" ? 552 : mapId === "WEST" ? 136 : map.width * 8 + 48,
-      y: mapId === "VIL" ? 568 : map.height * 8,
-    };
+    return mapId === "VIL"
+      ? villagePoint(552, 568)
+      : { x: mapId === "WEST" ? 136 : map.width * 8 + 48, y: map.height * 8 };
   }
   fish(toolId: string, bait: string) {
     const spot = this.fishingSpot(),
@@ -1516,7 +1515,7 @@ export class Life {
       y = pos.y + 48;
     while (
       isBlocked(maps.VIL, Math.floor(x / 16), Math.floor(y / 16)) &&
-      x < 40 * 16
+      x < maps.VIL.width * 16
     )
       x += 16;
     if (kind === "hide") {

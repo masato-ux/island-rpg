@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { maps, compactPoint, villagePoint, safePosition } from "../src/maps.ts";
 import { test, expect } from "@playwright/test";
 import { Session } from "../src/session.ts";
 import { SaveStore } from "../src/save.ts";
@@ -7,8 +9,11 @@ function fixture(map = "VIL", x = 264, y = 488) {
   s.story = { rescued: true, gathered: true, trained: true, wedge: true };
   s.inventory = { 魂の楔: 1, 紙とペン: 1, 魔法の袋: 1 };
   s.world.mapId = map;
-  s.world.x = x;
-  s.world.y = y;
+  const scaled =
+    map === "NORTH"
+      ? { x: maps.NORTH.width * 8, y: 128 }
+      : compactPoint(map, x, y);
+  Object.assign(s.world, safePosition(maps[map], scaled.x, scaled.y));
   s.clock = 10 * 3600;
   s.life.data.money = 2000;
   return s;
@@ -379,8 +384,8 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   await page.waitForTimeout(950);
   await page.keyboard.up("ArrowUp");
   const y = Number(await page.locator("#world").getAttribute("data-player-y"));
-  expect(y).toBeLessThan(512);
-  expect(y).toBeGreaterThan(448);
+  expect(y).toBeLessThan(villagePoint(0, 512).y);
+  expect(y).toBeGreaterThan(villagePoint(0, 448).y);
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
   await page.getByRole("button", { name: "魂の楔で保存" }).click();
   await expect(page.locator("#action-info")).toContainText("保存した");
@@ -389,30 +394,24 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 03");
+  await expect(page.locator(".badge")).toContainText("FIELD 04");
 });
-test("旧セーブが新しい崖に重なっても進行を保って読込できる", async ({
+test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
 }) => {
-  const { checksum } = await import("../src/save.ts");
-  const s = fixture("VIL", 456, 488);
-  s.inventory["薬草"] = 7;
-  const data = s.snapshot();
-  delete data.terrainVersion;
-  const raw = JSON.stringify({
-    generation: 1,
-    checksum: checksum(JSON.stringify(data)),
-    data,
-  });
+  const raw = readFileSync(
+    new URL("./fixtures/field03-save.json", import.meta.url),
+  );
   await page.goto("/");
   await page.locator("#import-save").setInputFiles({
     name: "old-field.json",
     mimeType: "application/json",
-    buffer: Buffer.from(raw),
+    buffer: raw,
   });
   await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
-  const pos = await page.locator("#world").getAttribute("data-player-x");
-  expect(Number(pos)).not.toBe(456);
+  expect(
+    Number(await page.locator("#world").getAttribute("data-player-x")),
+  ).not.toBe(600);
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
   await expect(page.locator("#inventory")).toContainText("薬草 ×7");
 });

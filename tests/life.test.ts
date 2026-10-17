@@ -1,3 +1,8 @@
+import {
+  villagePoint as vp,
+  compactPoint as cp,
+  maps as fieldMaps,
+} from "../src/maps.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Session } from "../src/session.ts";
@@ -180,8 +185,7 @@ test("釣り中断・失敗時の餌/耐久、魔法強化と耐久1の成功後
   l.gain("木竿");
   l.gain("ミミズ", 3);
   const rod = l.data.gear.at(-1)!;
-  s.world.x = 552;
-  s.world.y = 568;
+  Object.assign(s.world, vp(552, 568));
   l.fish(rod.id, "ミミズ");
   assert.equal(l.count("ミミズ"), 2);
   l.cancelAction();
@@ -249,8 +253,7 @@ test("転移杭・全世界保存・探索霧・結末後も生活継続", () =>
   const s = game(),
     l = s.life;
   s.world.mapId = "SFOREST";
-  s.world.x = 776;
-  s.world.y = 584;
+  Object.assign(s.world, cp("SFOREST", 776, 584));
   l.gain("転移杭");
   l.placeStake();
   assert.ok(l.data.stakes.SFOREST);
@@ -270,7 +273,7 @@ test("転移杭・全世界保存・探索霧・結末後も生活継続", () =>
   s.restore(store.load()!);
   assert.deepEqual(s.snapshot(), before);
   s.world.mapId = "NORTH";
-  s.world.x = 896;
+  s.world.x = fieldMaps.NORTH.width * 8;
   s.world.y = 128;
   s.life.interaction = { kind: "altar", id: "altar", title: "", text: "" };
   s.life.end("silent");
@@ -379,8 +382,7 @@ test("通常と強化した竿は同じ成功シードで魚種・サイズが�
       const g = l.data.gear.at(-1)!;
       if (boost) g.enhancedUntil = s.clock + 3600;
       s.rngSeed = seed;
-      s.world.x = 552;
-      s.world.y = 568;
+      Object.assign(s.world, vp(552, 568));
       l.fish(g.id, "ミミズ");
       l.actionUpdate(3);
       result.push(

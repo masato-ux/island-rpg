@@ -1,0 +1,707 @@
+{
+  "generation": 1,
+  "checksum": "98db6c7c",
+  "data": {
+    "version": 2,
+    "terrainVersion": 3,
+    "activity": {
+      "action": null,
+      "play": null,
+      "pendingMemo": null,
+      "interaction": null
+    },
+    "life": {
+      "money": 123,
+      "hunger": 100,
+      "awakeSince": 28800,
+      "wet": 0,
+      "cold": 0,
+      "coldAt": 0,
+      "protectedUntil": 0,
+      "weather": "clear",
+      "weatherUntil": 43200,
+      "social": {
+        "N01": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N02": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N03": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N04": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N05": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N06": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N07": {
+          "trust": 15,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N08": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N09": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N10": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N11": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        },
+        "N12": {
+          "trust": 0,
+          "giftDay": -1,
+          "categories": [],
+          "seen": []
+        }
+      },
+      "notes": [],
+      "quests": [],
+      "gear": [
+        {
+          "id": "driftwood",
+          "name": "流木",
+          "durability": 30,
+          "enhancedUntil": 0,
+          "element": null,
+          "elementUntil": 0
+        }
+      ],
+      "equipment": {
+        "weapon": "driftwood"
+      },
+      "nextId": 1,
+      "nodes": {},
+      "fish": {},
+      "jobs": [],
+      "stocks": {},
+      "stockDay": 0,
+      "known": [],
+      "fog": {
+        "VIL": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001111111100000000000000000000000000000000000000001111111100000000000000000000000000000000000000001111111100000000000000000000000000000000000000011111111100000000000000000000000000000000000000001111111011000000000000000000000000000000000000001111110000100000000000000000000000000000000000001110001000000000000000000000000000000000000000000100001000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "stakes": {
+        "VIL": {
+          "x": 392,
+          "y": 408
+        }
+      },
+      "xp": {
+        "sword": 0,
+        "magic": 0,
+        "hp": 0,
+        "mp": 0
+      },
+      "levels": {
+        "sword": 1,
+        "magic": 1,
+        "hp": 1,
+        "mp": 1
+      },
+      "shoeMinutes": 0,
+      "ending": null,
+      "gamePlayed": {}
+    },
+    "rngSeed": 4274092,
+    "clock": 36000,
+    "escapeGrace": 0,
+    "mapId": "VIL",
+    "x": 600,
+    "y": 480,
+    "facing": "down",
+    "hp": 120,
+    "mp": 160,
+    "enemies": [
+      {
+        "id": "enemy-0",
+        "kind": "rat",
+        "x": 552,
+        "y": 808,
+        "hp": 18,
+        "respawnAt": 0,
+        "heading": 0,
+        "aiTimer": 0
+      },
+      {
+        "id": "enemy-1",
+        "kind": "slime",
+        "x": 616,
+        "y": 712,
+        "hp": 24,
+        "respawnAt": 0,
+        "heading": 0,
+        "aiTimer": 0
+      },
+      {
+        "id": "enemy-2",
+        "kind": "rat",
+        "x": 552,
+        "y": 616,
+        "hp": 18,
+        "respawnAt": 0,
+        "heading": 0,
+        "aiTimer": 0
+      },
+      {
+        "id": "enemy-3",
+        "kind": "slime",
+        "x": 616,
+        "y": 520,
+        "hp": 24,
+        "respawnAt": 0,
+        "heading": 0,
+        "aiTimer": 0
+      },
+      {
+        "id": "enemy-4",
+        "kind": "rat",
+        "x": 552,
+        "y": 424,
+        "hp": 18,
+        "respawnAt": 0,
+        "heading": 0,
+        "aiTimer": 0
+      },
+      {
+        "id": "enemy-5",
+        "kind": "slime",
+        "x": 616,
+        "y": 328,
+        "hp": 24,
+        "respawnAt": 0,
+        "heading": 0,
+        "aiTimer": 0
+      },
+      {
+        "id": "SFOREST-0",
+        "mapId": "SFOREST",
+        "kind": "dog",
+        "x": 840,
+        "y": 424,
+        "hp": 42,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 840,
+        "spawnY": 424
+      },
+      {
+        "id": "SFOREST-1",
+        "mapId": "SFOREST",
+        "kind": "slime",
+        "x": 856,
+        "y": 424,
+        "hp": 24,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 856,
+        "spawnY": 424
+      },
+      {
+        "id": "SFOREST-2",
+        "mapId": "SFOREST",
+        "kind": "dog",
+        "x": 872,
+        "y": 424,
+        "hp": 42,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 872,
+        "spawnY": 424
+      },
+      {
+        "id": "SFOREST-3",
+        "mapId": "SFOREST",
+        "kind": "slime",
+        "x": 840,
+        "y": 680,
+        "hp": 24,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 840,
+        "spawnY": 680
+      },
+      {
+        "id": "SFOREST-4",
+        "mapId": "SFOREST",
+        "kind": "dog",
+        "x": 856,
+        "y": 680,
+        "hp": 42,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 856,
+        "spawnY": 680
+      },
+      {
+        "id": "SFOREST-5",
+        "mapId": "SFOREST",
+        "kind": "slime",
+        "x": 872,
+        "y": 680,
+        "hp": 24,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 872,
+        "spawnY": 680
+      },
+      {
+        "id": "CFOREST-0",
+        "mapId": "CFOREST",
+        "kind": "dog",
+        "x": 1032,
+        "y": 616,
+        "hp": 42,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1032,
+        "spawnY": 616
+      },
+      {
+        "id": "CFOREST-1",
+        "mapId": "CFOREST",
+        "kind": "goblin",
+        "x": 1048,
+        "y": 616,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1048,
+        "spawnY": 616
+      },
+      {
+        "id": "CFOREST-2",
+        "mapId": "CFOREST",
+        "kind": "lizard",
+        "x": 1064,
+        "y": 616,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1064,
+        "spawnY": 616
+      },
+      {
+        "id": "CFOREST-3",
+        "mapId": "CFOREST",
+        "kind": "dog",
+        "x": 1032,
+        "y": 872,
+        "hp": 42,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1032,
+        "spawnY": 872
+      },
+      {
+        "id": "CFOREST-4",
+        "mapId": "CFOREST",
+        "kind": "goblin",
+        "x": 1048,
+        "y": 872,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1048,
+        "spawnY": 872
+      },
+      {
+        "id": "CFOREST-5",
+        "mapId": "CFOREST",
+        "kind": "lizard",
+        "x": 1064,
+        "y": 872,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1064,
+        "spawnY": 872
+      },
+      {
+        "id": "WEST-0",
+        "mapId": "WEST",
+        "kind": "goblin",
+        "x": 904,
+        "y": 552,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 904,
+        "spawnY": 552
+      },
+      {
+        "id": "WEST-1",
+        "mapId": "WEST",
+        "kind": "goblin",
+        "x": 920,
+        "y": 552,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 920,
+        "spawnY": 552
+      },
+      {
+        "id": "WEST-2",
+        "mapId": "WEST",
+        "kind": "goblin",
+        "x": 936,
+        "y": 552,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 936,
+        "spawnY": 552
+      },
+      {
+        "id": "WEST-3",
+        "mapId": "WEST",
+        "kind": "goblin",
+        "x": 904,
+        "y": 808,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 904,
+        "spawnY": 808
+      },
+      {
+        "id": "WEST-4",
+        "mapId": "WEST",
+        "kind": "goblin",
+        "x": 920,
+        "y": 808,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 920,
+        "spawnY": 808
+      },
+      {
+        "id": "WEST-5",
+        "mapId": "WEST",
+        "kind": "goblin",
+        "x": 936,
+        "y": 808,
+        "hp": 65,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 936,
+        "spawnY": 808
+      },
+      {
+        "id": "EAST-0",
+        "mapId": "EAST",
+        "kind": "lizard",
+        "x": 904,
+        "y": 552,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 904,
+        "spawnY": 552
+      },
+      {
+        "id": "EAST-1",
+        "mapId": "EAST",
+        "kind": "lizard",
+        "x": 920,
+        "y": 552,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 920,
+        "spawnY": 552
+      },
+      {
+        "id": "EAST-2",
+        "mapId": "EAST",
+        "kind": "lizard",
+        "x": 936,
+        "y": 552,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 936,
+        "spawnY": 552
+      },
+      {
+        "id": "EAST-3",
+        "mapId": "EAST",
+        "kind": "lizard",
+        "x": 904,
+        "y": 808,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 904,
+        "spawnY": 808
+      },
+      {
+        "id": "EAST-4",
+        "mapId": "EAST",
+        "kind": "lizard",
+        "x": 920,
+        "y": 808,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 920,
+        "spawnY": 808
+      },
+      {
+        "id": "EAST-5",
+        "mapId": "EAST",
+        "kind": "lizard",
+        "x": 936,
+        "y": 808,
+        "hp": 78,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 936,
+        "spawnY": 808
+      },
+      {
+        "id": "MOUNT-0",
+        "mapId": "MOUNT",
+        "kind": "wolf",
+        "x": 1032,
+        "y": 680,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1032,
+        "spawnY": 680
+      },
+      {
+        "id": "MOUNT-1",
+        "mapId": "MOUNT",
+        "kind": "wolf",
+        "x": 1048,
+        "y": 680,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1048,
+        "spawnY": 680
+      },
+      {
+        "id": "MOUNT-2",
+        "mapId": "MOUNT",
+        "kind": "wolf",
+        "x": 1064,
+        "y": 680,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1064,
+        "spawnY": 680
+      },
+      {
+        "id": "MOUNT-3",
+        "mapId": "MOUNT",
+        "kind": "wolf",
+        "x": 1032,
+        "y": 936,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1032,
+        "spawnY": 936
+      },
+      {
+        "id": "MOUNT-4",
+        "mapId": "MOUNT",
+        "kind": "wolf",
+        "x": 1048,
+        "y": 936,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1048,
+        "spawnY": 936
+      },
+      {
+        "id": "MOUNT-5",
+        "mapId": "MOUNT",
+        "kind": "wolf",
+        "x": 1064,
+        "y": 936,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1064,
+        "spawnY": 936
+      },
+      {
+        "id": "NORTH-0",
+        "mapId": "NORTH",
+        "kind": "wolf",
+        "x": 968,
+        "y": 616,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 968,
+        "spawnY": 616
+      },
+      {
+        "id": "NORTH-1",
+        "mapId": "NORTH",
+        "kind": "wolf",
+        "x": 984,
+        "y": 616,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 984,
+        "spawnY": 616
+      },
+      {
+        "id": "NORTH-2",
+        "mapId": "NORTH",
+        "kind": "wolf",
+        "x": 1000,
+        "y": 616,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1000,
+        "spawnY": 616
+      },
+      {
+        "id": "NORTH-3",
+        "mapId": "NORTH",
+        "kind": "wolf",
+        "x": 968,
+        "y": 872,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 968,
+        "spawnY": 872
+      },
+      {
+        "id": "NORTH-4",
+        "mapId": "NORTH",
+        "kind": "wolf",
+        "x": 984,
+        "y": 872,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 984,
+        "spawnY": 872
+      },
+      {
+        "id": "NORTH-5",
+        "mapId": "NORTH",
+        "kind": "wolf",
+        "x": 1000,
+        "y": 872,
+        "hp": 115,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0,
+        "spawnX": 1000,
+        "spawnY": 872
+      },
+      {
+        "id": "dragon",
+        "mapId": "NORTH",
+        "kind": "dragon",
+        "x": 976,
+        "y": 208,
+        "hp": 300,
+        "heading": 0,
+        "aiTimer": 0,
+        "respawnAt": 0
+      }
+    ],
+    "inventory": {
+      "魂の楔": 1,
+      "紙とペン": 1,
+      "魔法の袋": 1,
+      "薬草": 7
+    },
+    "story": {
+      "rescued": true,
+      "gathered": true,
+      "trained": true,
+      "wedge": true
+    }
+  }
+}

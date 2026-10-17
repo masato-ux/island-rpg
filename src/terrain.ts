@@ -43,12 +43,12 @@ export class Terrain {
         const palette: Record<Tile, string[]> = {
           grass:
             elevationAt(map, x, y) > 0
-              ? ["#9bb66d", "#aac67e", "#8ca664", "#c0cc86"]
-              : ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
+              ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
+              : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
           cliff: ["#678982", "#83a49b", "#4d6f73", "#a8b7a0"],
           stairs: ["#99aa8b", "#b8bea0", "#667f79", "#ccd0ad"],
-          tree: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
-          rock: ["#87ab68", "#91b46c", "#7fa364", "#a2bc76"],
+          tree: ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+          rock: ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
           house: ["#b5a17a", "#c5b38c", "#a18d6b", "#cfbf97"],
           path: ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
           sand: ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
@@ -59,7 +59,7 @@ export class Terrain {
         const colors = palette[tile];
         ctx.fillStyle = colors[0];
         ctx.fillRect(0, 0, 16, 16);
-        for (let i = 0; i < (tile === "water" ? 6 : 14); i++) {
+        for (let i = 0; i < (tile === "water" ? 3 : 6); i++) {
           const seed = hash(i, variant, tile.length),
             xx = seed % 16,
             yy = (seed >>> 8) % 16;
@@ -71,7 +71,10 @@ export class Terrain {
           ctx.fillRect(0, 15, 16, 1);
           ctx.fillRect(variant % 2 ? 12 : 4, 0, 1, 15);
         }
-        if (tile === "grass" || tile === "wet" || tile === "tree") {
+        if (
+          (tile === "grass" || tile === "wet" || tile === "tree") &&
+          variant % 3 === 0
+        ) {
           const xx = 3 + variant,
             yy = 7 + (variant % 4);
           ctx.fillStyle = tile === "wet" ? "#527e66" : "#648d57";
@@ -89,6 +92,9 @@ export class Terrain {
     );
     c.drawImage(image, px, py);
     if (tile === "cliff") {
+      const level = elevationAt(map, x, y),
+        lower = (dx: number, dy: number) =>
+          elevationAt(map, x + dx, y + dy) < level;
       const fill = (
         xx: number,
         yy: number,
@@ -99,17 +105,43 @@ export class Terrain {
         c.fillStyle = color;
         c.fillRect(px + xx, py + yy, w, h);
       };
-      fill(0, 0, 16, 2, "#435f53");
-      fill(1, 0, 14, 1, "#bdcf8d");
-      fill(0, 2, 16, 2, "#789c5a");
-      fill(1, 4, 3, 9, "#8aa99d");
-      fill(5, 5, 1, 9, "#415f65");
-      fill(7, 4, 5, 8, "#789b91");
-      fill(13, 3, 2, 11, "#4c6f72");
-      fill(2, 5, 2, 2, "#afbeaa");
-      fill(8, 5, 3, 1, "#a6b9a3");
-      fill(7, 13, 5, 1, "#476a6d");
-      fill(0, 15, 16, 1, "#3b5b60");
+      fill(0, 0, 16, 16, "#97b96e");
+      if (lower(0, 1)) {
+        fill(0, 3, 16, 13, "#466975");
+        // Connected uneven rock columns, without a rectangular frame around every tile.
+        for (let col = 0; col < 3; col++) {
+          const xx = col * 6 - 1,
+            n = hash(x, y, col),
+            top = 3 + (n % 3);
+          fill(xx, top, 6, 11 - top, "#789c96");
+          fill(xx + 1, top, 4, 2, "#a4b9a5");
+          fill(xx + 1, top + 2, 5, 5, "#86a69b");
+          fill(xx + 2, 12 - (n % 2), 4, 2, "#567e83");
+          fill(xx + 5, top + 4, 1, 5, "#3c6370");
+        }
+        fill(0, 0, 16, 2, "#4b7552");
+        fill(1, 0, 14, 1, "#c0d28d");
+        fill(0, 1, 16, 2, "#82a65e");
+        for (let n = 0; n < 4; n++)
+          fill(n * 4, 2 + ((n + variant) % 2), 2, 2, "#6f9658");
+      } else {
+        if (lower(0, -1)) {
+          fill(0, 0, 16, 2, "#456b56");
+          fill(1, 2, 14, 1, "#b5cd88");
+        }
+        if (lower(-1, 0)) {
+          fill(0, 0, 3, 16, "#4f7680");
+          fill(3, 1, 1, 14, "#b9ce8b");
+          fill(1, 3, 1, 9, "#90afa0");
+        }
+        if (lower(1, 0)) {
+          fill(12, 0, 4, 16, "#4d737b");
+          fill(12, 1, 1, 14, "#b4c98a");
+          fill(14, 2, 1, 10, "#86a79c");
+        }
+        fill(5, 7, 2, 1, "#adc57c");
+        fill(9, 12, 1, 2, "#82a565");
+      }
       return;
     }
     if (tile === "stairs") {
@@ -133,6 +165,21 @@ export class Terrain {
         c.fillRect(px + 3, py + 5 + (n % 6), 5, 1);
         c.fillStyle = "#7395ac";
         c.fillRect(px + 4, py + 4 + (n % 6), 2, 1);
+      }
+      const land = (dx: number, dy: number) =>
+        tileAt(map, x + dx, y + dy) !== "water";
+      c.fillStyle = "#75a5ac";
+      if (land(0, -1)) c.fillRect(px, py, 16, 2);
+      if (land(0, 1)) c.fillRect(px, py + 14, 16, 2);
+      if (land(-1, 0)) c.fillRect(px, py, 2, 16);
+      if (land(1, 0)) c.fillRect(px + 14, py, 2, 16);
+      c.fillStyle = "#d0e7cf";
+      for (let i = 0; i < 4; i++) {
+        const n = (i * 5 + phase) % 16;
+        if (land(0, -1)) c.fillRect(px + n, py + 1, 2, 1);
+        if (land(0, 1)) c.fillRect(px + n, py + 14, 2, 1);
+        if (land(-1, 0)) c.fillRect(px + 1, py + n, 1, 2);
+        if (land(1, 0)) c.fillRect(px + 14, py + n, 1, 2);
       }
       return;
     }
@@ -174,18 +221,6 @@ export class Terrain {
       edge(15, 0, 1, 16, "#d3ead6");
       edge(14, 1, 1, 14, tile === "sand" ? "#ece0ad" : "#587f6b");
     }
-    if (
-      tile === "grass" &&
-      map.id === "VIL" &&
-      y === 32 &&
-      (x < 22 || x > 26)
-    ) {
-      edge(1, 11, 13, 4, "#466e50");
-      edge(2, 8, 11, 5, "#638e50");
-      edge(4, 6, 7, 5, "#83a65c");
-      edge(4, 8, 3, 1, "#abc779");
-      edge(11, 12, 2, 2, "#314f43");
-    }
     if (tile === "grass" || tile === "wet") {
       if (path(-1, 0)) edge(0, 0, 1, 16, "#b2be7c");
       if (path(1, 0)) edge(15, 0, 1, 16, "#b2be7c");
@@ -223,6 +258,40 @@ export class Terrain {
     py: number,
   ) {
     const tile = tileAt(map, x, y);
+    if (tile === "grass" || tile === "wet") {
+      const n = hash(x, y, 6);
+      const rect = (
+        xx: number,
+        yy: number,
+        w: number,
+        h: number,
+        color: string,
+      ) => {
+        c.fillStyle = color;
+        c.fillRect(px + xx, py + yy, w, h);
+      };
+      if (n % 13 === 0) {
+        rect(2, 9, 11, 4, "#476d52");
+        rect(1, 8, 13, 2, "#476d52");
+        rect(3, 5, 8, 6, "#729b57");
+        rect(5, 4, 5, 2, "#a8bf6e");
+        rect(3, 7, 3, 2, "#91ad61");
+        rect(10, 8, 2, 3, "#577f51");
+      } else if (n % 19 === 0) {
+        for (let i = 0; i < 5; i++) {
+          const xx = 2 + i * 2,
+            yy = 6 + ((n >>> i) % 5);
+          rect(xx, yy, 1, 5, "#477551");
+          rect(xx - 1, yy - 1, 2, 1, "#9fba71");
+        }
+      } else if (n % 61 === 0) {
+        rect(3, 10, 9, 3, "#4a7477");
+        rect(4, 7, 6, 4, "#8bada0");
+        rect(5, 6, 4, 1, "#bed0af");
+        rect(9, 9, 3, 3, "#638b88");
+      }
+      return;
+    }
     if (tile !== "tree" && tile !== "rock") return;
     const variant = hash(x, y) % 4;
     const image = this.sprite(`object:${tile}:${variant}`, 32, 40, (ctx) => {
@@ -238,8 +307,8 @@ export class Terrain {
       };
       if (tile === "tree") {
         // Stepped silhouettes and fixed dither clusters keep the art sharp at integer scales.
-        rect(5, 33, 23, 3, "#638655");
-        rect(9, 31, 16, 5, "#638655");
+        rect(5, 33, 23, 3, "rgba(38,70,51,.18)");
+        rect(9, 31, 16, 5, "rgba(38,70,51,.12)");
         rect(15, 21, 4, 16, "#485b49");
         rect(16, 22, 3, 14, "#c1b78d");
         rect(17, 24, 1, 10, "#e0cea0");
@@ -264,9 +333,11 @@ export class Terrain {
           }
         };
         disk(16, 20, 14, 12, colors[0]);
-        disk(15, 16, 13, 12, colors[1]);
-        disk(14, 12, 10, 11, colors[2]);
-        disk(13, 8, 7, 7, colors[3]);
+        disk(10, 17, 9, 10, colors[1]);
+        disk(22, 17, 8, 10, colors[1]);
+        disk(15, 12, 10, 10, colors[2]);
+        disk(10, 10, 6, 7, colors[3]);
+        disk(18, 7, 6, 6, colors[3]);
         for (let i = 0; i < 70; i++) {
           const seed = hash(i, variant),
             xx = 4 + (seed % 24),

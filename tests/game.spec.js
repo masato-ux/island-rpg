@@ -1,3 +1,4 @@
+import { villagePoint } from "../src/maps.ts";
 import { test, expect } from "@playwright/test";
 async function x(page) {
   return Number(await page.locator("canvas").getAttribute("data-player-x"));
@@ -31,7 +32,7 @@ test("描画、キー移動、衝突、再開始", async ({ page }) => {
   expect(await x(page)).toBeGreaterThanOrEqual(37);
   await page.reload();
   await page.getByRole("button", { name: "最初から", exact: true }).click();
-  expect(await x(page)).toBe(392);
+  expect(await x(page)).toBeCloseTo(villagePoint(392, 552).x, 1);
   expect(errors).toEqual([]);
 });
 test("タッチ操作、キャンセル、回転、復帰", async ({ page }, testInfo) => {
@@ -58,7 +59,7 @@ test("タッチ操作、キャンセル、回転、復帰", async ({ page }, tes
     await page.waitForTimeout(400);
     await page.mouse.up();
   }
-  expect(await x(page)).toBeGreaterThan(402);
+  expect(await x(page)).toBeGreaterThan(villagePoint(392, 552).x + 10);
   const stopped = await x(page);
   await page.waitForTimeout(150);
   expect(await x(page)).toBe(stopped);

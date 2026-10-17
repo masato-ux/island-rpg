@@ -1,3 +1,4 @@
+import { maps, villagePoint, compactPoint } from "../src/maps.ts";
 import { Session } from "../src/session.ts";
 import { SaveStore } from "../src/save.ts";
 import { test, expect } from "@playwright/test";
@@ -6,6 +7,9 @@ async function start(page) {
   await page.getByRole("button", { name: "最初から", exact: true }).click();
 }
 async function walk(page, axis, target) {
+  if ((await page.locator("canvas").getAttribute("data-map")) === "VIL")
+    target =
+      axis === "x" ? villagePoint(target, 0).x : villagePoint(0, target).y;
   const attribute = axis === "x" ? "data-player-x" : "data-player-y",
     current = Number(await page.locator("canvas").getAttribute(attribute));
   if (Math.abs(current - target) < 5) return;
@@ -161,10 +165,9 @@ test("JSON読込から通常戦闘・死亡・保存への復元", async ({ page
   fixture.inventory["魔法の袋"] = 1;
   fixture.hp = 1;
   fixture.world.mapId = "GRASS";
-  fixture.world.x = 584;
-  fixture.world.y = 808;
-  fixture.enemies[0].x = 584;
-  fixture.enemies[0].y = 808;
+  const point = compactPoint("GRASS", 584, 808);
+  Object.assign(fixture.world, point);
+  Object.assign(fixture.enemies[0], point);
   fixture.rngSeed = 1;
   const raw = new SaveStore({ getItem: () => null, setItem: () => {} }).export(
     fixture.snapshot(),
