@@ -1,9 +1,11 @@
+import { Terrain } from "./terrain.ts";
 import { people } from "./data.ts";
 import { WIDTH, HEIGHT, TILE } from "./constants.ts";
 import { tileAt } from "./maps.ts";
 import { species, type Session } from "./session.ts";
 import { World } from "./state.ts";
 export class Renderer {
+  private terrain = new Terrain();
   constructor(private ctx: CanvasRenderingContext2D) {
     ctx.imageSmoothingEnabled = false;
   }
@@ -31,7 +33,7 @@ export class Renderer {
             Math.round(world.y - HEIGHT / 2),
           ),
         );
-    rect(0, 0, WIDTH, HEIGHT, world.map.interior ? "#283a32" : "#4c9ba9");
+    rect(0, 0, WIDTH, HEIGHT, world.map.interior ? "#283a32" : "#355678");
     // Only visible tiles are drawn, including one row above for tree crowns.
     for (
       let y = Math.floor(camY / TILE);
@@ -46,48 +48,32 @@ export class Renderer {
         const px = x * TILE - camX,
           py = y * TILE - camY,
           tile = tileAt(world.map, x, y);
-        if (tile === "water") {
-          if (world.map.interior) continue;
-          if ((x + y) % 3 === 0) rect(px + 3, py + 7, 8, 1, "#7ac0be");
-          continue;
-        }
-        rect(
-          px,
-          py,
-          TILE,
-          TILE,
-          tile === "sand"
-            ? "#e3ce91"
-            : tile === "floor"
-              ? "#b3a17e"
-              : tile === "wet"
-                ? "#708e78"
-                : tile === "path"
-                  ? "#c3b37c"
-                  : (x + y) % 3
-                    ? "#96ad63"
-                    : "#8fa65d",
-        );
-        if (tile === "grass" && (x * 7 + y * 3) % 5 === 0) {
-          rect(px + 3, py + 6, 1, 3, "#698b50");
-          rect(px + 5, py + 5, 1, 4, "#698b50");
-        }
-        if (tile === "tree") {
-          rect(px + 7, py + 7, 3, 8, "#766144");
-          rect(px + 1, py, 14, 11, "#426e4c");
-          rect(px + 4, py - 4, 9, 12, "#528350");
-          rect(px + 5, py - 2, 4, 5, "#69964f");
-        }
-        if (tile === "rock") {
-          rect(px + 2, py + 3, 12, 11, "#7c8986");
-          rect(px + 4, py + 1, 8, 7, "#a6aaa0");
-        }
+        if (world.map.interior && tile === "water") continue;
+        this.terrain.ground(ctx, world.map, x, y, px, py, session?.clock || 0);
         if (tile === "house") {
           rect(px, py, 16, 16, "#b6a17b");
           rect(px, py, 16, 6, "#79584c");
           rect(px + 5, py + 9, 6, 6, "#3b5556");
         }
       }
+    for (
+      let y = Math.floor(camY / TILE);
+      y <= Math.ceil((camY + HEIGHT) / TILE) + 2;
+      y++
+    )
+      for (
+        let x = Math.floor(camX / TILE) - 1;
+        x <= Math.ceil((camX + WIDTH) / TILE) + 1;
+        x++
+      )
+        this.terrain.object(
+          ctx,
+          world.map,
+          x,
+          y,
+          x * TILE - camX,
+          y * TILE - camY,
+        );
     for (const b of world.map.buildings) {
       const bx = b.x * TILE - camX,
         by = b.y * TILE - camY,
