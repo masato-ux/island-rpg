@@ -1,3 +1,5 @@
+import { DepthArt } from "./depth-art.ts";
+import { rooms } from "./interiors.ts";
 import { Terrain } from "./terrain.ts";
 import { people } from "./data.ts";
 import { WIDTH, HEIGHT, TILE } from "./constants.ts";
@@ -6,10 +8,14 @@ import { species, type Session } from "./session.ts";
 import { World } from "./state.ts";
 export class Renderer {
   private terrain = new Terrain();
+  private art: DepthArt;
   constructor(private ctx: CanvasRenderingContext2D) {
     ctx.imageSmoothingEnabled = false;
+    this.art = new DepthArt(ctx);
   }
   draw(world: World, session?: Session) {
+    const layers: { y: number; paint: () => void }[] = [];
+    const add = (y: number, paint: () => void) => layers.push({ y, paint });
     const ctx = this.ctx,
       rect = (x: number, y: number, w: number, h: number, c: string) => {
         ctx.fillStyle = c;
@@ -48,16 +54,25 @@ export class Renderer {
         const px = x * TILE - camX,
           py = y * TILE - camY,
           tile = tileAt(world.map, x, y);
-        if (world.map.interior && tile === "water") continue;
+        if (world.map.interior) continue;
         this.terrain.ground(ctx, world.map, x, y, px, py, session?.clock || 0);
+        if (
+          tileAt(world.map, x, y - 1) === "cliff" &&
+          tile !== "cliff" &&
+          tile !== "stairs"
+        ) {
+          rect(px, py, 16, 3, "rgba(30,55,57,.22)");
+          rect(px + 2, py + 3, 14, 2, "rgba(30,55,57,.09)");
+        }
         if (tile === "house") {
           rect(px, py, 16, 16, "#b6a17b");
           rect(px, py, 16, 6, "#79584c");
           rect(px + 5, py + 9, 6, 6, "#3b5556");
         }
       }
+    if (world.map.interior) this.art.room(world.mapId, camX, camY);
     for (
-      let y = Math.floor(camY / TILE);
+      let y = Math.floor(camY / TILE) - 1;
       y <= Math.ceil((camY + HEIGHT) / TILE) + 2;
       y++
     )
@@ -65,52 +80,59 @@ export class Renderer {
         let x = Math.floor(camX / TILE) - 1;
         x <= Math.ceil((camX + WIDTH) / TILE) + 1;
         x++
-      )
-        this.terrain.object(
-          ctx,
-          world.map,
-          x,
-          y,
-          x * TILE - camX,
-          y * TILE - camY,
-        );
+      ) {
+        const tile = tileAt(world.map, x, y);
+        if (tile === "tree" || tile === "rock") {
+          if (tile === "tree")
+            this.art.shadow(x * 16 + 8 - camX, y * 16 + 12 - camY, 22, 26);
+          add(y * 16 + 12, () =>
+            this.terrain.object(
+              ctx,
+              world.map,
+              x,
+              y,
+              x * 16 - camX,
+              y * 16 - camY,
+            ),
+          );
+        } else
+          this.terrain.object(
+            ctx,
+            world.map,
+            x,
+            y,
+            x * 16 - camX,
+            y * 16 - camY,
+          );
+      }
     for (const b of world.map.buildings) {
-      const bx = b.x * TILE - camX,
-        by = b.y * TILE - camY,
-        bw = b.w * TILE,
-        bh = b.h * TILE;
-      if (bx + bw < 0 || bx > WIDTH || by + bh < 0 || by > HEIGHT) continue;
-      rect(bx + 2, by + 22, bw - 4, bh - 22, "#bda582");
-      rect(bx + 2, by + bh - 5, bw - 4, 5, "#887455");
-      for (let step = 0; step < 6; step++)
-        rect(
-          bx + 10 - step * 2,
-          by + step * 4,
-          bw - 20 + step * 4,
-          4,
-          step % 2 ? "#80604c" : "#967047",
-        );
-      rect(bx + bw / 2 - 5, by + bh - 18, 10, 18, "#65543e");
-      rect(bx + 12, by + 32, 12, 10, "#567473");
-      rect(bx + bw - 24, by + 32, 12, 10, "#567473");
-      rect(bx + 17, by + 32, 2, 10, "#c4b38f");
-      rect(bx + bw - 19, by + 32, 2, 10, "#c4b38f");
-      ctx.font = "7px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillStyle = "#fff3ce";
-      ctx.fillText(b.name, bx + bw / 2, by + 13);
+      if (
+        (b.x + b.w) * 16 < camX ||
+        b.x * 16 > camX + WIDTH ||
+        (b.y + b.h) * 16 < camY ||
+        b.y * 16 > camY + HEIGHT
+      )
+        continue;
+      add((b.y + b.h) * 16, () => {
+        this.art.building(b, b.x * 16 - camX, b.y * 16 - camY);
+        ctx.font = "7px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff3ce";
+        ctx.fillText(b.name, (b.x + b.w / 2) * 16 - camX, b.y * 16 - 9 - camY);
+      });
     }
+    for (const p of rooms[world.mapId]?.furniture || [])
+      add(p.y + p.h, () => this.art.furniture(p, camX, camY));
     if (session) {
       const label = (x: number, y: number, name: string, color: string) => {
         if (x < -20 || x > WIDTH + 20 || y < -20 || y > HEIGHT + 20) return;
-        rect(x - 4, y - 8, 8, 9, color);
-        rect(x - 3, y - 13, 6, 5, "#e5bb85");
-        rect(x - 4, y + 1, 3, 3, "#41463d");
-        rect(x + 1, y + 1, 3, 3, "#41463d");
-        ctx.textAlign = "center";
-        ctx.font = "7px sans-serif";
-        ctx.fillStyle = "#fff8d8";
-        ctx.fillText(name, x, y - 17);
+        add(y + camY, () => {
+          this.art.person(x, y, color, name.length + name.charCodeAt(0));
+          ctx.textAlign = "center";
+          ctx.font = "7px sans-serif";
+          ctx.fillStyle = "#fff8d8";
+          ctx.fillText(name, x, y - 23);
+        });
       };
       if (world.mapId === "VIL" && !session.story.wedge) {
         const dan = session.story.rescued ? { x: 16, y: 30 } : { x: 25, y: 34 };
@@ -151,10 +173,6 @@ export class Renderer {
               p.child ? "#b7a879" : "#a06d4e",
             );
         }
-      if (world.map.interior) {
-        rect(28 - camX, 26 - camY, 22, 30, "#c3bc90");
-        rect(110 - camX, 24 - camY, 28, 18, "#896e54");
-      }
       if (session.story.wedge)
         for (const node of session.life.nodeList(world.mapId)) {
           const depleted = session.life.nodeState(node.id).left === 0;
@@ -199,27 +217,15 @@ export class Renderer {
         const x = enemy.x - camX,
           y = enemy.y - camY;
         if (x < -16 || x > WIDTH + 16 || y < -20 || y > HEIGHT + 20) continue;
-        if (enemy.kind === "slime") {
-          rect(x - 7, y - 4, 14, 8, "#6cb7a3");
-          rect(x - 4, y - 7, 8, 4, "#8fd3b5");
-        } else {
-          rect(
-            x - 6,
-            y - 4,
-            12,
-            7,
-            enemy.kind === "rat" ? "#967e75" : "#efe3b4",
-          );
-          rect(x + 3, y - 8, 4, 5, "#a2877c");
-        }
-        rect(x - 3, y - 3, 1, 2, "#243e3b");
-        rect(x + 2, y - 3, 1, 2, "#243e3b");
-        if (session.battle?.enemyId === enemy.id) {
-          ctx.textAlign = "center";
-          ctx.font = "7px sans-serif";
-          ctx.fillStyle = "#fff3ce";
-          ctx.fillText(species[enemy.kind].name, x, y - 12);
-        }
+        add(enemy.y, () => {
+          this.art.monster(x, y, enemy.kind, session.clock);
+          if (session.battle?.enemyId === enemy.id) {
+            ctx.textAlign = "center";
+            ctx.font = "7px sans-serif";
+            ctx.fillStyle = "#fff3ce";
+            ctx.fillText(species[enemy.kind].name, x, y - 23);
+          }
+        });
       }
     }
     const gesture =
@@ -233,36 +239,12 @@ export class Renderer {
         camY +
         (["うなずく", "お辞儀"].includes(gesture) ? motion : 0),
       step = world.moving ? Math.floor(world.animation / 0.16) % 2 : 0;
-    rect(x - 6, y + 2, 12, 4, "#718450");
-    rect(x - 4, y - 3, 8, 6, "#344e67");
-    rect(x - 4, y + 3, 3, 3 + step, "#3d4141");
-    rect(x + 1, y + 3, 3, 4 - step, "#3d4141");
-    rect(x - 5, y - 9, 10, 7, "#edbe88");
-    rect(x - 6, y - 12, 12, 4, "#684d39");
-    rect(x - 4, y - 14, 8, 3, "#82603d");
-    rect(x - 6, y - 3, 2, 5, "#dfac75");
-    rect(
-      x + 4,
-      y -
-        3 +
-        (gesture === "手を振る"
-          ? -4 + motion * 2
-          : gesture === "指差す"
-            ? -2
-            : 0),
-      gesture === "指差す" ? 4 : 2,
-      5,
-      "#dfac75",
-    );
-    rect(x - 4, y - 2, 8, 2, "#c7d3ab");
-    if (world.facing === "up") {
-      rect(x - 4, y - 8, 8, 4, "#684d39");
-    } else if (world.facing === "down") {
-      rect(x - 3, y - 7, 1, 2, "#35403c");
-      rect(x + 2, y - 7, 1, 2, "#35403c");
-    } else {
-      rect(x + (world.facing === "left" ? -4 : 3), y - 7, 1, 2, "#35403c");
-    }
+    add(world.y, () => {
+      this.art.person(x, y, "#58778a", 0, step, world.facing);
+      if (gesture === "手を振る" || gesture === "指差す")
+        rect(x + 6, y - 10 + motion * 2, 2, 6, "#e2b58a");
+    });
+    layers.sort((a, b) => a.y - b.y).forEach((layer) => layer.paint());
     if (session?.life.gesture && session.life.gesture.until > session.clock) {
       ctx.textAlign = "center";
       ctx.font = "7px sans-serif";

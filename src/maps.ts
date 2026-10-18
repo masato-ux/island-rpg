@@ -1,3 +1,4 @@
+import { furnitureBlocks } from "./interiors.ts";
 import * as previous from "./legacy-maps.ts";
 export type {
   MapId,
@@ -10,7 +11,7 @@ export type {
 } from "./legacy-maps.ts";
 import type { MapId, Tile, GameMap, Terrace } from "./legacy-maps.ts";
 
-export const TERRAIN_VERSION = 4;
+export const TERRAIN_VERSION = 5;
 const sizes: Partial<Record<MapId, [number, number]>> = {
   VIL: [40, 34],
   GRASS: [48, 38],
@@ -248,6 +249,7 @@ export function canStandOn(map: GameMap, x: number, y: number, legacy = false) {
   return (
     Number.isFinite(x) &&
     Number.isFinite(y) &&
+    (legacy || !furnitureBlocks(map.id, x, y)) &&
     [
       [-5, -5],
       [5, -5],

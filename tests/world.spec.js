@@ -394,7 +394,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 04");
+  await expect(page.locator(".badge")).toContainText("FIELD 05");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
@@ -414,4 +414,38 @@ test("旧セーブを縮小した村へ移しても進行を保って読込で�
   ).not.toBe(600);
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
   await expect(page.locator("#inventory")).toContainText("薬草 ×7");
+});
+
+test("6軒すべてに入室し、室内を歩いて戸口から元の入口に戻れる", async ({
+  page,
+}) => {
+  for (const b of maps.VIL.buildings) {
+    const s = fixture(),
+      x = (b.x + b.w / 2) * 16 + 8,
+      y = (b.y + b.h) * 16 + 8;
+    Object.assign(s.world, { x, y, facing: "up" });
+    await load(page, s);
+    await inspect(page);
+    await expect(page.locator("canvas")).toHaveAttribute(
+      "data-map",
+      b.interior,
+    );
+    await page.waitForTimeout(300);
+    await page.keyboard.down("ArrowUp");
+    await page.waitForTimeout(260);
+    await page.keyboard.up("ArrowUp");
+    const inside = Number(
+      await page.locator("canvas").getAttribute("data-player-y"),
+    );
+    expect(inside).toBeLessThan(90);
+    await page.keyboard.down("ArrowDown");
+    await page.waitForTimeout(400);
+    await page.keyboard.up("ArrowDown");
+    await inspect(page);
+    await expect(page.locator("canvas")).toHaveAttribute("data-map", "VIL");
+    await page.waitForTimeout(300);
+    expect(
+      Number(await page.locator("canvas").getAttribute("data-player-x")),
+    ).toBeCloseTo(x, 0);
+  }
 });

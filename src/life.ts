@@ -1,3 +1,4 @@
+import { rooms } from "./interiors.ts";
 import type { Session } from "./session.ts";
 import {
   people,
@@ -149,7 +150,7 @@ export function defaults(): LifeData {
   };
 }
 export interface Interaction {
-  kind: "person" | "resource" | "fishing" | "home" | "stake" | "altar";
+  kind: "person" | "resource" | "fishing" | "home" | "stake" | "altar" | "room";
   id: string;
   title: string;
   text: string;
@@ -1114,6 +1115,19 @@ export class Life {
   nearest() {
     const w = this.session.world,
       near = (x: number, y: number, r = 36) => Math.hypot(w.x - x, w.y - y) < r;
+    if (w.map.interior && Math.hypot(w.x - 88, w.y - 104) < 20) {
+      this.leave();
+      return true;
+    }
+    if (w.mapId === "VIL" && w.facing === "up") {
+      const door = w.map.buildings.find((b) =>
+        near((b.x + b.w / 2) * 16 + 8, (b.y + b.h) * 16 + 8, 18),
+      );
+      if (door) {
+        this.enter(door.interior);
+        return true;
+      }
+    }
     for (const p of [...people].sort((a, b) => {
       const pa = this.position(a),
         pb = this.position(b);
@@ -1135,16 +1149,22 @@ export class Life {
       }
     }
     if (w.map.interior) {
-      if (w.y > 80) {
-        this.leave();
-        return true;
-      }
       if (w.mapId === "HOME") {
         this.interaction = {
           kind: "home",
           id: "HOME",
           title: "家畜小屋",
-          text: "寝床と台所。空腹のまま長く眠ると命を落とす。",
+          text: rooms.HOME!.description + "空腹のまま長く眠ると命を落とす。",
+        };
+        return true;
+      }
+      const room = rooms[w.mapId];
+      if (room) {
+        this.interaction = {
+          kind: "room",
+          id: w.mapId,
+          title: w.map.name,
+          text: room.description,
         };
         return true;
       }

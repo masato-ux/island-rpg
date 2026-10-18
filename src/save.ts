@@ -154,8 +154,7 @@ export function validateSnapshot(v: unknown): Snapshot {
   )
     throw new Error("地形バージョンが不正です。");
   const oldTerrain =
-    v.terrainVersion === undefined ||
-    Number(v.terrainVersion) < TERRAIN_VERSION;
+    v.terrainVersion === undefined || Number(v.terrainVersion) < 4;
   const life = v.version === 1 ? defaults() : v.life;
   if (!shape(life, lifeRule))
     throw new Error("生活・人物・探索の保存データが不正です。");
@@ -450,9 +449,15 @@ export function validateSnapshot(v: unknown): Snapshot {
   if (object(activity.interaction)) {
     const i = activity.interaction;
     if (
-      !["person", "resource", "fishing", "home", "stake", "altar"].includes(
-        String(i.kind),
-      ) ||
+      ![
+        "person",
+        "resource",
+        "fishing",
+        "home",
+        "stake",
+        "altar",
+        "room",
+      ].includes(String(i.kind)) ||
       (i.kind === "person" && !peopleIds.has(String(i.id))) ||
       (i.kind === "resource" &&
         (() => {
@@ -464,7 +469,11 @@ export function validateSnapshot(v: unknown): Snapshot {
       (i.kind === "fishing" && !Object.hasOwn(fishByMap, String(i.id))) ||
       (i.kind === "stake" && !Object.hasOwn(systems.stakes, String(i.id))) ||
       (i.kind === "home" && i.id !== "HOME") ||
-      (i.kind === "altar" && i.id !== "altar")
+      (i.kind === "altar" && i.id !== "altar") ||
+      (i.kind === "room" &&
+        !(
+          typeof i.id === "string" && maps[i.id as keyof typeof maps]?.interior
+        ))
     )
       throw new Error("会話相手が不正です。");
   }
@@ -555,8 +564,20 @@ export function validateSnapshot(v: unknown): Snapshot {
         }
       }
     }
-  } else if (!w.canStand(result.x, result.y))
-    throw new Error("保存位置が通行できない場所です。");
+  } else if (!w.canStand(result.x, result.y)) {
+    // FIELD 04 rooms had no furniture collision. Preserve outdoor coordinates.
+    if (
+      v.terrainVersion === 4 &&
+      w.map.interior &&
+      oldField.canStandOn(oldField.maps[result.mapId], result.x, result.y)
+    ) {
+      const pos = safePosition(w.map, result.x, result.y);
+      if (!pos) throw new Error("室内の安全な位置が見つかりません。");
+      Object.assign(result, pos);
+      result.activity.interaction = null;
+      result.activity.action = null;
+    } else throw new Error("保存位置が通行できない場所です。");
+  }
   if (v.version === 1) result.enemies.push(...new Session().enemies.slice(6));
   result.terrainVersion = TERRAIN_VERSION;
   return result;

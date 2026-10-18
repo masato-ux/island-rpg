@@ -398,6 +398,8 @@ export class Interface {
         interaction.append(trial);
         this.button(interaction, "外へ出る", "leave");
       }
+      if (current.kind === "room")
+        this.button(interaction, "外へ出る", "leave");
       if (current.kind === "resource") {
         const def = resources[Number(current.id.split(":")[1])];
         this.paragraph(

@@ -7,6 +7,7 @@ import {
   type Direction,
 } from "./constants.ts";
 import { maps, isBlocked, tileAt, villagePoint, type MapId } from "./maps.ts";
+import { furnitureBlocks } from "./interiors.ts";
 interface Transition {
   to: MapId;
   x: number;
@@ -36,18 +37,21 @@ export class World {
     this.facing = "down";
   }
   canStand(x: number, y: number) {
-    return [
-      [-RADIUS, -RADIUS],
-      [RADIUS, -RADIUS],
-      [-RADIUS, RADIUS],
-      [RADIUS, RADIUS],
-    ].every(
-      ([dx, dy]) =>
-        !isBlocked(
-          this.map,
-          Math.floor((x + dx) / TILE),
-          Math.floor((y + dy) / TILE),
-        ),
+    return (
+      !furnitureBlocks(this.mapId, x, y) &&
+      [
+        [-RADIUS, -RADIUS],
+        [RADIUS, -RADIUS],
+        [-RADIUS, RADIUS],
+        [RADIUS, RADIUS],
+      ].every(
+        ([dx, dy]) =>
+          !isBlocked(
+            this.map,
+            Math.floor((x + dx) / TILE),
+            Math.floor((y + dy) / TILE),
+          ),
+      )
     );
   }
   travel(to: MapId, x: number, y: number) {
