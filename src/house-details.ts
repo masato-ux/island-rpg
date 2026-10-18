@@ -1,11 +1,19 @@
+import { roundedBox } from "./rounded-box.ts";
 import type { Building } from "./maps.ts";
 
 /** Fixed quarter-pixel material detail, baked into each house's cached sprite. */
 export class HouseDetails {
   constructor(private c: CanvasRenderingContext2D) {}
   private r(x: number, y: number, w: number, h: number, color: string) {
-    this.c.fillStyle = color;
-    this.c.fillRect(Math.round(x * 4) / 4, Math.round(y * 4) / 4, w, h);
+    roundedBox(
+      this.c,
+      Math.round(x * 4) / 4,
+      Math.round(y * 4) / 4,
+      w,
+      h,
+      color,
+      0.5,
+    );
   }
   private line(points: number[][], color: string, width = 0.5) {
     const c = this.c;

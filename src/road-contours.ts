@@ -1,4 +1,4 @@
-import { tileAt, type GameMap } from "./maps.ts";
+import { tileAt, type Tile, type GameMap } from "./maps.ts";
 type Point = [number, number];
 interface Edge {
   a: Point;
@@ -8,8 +8,15 @@ interface Edge {
 /** Trace the whole road boundary before rounding, so curves cross tile seams. */
 export class RoadContours {
   private cache = new Map<string, Path2D>();
-  path(map: GameMap) {
-    const cached = this.cache.get(map.id);
+  path(map: GameMap, region: Tile | "land" = "path") {
+    const key = `${map.id}:${region}`;
+    const contains = (x: number, y: number) => {
+      const tile = tileAt(map, x, y);
+      return region === "land"
+        ? !["water", "shallow"].includes(tile)
+        : tile === region;
+    };
+    const cached = this.cache.get(key);
     if (cached) return cached;
     const edges: Edge[] = [];
     const starts = new Map<string, number[]>();
@@ -21,14 +28,14 @@ export class RoadContours {
     };
     for (let y = 0; y < map.height; y++)
       for (let x = 0; x < map.width; x++)
-        if (tileAt(map, x, y) === "path") {
-          if (tileAt(map, x, y - 1) !== "path")
+        if (contains(x, y)) {
+          if (!contains(x, y - 1))
             add([x * 16, y * 16], [(x + 1) * 16, y * 16]);
-          if (tileAt(map, x + 1, y) !== "path")
+          if (!contains(x + 1, y))
             add([(x + 1) * 16, y * 16], [(x + 1) * 16, (y + 1) * 16]);
-          if (tileAt(map, x, y + 1) !== "path")
+          if (!contains(x, y + 1))
             add([(x + 1) * 16, (y + 1) * 16], [x * 16, (y + 1) * 16]);
-          if (tileAt(map, x - 1, y) !== "path")
+          if (!contains(x - 1, y))
             add([x * 16, (y + 1) * 16], [x * 16, y * 16]);
         }
     const path = new Path2D();
@@ -83,7 +90,7 @@ export class RoadContours {
       }
       path.closePath();
     }
-    this.cache.set(map.id, path);
+    this.cache.set(key, path);
     return path;
   }
 }

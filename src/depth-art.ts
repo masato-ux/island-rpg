@@ -1,3 +1,4 @@
+import { roundedBox } from "./rounded-box.ts";
 import { HouseDetails } from "./house-details.ts";
 import { paintHero } from "./hero-art.ts";
 import { houseStyles } from "./architecture.ts";
@@ -23,16 +24,20 @@ export class DepthArt {
     c.fill();
   }
   shadow(x: number, y: number, w: number, h: number) {
-    this.polygon(
-      [
-        [x - w / 2, y - 2],
-        [x + w / 2, y - 2],
-        [x + w / 2 + h * 0.6, y + h * 0.45],
-        [x - w / 2 + h * 0.6, y + h * 0.45],
-      ],
+    const c = this.c;
+    c.save();
+    c.translate(x + h * 0.24, y + h * 0.18);
+    c.rotate(0.12);
+    this.ellipse(
+      0,
+      0,
+      w * 0.55 + h * 0.12,
+      Math.max(2, h * 0.25),
       "rgba(27,42,42,.20)",
     );
+    c.restore();
   }
+
   ellipse(x: number, y: number, rx: number, ry: number, color: string) {
     const c = this.c;
     c.fillStyle = color;
@@ -776,7 +781,8 @@ export class DepthArt {
     );
   }
   private paintBuilding(b: Building, x: number, y: number) {
-    const r = this.rect.bind(this),
+    const r = (x: number, y: number, w: number, h: number, color: string) =>
+        roundedBox(this.c, x, y, w, h, color, 0.65),
       e = this.ellipse.bind(this),
       p = this.polygon.bind(this),
       c = this.c;

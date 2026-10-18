@@ -1,3 +1,4 @@
+import { roundedBox } from "./rounded-box.ts";
 import { RoadContours } from "./road-contours.ts";
 import { grassDensity } from "./surface-detail.ts";
 import {
@@ -77,8 +78,23 @@ export class Terrain {
         [-1, 0, 1].some((dx) => tileAt(map, x + dx, y + dy) === "path"),
       );
     const road = nearRoad ? this.roads.path(map) : undefined;
+    const neighbors = [-1, 0, 1].flatMap((dy) =>
+      [-1, 0, 1].map((dx) => tileAt(map, x + dx, y + dy)),
+    );
+    const sea = (t: Tile) => ["water", "shallow"].includes(t);
+    const coastal = neighbors.some(sea) && neighbors.some((t) => !sea(t));
+    const shoreline = coastal ? this.roads.path(map, "land") : undefined;
+    const shaped = ["sand", "wet", "deepmud", "shallow"].includes(tile)
+      ? this.roads.path(map, tile)
+      : undefined;
+    const blends: Tile[] =
+      tile === "water"
+        ? (["shallow"] as Tile[]).filter((t) => neighbors.includes(t))
+        : tile === "grass"
+          ? (["sand", "wet"] as Tile[]).filter((t) => neighbors.includes(t))
+          : [];
     const image = this.sprite(
-      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}:${nearRoad ? `${map.id}:${x}:${y}` : ""}`,
+      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}:${nearRoad || coastal || shaped || blends.length ? `${map.id}:${x}:${y}` : ""}`,
       16,
       16,
       (ctx) => {
@@ -116,6 +132,28 @@ export class Terrain {
           water: ["#355678", "#3a5b7e", "#335476", "#426484"],
           floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
         };
+        const clipSurface = (path: Path2D) => {
+          ctx.translate(-x * 16, -y * 16);
+          ctx.clip(path);
+          ctx.translate(x * 16, y * 16);
+        };
+        if (shoreline && !sea(tile)) {
+          ctx.fillStyle = palette.water[0];
+          ctx.fillRect(0, 0, 16, 16);
+          ctx.save();
+          clipSurface(shoreline);
+        }
+        if (shaped) {
+          ctx.fillStyle =
+            tile === "deepmud"
+              ? palette.wet[0]
+              : tile === "shallow"
+                ? palette.water[0]
+                : palette.grass[0];
+          ctx.fillRect(0, 0, 16, 16);
+          ctx.save();
+          clipSurface(shaped);
+        }
         const clipRoad = () => {
           ctx.translate(-x * 16, -y * 16);
           ctx.clip(road!);
@@ -136,6 +174,23 @@ export class Terrain {
         const colors = palette[tile];
         ctx.fillStyle = colors[0];
         ctx.fillRect(0, 0, 16, 16);
+        if (tile === "grass" && biome !== "森林") {
+          for (let sy = 0; sy < 16; sy++)
+            for (let sx = 0; sx < 16; sx++) {
+              const tx = sx / 16,
+                ty = sy / 16,
+                level =
+                  corners[0] * (1 - tx) * (1 - ty) +
+                  corners[1] * tx * (1 - ty) +
+                  corners[2] * (1 - tx) * ty +
+                  corners[3] * tx * ty;
+              const t = level / 2,
+                blend = (a: number, b: number) =>
+                  Math.round(a * (1 - t) + b * t);
+              ctx.fillStyle = `rgb(${blend(146, 126)},${blend(175, 159)},${blend(112, 96)})`;
+              ctx.fillRect(sx, sy, 1, 1);
+            }
+        }
         for (
           let i = 0;
           i < (["water", "shallow", "deepmud"].includes(tile) ? 3 : 6);
@@ -316,6 +371,42 @@ export class Terrain {
           }
           ctx.restore();
         }
+        if (shaped) ctx.restore();
+        for (const surface of blends) {
+          ctx.save();
+          clipSurface(this.roads.path(map, surface));
+          ctx.fillStyle = palette[surface][0];
+          ctx.fillRect(0, 0, 16, 16);
+          for (let i = 0; i < 24; i++) {
+            const seed = hash(i, variant, 173);
+            ctx.fillStyle = palette[surface][1 + (i % 2)];
+            ctx.fillRect((seed % 64) / 4, ((seed >>> 8) % 64) / 4, 0.5, 0.25);
+          }
+          ctx.restore();
+        }
+        if (shoreline && !sea(tile)) ctx.restore();
+        if (shoreline) {
+          if (sea(tile)) {
+            const ground =
+              neighbors.find((t) => !sea(t) && t !== "cliff") || "grass";
+            ctx.save();
+            clipSurface(shoreline);
+            ctx.fillStyle = palette[ground][0];
+            ctx.fillRect(0, 0, 16, 16);
+            ctx.restore();
+          }
+          ctx.save();
+          ctx.translate(-x * 16, -y * 16);
+          ctx.lineJoin = "round";
+          ctx.lineCap = "round";
+          ctx.lineWidth = 2.25;
+          ctx.strokeStyle = "#78adb0";
+          ctx.stroke(shoreline);
+          ctx.lineWidth = 0.65;
+          ctx.strokeStyle = "#d4e6ca";
+          ctx.stroke(shoreline);
+          ctx.restore();
+        }
       },
       4,
     );
@@ -343,13 +434,19 @@ export class Terrain {
       }
     }
     if (tile === "cliff") {
+      c.fillStyle = coastal ? "#355678" : "#84a071";
+      c.fillRect(px, py, 16, 16);
+      c.save();
+      c.translate(px - x * 16, py - y * 16);
+      c.clip(this.roads.path(map, "cliff"));
+      c.translate(x * 16 - px, y * 16 - py);
       c.fillStyle = "#425e69";
       c.fillRect(px, py, 16, 16);
       for (let col = 0; col < 4; col++) {
         const xx = col * 4,
           n = hash(x, col, 3);
         c.fillStyle = ["#648287", "#728f8c", "#587781", "#80988f"][n % 4];
-        c.fillRect(px + xx, py, 3, 16);
+        roundedBox(c, px + xx, py, 3, 16, c.fillStyle as string, 1);
         c.fillStyle = "#9eaca0";
         c.fillRect(px + xx, py, 1, 16);
         c.fillStyle = "#354f60";
@@ -368,6 +465,7 @@ export class Terrain {
         c.fillRect(px, py, 16, 1);
         for (let i = 1; i < 16; i += 4) c.fillRect(px + i, py + 1, 2, 2);
       }
+      c.restore();
       return;
     }
     if (tile === "stairs") {
@@ -377,7 +475,15 @@ export class Terrain {
         c.fillStyle = "#c1c8a7";
         c.fillRect(px + 2, py + row * 4, 12, 1);
         c.fillStyle = "#96a98f";
-        c.fillRect(px + 2, py + row * 4 + 1, 12, 2);
+        roundedBox(
+          c,
+          px + 2,
+          py + row * 4 + 1,
+          12,
+          2,
+          c.fillStyle as string,
+          0.75,
+        );
         c.fillStyle = "#627f77";
         c.fillRect(px + 2, py + row * 4 + 3, 12, 1);
       }
@@ -392,29 +498,9 @@ export class Terrain {
         c.fillStyle = "#7395ac";
         c.fillRect(px + 4, py + 4 + (n % 6), 2, 1);
       }
-      const land = (dx: number, dy: number) =>
-        !["water", "shallow", "deepmud"].includes(tileAt(map, x + dx, y + dy));
-      c.fillStyle = tile === "deepmud" ? "#566e5e" : "#75a5ac";
-      if (land(0, -1)) c.fillRect(px, py, 16, 2);
-      if (land(0, 1)) c.fillRect(px, py + 14, 16, 2);
-      if (land(-1, 0)) c.fillRect(px, py, 2, 16);
-      if (land(1, 0)) c.fillRect(px + 14, py, 2, 16);
-      c.fillStyle = tile === "deepmud" ? "#7b8d70" : "#d0e7cf";
-      for (let i = 0; i < 4; i++) {
-        const n = (i * 5 + phase) % 16;
-        if (land(0, -1)) c.fillRect(px + n, py + 1, 2, 1);
-        if (land(0, 1)) c.fillRect(px + n, py + 14, 2, 1);
-        if (land(-1, 0)) c.fillRect(px + 1, py + n, 1, 2);
-        if (land(1, 0)) c.fillRect(px + 14, py + n, 1, 2);
-      }
       return;
     }
     if (map.interior) return;
-    const water = (dx: number, dy: number) =>
-      tileAt(map, x + dx, y + dy) === "water";
-    const path = (dx: number, dy: number) =>
-      tileAt(map, x + dx, y + dy) === "path";
-    // The grassy lip, rock face and foam follow adjacent water tiles, rather than a square overlay.
     const edge = (
       xx: number,
       yy: number,
@@ -425,34 +511,6 @@ export class Terrain {
       c.fillStyle = color;
       c.fillRect(px + xx, py + yy, w, h);
     };
-    if (water(0, 1)) {
-      if (tile !== "sand") {
-        edge(0, 10, 16, 5, "#4d7470");
-        edge(0, 10, 16, 1, "#b5c88d");
-        for (let n = 2; n < 16; n += 5) edge(n, 12, 1, 3, "#72928b");
-      }
-      edge(0, 15, 16, 1, "#d3ead6");
-      edge(2, 14, 3, 1, "#9bcbbd");
-      edge(10, 14, 4, 1, "#9bcbbd");
-    }
-    if (water(0, -1)) {
-      edge(0, 0, 16, 1, "#c4dfc6");
-      edge(1, 1, 14, 1, tile === "sand" ? "#ece0ad" : "#afc77e");
-    }
-    if (water(-1, 0)) {
-      edge(0, 0, 1, 16, "#d3ead6");
-      edge(1, 1, 1, 14, tile === "sand" ? "#ece0ad" : "#587f6b");
-    }
-    if (water(1, 0)) {
-      edge(15, 0, 1, 16, "#d3ead6");
-      edge(14, 1, 1, 14, tile === "sand" ? "#ece0ad" : "#587f6b");
-    }
-    if (tile === "grass" || tile === "wet") {
-      if (path(-1, 0)) edge(0, 0, 1, 16, "#b2be7c");
-      if (path(1, 0)) edge(15, 0, 1, 16, "#b2be7c");
-      if (path(0, -1)) edge(0, 0, 16, 1, "#b2be7c");
-      if (path(0, 1)) edge(0, 15, 16, 1, "#b2be7c");
-    }
     // A wooden crossing is visual decoration on the existing safe corridor.
     if (
       tile === "path" &&
