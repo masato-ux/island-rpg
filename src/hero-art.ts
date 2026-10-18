@@ -19,7 +19,7 @@ export function paintHero(
     shade = "#bb7b60",
     coat = "#35586a",
     light = "#557f88";
-  r(-5, 2, 12, 2, "rgba(22,38,36,.25)");
+
   const stride = step ? (step % 2 ? 1 : -1) : 0;
   // Short travelling coat, separate boots and a sheathed blade.
   r(-5, -10, 10, 11, ink);

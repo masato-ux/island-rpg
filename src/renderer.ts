@@ -22,6 +22,7 @@ export class Renderer {
     this.props = new WorldProps(ctx);
   }
   draw(world: World, session?: Session) {
+    const shadows: (() => void)[] = [];
     const layers: { y: number; paint: () => void }[] = [];
     const add = (y: number, paint: () => void) => layers.push({ y, paint });
     const ctx = this.ctx,
@@ -64,14 +65,6 @@ export class Renderer {
           tile = tileAt(world.map, x, y);
         if (world.map.interior) continue;
         this.terrain.ground(ctx, world.map, x, y, px, py, session?.clock || 0);
-        if (
-          tileAt(world.map, x, y - 1) === "cliff" &&
-          tile !== "cliff" &&
-          tile !== "stairs"
-        ) {
-          rect(px, py, 16, 3, "rgba(30,55,57,.22)");
-          rect(px + 2, py + 3, 14, 2, "rgba(30,55,57,.09)");
-        }
         if (tile === "house") {
           rect(px, py, 16, 16, "#b6a17b");
           rect(px, py, 16, 6, "#79584c");
@@ -91,8 +84,17 @@ export class Renderer {
       ) {
         const tile = tileAt(world.map, x, y);
         if (tile === "tree" || tile === "rock") {
-          if (tile === "tree")
-            this.art.shadow(x * 16 + 8 - camX, y * 16 + 12 - camY, 22, 26);
+          shadows.push(() =>
+            this.terrain.object(
+              ctx,
+              world.map,
+              x,
+              y,
+              x * 16 - camX,
+              y * 16 - camY,
+              true,
+            ),
+          );
           add(y * 16 + 12, () =>
             this.terrain.object(
               ctx,
@@ -121,6 +123,9 @@ export class Renderer {
         b.y * 16 > camY + HEIGHT
       )
         continue;
+      shadows.push(() =>
+        this.art.building(b, b.x * 16 - camX, b.y * 16 - camY, true),
+      );
       add((b.y + b.h) * 16, () => {
         this.art.building(b, b.x * 16 - camX, b.y * 16 - camY);
         ctx.font = "7px sans-serif";
@@ -136,6 +141,17 @@ export class Renderer {
     if (session) {
       const label = (x: number, y: number, name: string, color: string) => {
         if (x < -20 || x > WIDTH + 20 || y < -20 || y > HEIGHT + 20) return;
+        shadows.push(() =>
+          this.art.person(
+            x,
+            y,
+            color,
+            people.findIndex((p) => p.name === name) + 1,
+            0,
+            "down",
+            true,
+          ),
+        );
         add(y + camY, () => {
           this.art.person(
             x,
@@ -156,6 +172,15 @@ export class Renderer {
           grass = villagePoint(392, 488);
         label(d.x - camX, d.y - camY, "ダン", "#a06d4e");
         label(chief.x - camX, chief.y - camY, "ロアン", "#687a9a");
+        shadows.push(() =>
+          this.props.resource(
+            grass.x - camX,
+            grass.y - camY,
+            "草",
+            session.story.gathered,
+            true,
+          ),
+        );
         add(grass.y, () =>
           this.props.resource(
             grass.x - camX,
@@ -192,6 +217,15 @@ export class Renderer {
       if (session.story.wedge)
         for (const node of session.life.nodeList(world.mapId)) {
           const depleted = session.life.nodeState(node.id).left === 0;
+          shadows.push(() =>
+            this.props.resource(
+              node.x - camX,
+              node.y - camY,
+              node.def.item,
+              depleted,
+              true,
+            ),
+          );
           add(node.y, () =>
             this.props.resource(
               node.x - camX,
@@ -239,6 +273,15 @@ export class Renderer {
           this.fishingTargets.set(key, target);
         }
         const target = this.fishingTargets.get(key);
+        shadows.push(() =>
+          this.props.fishing(
+            fx - camX,
+            fy - camY,
+            session.clock,
+            undefined,
+            true,
+          ),
+        );
         add(fy + 3, () =>
           this.props.fishing(
             fx - camX,
@@ -253,10 +296,14 @@ export class Renderer {
         ctx.fillText("釣り場", fx - camX, fy - 25 - camY);
       }
       const stake = session.life.data.stakes[world.mapId];
-      if (stake)
+      if (stake) {
+        shadows.push(() =>
+          this.props.stake(stake.x - camX, stake.y - camY, session.clock, true),
+        );
         add(stake.y, () =>
           this.props.stake(stake.x - camX, stake.y - camY, session.clock),
         );
+      }
       if (world.mapId === "NORTH") {
         rect(
           world.map.width * 8 - 16 - camX,
@@ -271,6 +318,9 @@ export class Renderer {
         const x = enemy.x - camX,
           y = enemy.y - camY;
         if (x < -16 || x > WIDTH + 16 || y < -20 || y > HEIGHT + 20) continue;
+        shadows.push(() =>
+          this.art.monster(x, y, enemy.kind, session.clock, true),
+        );
         add(enemy.y, () => {
           this.art.monster(x, y, enemy.kind, session.clock);
           if (session.battle?.enemyId === enemy.id) {
@@ -293,11 +343,28 @@ export class Renderer {
         camY +
         (["うなずく", "お辞儀"].includes(gesture) ? motion : 0),
       step = world.moving ? Math.floor(world.animation / 0.16) % 2 : 0;
+    shadows.push(() =>
+      this.art.person(x, y, "#58778a", 0, step, world.facing, true),
+    );
     add(world.y, () => {
       this.art.person(x, y, "#58778a", 0, step, world.facing);
       if (gesture === "手を振る" || gesture === "指差す")
         rect(x + 6, y - 10 + motion * 2, 2, 6, "#e2b58a");
     });
+    {
+      ctx.save();
+      const hour = session ? (session.clock / 3600) % 24 : 12;
+      ctx.globalAlpha =
+        hour < 6 || hour >= 20 ? 0.2 : hour < 8 || hour >= 18 ? 0.65 : 1;
+      if (
+        session?.life.data.weather === "rain" ||
+        session?.life.data.weather === "fog"
+      )
+        ctx.globalAlpha *= 0.5;
+      if (world.map.interior) ctx.globalAlpha = 0.4;
+      shadows.forEach((paint) => paint());
+      ctx.restore();
+    }
     layers.sort((a, b) => a.y - b.y).forEach((layer) => layer.paint());
     if (session?.life.gesture && session.life.gesture.until > session.clock) {
       ctx.textAlign = "center";

@@ -44,7 +44,7 @@ export function paintNature(
     n = Math.imul(n ^ (n >>> 13), 1274126177);
     return ((n ^ (n >>> 16)) >>> 0) / 4294967295;
   };
-  e(21, 43, 12, 2.7, "rgba(25,44,35,.24)");
+
   if (tile === "rock") {
     const family = seed % 5,
       width = family === 1 ? 8 : family === 2 ? 15 : 11,

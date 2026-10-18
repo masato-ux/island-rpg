@@ -1,3 +1,4 @@
+import { castShadow } from "./projected-shadow.ts";
 import { roundedBox } from "./rounded-box.ts";
 import { HouseDetails } from "./house-details.ts";
 import { paintHero } from "./hero-art.ts";
@@ -53,6 +54,7 @@ export class DepthArt {
     seed = 0,
     step = 0,
     facing = "down",
+    shadowOnly = false,
   ) {
     const key = `${seed}:${color}:${step}:${facing}`;
     let sprite = this.peopleSprites.get(key);
@@ -66,7 +68,18 @@ export class DepthArt {
       else new DepthArt(context).paintPerson(20, 32, color, seed, step, facing);
       this.peopleSprites.set(key, sprite);
     }
-    this.c.drawImage(sprite, Math.round(x) - 20, Math.round(y) - 32);
+    if (shadowOnly)
+      castShadow(
+        this.c,
+        sprite,
+        Math.round(x) - 20,
+        Math.round(y) - 32,
+        40,
+        44,
+        20,
+        35,
+      );
+    else this.c.drawImage(sprite, Math.round(x) - 20, Math.round(y) - 32);
   }
   private paintPerson(
     x: number,
@@ -160,8 +173,7 @@ export class DepthArt {
     }
     x = 0;
     y = 0;
-    this.shadow(0, 4, 12, 17);
-    e(0, 3, 5, 1.8, "rgba(23,33,32,.32)");
+
     const coat = look.outfit,
       hair = look.hair,
       ink = "#35313c",
@@ -494,7 +506,26 @@ export class DepthArt {
     }
     c.restore();
   }
-  monster(x: number, y: number, kind: string, time: number) {
+  private monsterSprites = new Map<string, HTMLCanvasElement>();
+  monster(
+    x: number,
+    y: number,
+    kind: string,
+    time: number,
+    shadowOnly = false,
+  ) {
+    let sprite = this.monsterSprites.get(kind);
+    if (!sprite) {
+      sprite = document.createElement("canvas");
+      sprite.width = 96;
+      sprite.height = 96;
+      new DepthArt(sprite.getContext("2d")!).paintMonster(48, 72, kind, 0);
+      this.monsterSprites.set(kind, sprite);
+    }
+    if (shadowOnly) castShadow(this.c, sprite, x - 48, y - 72, 96, 96, 48, 76);
+    else this.c.drawImage(sprite, Math.round(x) - 48, Math.round(y) - 72);
+  }
+  private paintMonster(x: number, y: number, kind: string, time: number) {
     const r = this.rect.bind(this),
       e = this.ellipse.bind(this),
       c = this.c;
@@ -502,8 +533,7 @@ export class DepthArt {
     c.translate(Math.round(x * 2) / 2, Math.round(y * 2) / 2);
     x = 0;
     y = Math.sin(time * 2 + x) * 0.4;
-    this.shadow(0, 4, kind === "dragon" ? 34 : 19, 16);
-    e(0, 3, 8, 2, "rgba(23,36,39,.25)");
+
     if (kind === "slime") {
       this.polygon(
         [
@@ -760,7 +790,7 @@ export class DepthArt {
     c.restore();
   }
   private buildingSprites = new Map<string, HTMLCanvasElement>();
-  building(b: Building, x: number, y: number) {
+  building(b: Building, x: number, y: number, shadowOnly = false) {
     const key = `${b.interior}:${b.w}:${b.h}`;
     let sprite = this.buildingSprites.get(key);
     if (!sprite) {
@@ -771,6 +801,19 @@ export class DepthArt {
       context.scale(4, 4);
       new DepthArt(context).paintBuilding(b, 24, 32);
       this.buildingSprites.set(key, sprite);
+    }
+    if (shadowOnly) {
+      castShadow(
+        this.c,
+        sprite,
+        x - 24,
+        y - 32,
+        sprite.width / 4,
+        sprite.height / 4,
+        24 + b.w * 8,
+        32 + b.h * 16 - 2,
+      );
+      return;
     }
     this.c.drawImage(
       sprite,
@@ -792,7 +835,7 @@ export class DepthArt {
       wall = style.stories === 2 ? 82 : 46,
       eave = h - wall,
       door = w / 2 + 8;
-    this.shadow(x + w / 2, y + h - 3, w, 36);
+
     // Stone foundation and round horizontal logs, including the cut ends.
     r(x + 4, y + eave, w - 8, wall, "#5a4938");
     r(x + 4, y + h - 7, w - 8, 7, "#747566");

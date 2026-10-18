@@ -95,6 +95,29 @@ export function escarpment(
       c.fillRect(px + col, py + 3 + (n % 9), 1, 3);
     }
   }
+  // One lit upper edge, a shaded lower wall and a darker right-facing plane.
+  let above = 0,
+    below = 0;
+  while (above < 12 && tileAt(map, x, y - above - 1) === "cliff") above++;
+  while (below < 12 && tileAt(map, x, y + below + 1) === "cliff") below++;
+  const vertical = c.createLinearGradient(
+    0,
+    py - above * 16,
+    0,
+    py + (below + 1) * 16,
+  );
+  vertical.addColorStop(0, "rgba(255,242,183,.18)");
+  vertical.addColorStop(0.35, "rgba(64,59,37,0)");
+  vertical.addColorStop(1, "rgba(43,47,32,.42)");
+  c.fillStyle = vertical;
+  c.fillRect(px, py, 16, 16);
+  if (tileAt(map, x + 1, y) !== "cliff") {
+    const side = c.createLinearGradient(px + 8, 0, px + 16, 0);
+    side.addColorStop(0, "rgba(37,46,35,0)");
+    side.addColorStop(1, "rgba(37,46,35,.36)");
+    c.fillStyle = side;
+    c.fillRect(px + 8, py, 8, 16);
+  }
   const upper = tileAt(map, x, y - 1),
     lower = tileAt(map, x, y + 1);
   if (

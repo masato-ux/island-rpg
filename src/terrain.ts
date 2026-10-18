@@ -1,3 +1,4 @@
+import { castShadow } from "./projected-shadow.ts";
 import { meadow, ocean, escarpment } from "./retro-landscape.ts";
 import { paintNature, groundMood } from "./nature-art.ts";
 import { roundedBox } from "./rounded-box.ts";
@@ -439,6 +440,31 @@ export class Terrain {
           ctx.stroke(shoreline);
           ctx.restore();
         }
+        if (!map.interior && !["cliff", "stairs"].includes(tile)) {
+          const level = elevationAt(map, x, y);
+          const belowRim = [-1, 0, 1].some((dy) =>
+            [-1, 0, 1].some(
+              (dx) =>
+                tileAt(map, x + dx, y + dy) === "cliff" &&
+                elevationAt(map, x + dx, y + dy) > level,
+            ),
+          );
+          if (belowRim) {
+            const face = this.roads.path(map, "cliff");
+            ctx.save();
+            ctx.translate(-x * 16, -y * 16);
+            // Offset the actual cliff outline, longest projection first.
+            for (let d = 12; d >= 2; d -= 2) {
+              ctx.save();
+              ctx.translate(d * 0.65, d * 0.32);
+              ctx.fillStyle =
+                d > 8 ? "rgba(27,42,42,.035)" : "rgba(27,42,42,.07)";
+              ctx.fill(face);
+              ctx.restore();
+            }
+            ctx.restore();
+          }
+        }
       },
       4,
     );
@@ -552,6 +578,7 @@ export class Terrain {
     y: number,
     px: number,
     py: number,
+    shadowOnly = false,
   ) {
     const tile = tileAt(map, x, y);
     if (tile === "sand") {
@@ -639,6 +666,7 @@ export class Terrain {
       (ctx) => paintNature(ctx, tile, variant, forest),
       1,
     );
-    c.drawImage(image, px - 12, py - 30, 40, 48);
+    if (shadowOnly) castShadow(c, image, px - 12, py - 30, 40, 48, 20, 44);
+    else c.drawImage(image, px - 12, py - 30, 40, 48);
   }
 }

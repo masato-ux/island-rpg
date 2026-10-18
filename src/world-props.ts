@@ -1,16 +1,46 @@
+import { castShadow } from "./projected-shadow.ts";
 import { DepthArt } from "./depth-art.ts";
 export class WorldProps {
   private art: DepthArt;
   constructor(private c: CanvasRenderingContext2D) {
     this.art = new DepthArt(c);
   }
-  resource(x: number, y: number, item: string, depleted: boolean) {
+  private silhouettes = new Map<string, HTMLCanvasElement>();
+  private project(
+    key: string,
+    x: number,
+    y: number,
+    paint: (a: WorldProps) => void,
+  ) {
+    let sprite = this.silhouettes.get(key);
+    if (!sprite) {
+      sprite = document.createElement("canvas");
+      sprite.width = 96;
+      sprite.height = 96;
+      paint(new WorldProps(sprite.getContext("2d")!));
+      this.silhouettes.set(key, sprite);
+    }
+    castShadow(this.c, sprite, x - 48, y - 80, 96, 96, 48, 84);
+  }
+  resource(
+    x: number,
+    y: number,
+    item: string,
+    depleted: boolean,
+    shadowOnly = false,
+  ) {
+    if (shadowOnly)
+      this.project(`resource:${item}:${depleted}`, x, y, (a) =>
+        a.paintResource(48, 80, item, depleted),
+      );
+    else this.paintResource(x, y, item, depleted);
+  }
+  private paintResource(x: number, y: number, item: string, depleted: boolean) {
     const a = this.art,
       r = a.rect.bind(a),
       e = a.ellipse.bind(a),
       p = a.polygon.bind(a);
-    a.shadow(x, y + 2, 13, 8);
-    e(x, y + 2, 6, 1.5, "rgba(33,45,35,.22)");
+
     if (depleted) {
       r(x - 4, y, 8, 2, "#8c8060");
       r(x - 2, y - 1, 1, 2, "#b4a17a");
@@ -205,12 +235,16 @@ export class WorldProps {
       if (herb) r(x + dx, y + top - 3, 1, 1, "#ddce8f");
     }
   }
-  stake(x: number, y: number, time: number) {
+  stake(x: number, y: number, time: number, shadowOnly = false) {
+    if (shadowOnly) this.project("stake", x, y, (a) => a.paintStake(48, 80, 0));
+    else this.paintStake(x, y, time);
+  }
+  private paintStake(x: number, y: number, time: number) {
     const a = this.art,
       r = a.rect.bind(a),
       e = a.ellipse.bind(a),
       p = a.polygon.bind(a);
-    a.shadow(x, y + 3, 16, 28);
+
     // Irregular stone footing, moss and a split, weathered timber pillar.
     p(
       [
@@ -390,13 +424,18 @@ export class WorldProps {
     y: number,
     time: number,
     water?: { x: number; y: number },
+    shadowOnly = false,
   ) {
+    if (shadowOnly) {
+      this.project("fishing", x, y, (a) => a.fishing(48, 80, 0));
+      return;
+    }
     const a = this.art,
       r = a.rect.bind(a),
       e = a.ellipse.bind(a),
       p = a.polygon.bind(a),
       c = this.c;
-    a.shadow(x, y + 3, 22, 8);
+
     // A worn landing, coiled rope, creel and rod identify the usable spot.
     r(x - 12, y, 25, 7, "#64583e");
     for (let i = 0; i < 4; i++) {
