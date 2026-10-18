@@ -1,3 +1,4 @@
+import { grassDensity } from "./surface-detail.ts";
 import {
   biomeAt,
   elevationAt,
@@ -41,9 +42,31 @@ export class Terrain {
   ) {
     const tile = tileAt(map, x, y),
       variant = hash(x, y) % 8,
-      biome = biomeAt(map, x, y);
+      biome = biomeAt(map, x, y),
+      density = biome === "森林" ? 2 : grassDensity(map.id, x, y),
+      corners =
+        tile === "grass"
+          ? biome === "森林"
+            ? [2, 2, 2, 2]
+            : [
+                density,
+                grassDensity(map.id, x + 1, y),
+                grassDensity(map.id, x, y + 1),
+                grassDensity(map.id, x + 1, y + 1),
+              ]
+          : [0, 0, 0, 0],
+      damp =
+        tile === "sand" &&
+        [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ].some(([dx, dy]) =>
+          ["water", "shallow"].includes(tileAt(map, x + dx, y + dy)),
+        );
     const image = this.sprite(
-      `${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}`,
+      `${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}`,
       16,
       16,
       (ctx) => {
@@ -51,9 +74,13 @@ export class Terrain {
           grass:
             biome === "森林"
               ? ["#698f65", "#82a16b", "#5c805e", "#a5b67c"]
-              : elevationAt(map, x, y) > 0
-                ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
-                : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+              : density === 2
+                ? ["#7e9f60", "#91ad6c", "#719355", "#adc17e"]
+                : density === 0
+                  ? ["#92af70", "#a5bd7e", "#86a466", "#b1c486"]
+                  : elevationAt(map, x, y) > 0
+                    ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
+                    : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
           deepmud: ["#3e615f", "#577a70", "#345552", "#74907a"],
           shallow: ["#72aaad", "#92c4be", "#608e9c", "#bad4bf"],
           cavefloor: ["#505a66", "#747d80", "#414f5e", "#89908b"],
@@ -70,7 +97,9 @@ export class Terrain {
             biome === "森林"
               ? ["#627d52", "#77935e", "#506e49", "#8e9c67"]
               : ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
-          sand: ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
+          sand: damp
+            ? ["#b9af89", "#d2c7a3", "#a99f7c", "#dcd0ad"]
+            : ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
           wet: ["#849480", "#9fab8d", "#6d8272", "#bac0a0"],
           water: ["#355678", "#3a5b7e", "#335476", "#426484"],
           floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
@@ -88,6 +117,39 @@ export class Terrain {
             yy = (seed >>> 8) % 16;
           ctx.fillStyle = colors[1 + ((seed >>> 16) % 3)];
           ctx.fillRect(xx, yy, 1 + (seed % 2), 1);
+        }
+        if (tile === "sand") {
+          for (let i = 0; i < 18; i++) {
+            const seed = hash(i, variant, 18),
+              xx = seed % 16,
+              yy = (seed >>> 8) % 16;
+            ctx.fillStyle = i % 3 ? "#e7d8a4" : "#bcb083";
+            ctx.fillRect(xx, yy, 1, 1);
+          }
+          for (let yy = 3; yy < 16; yy += 6) {
+            ctx.fillStyle = damp ? "#9f987b" : "#c4b98d";
+            ctx.fillRect(1 + (variant % 3), yy, 5, 1);
+            ctx.fillRect(7 + (variant % 3), yy + 1, 5, 1);
+            ctx.fillStyle = damp ? "#d3c9a5" : "#eee0ac";
+            ctx.fillRect(2 + (variant % 3), yy + 1, 4, 1);
+          }
+        }
+        if (tile === "grass" && density === 2) {
+          for (let i = 0; i < 11; i++) {
+            const xx = (i * 7 + variant) % 16,
+              yy = (i * 5 + variant) % 16;
+            const tx = xx / 16,
+              ty = yy / 16,
+              local =
+                corners[0] * (1 - tx) * (1 - ty) +
+                corners[1] * tx * (1 - ty) +
+                corners[2] * (1 - tx) * ty +
+                corners[3] * tx * ty;
+            if (local < 1.6) continue;
+            ctx.fillStyle = i % 2 ? "#587c47" : "#a2b96e";
+            ctx.fillRect(xx, yy, 1, 3);
+            ctx.fillRect(xx - 1, yy + 1, 3, 1);
+          }
         }
         if (tile === "cavefloor") {
           ctx.fillStyle = "#4c545f";
@@ -330,8 +392,49 @@ export class Terrain {
     py: number,
   ) {
     const tile = tileAt(map, x, y);
+    if (tile === "sand") {
+      const n = hash(x, y, 44),
+        r = (xx: number, yy: number, w: number, h: number, color: string) => {
+          c.fillStyle = color;
+          c.fillRect(px + xx, py + yy, w, h);
+        };
+      if (n % 23 === 0) {
+        r(3, 9, 10, 3, "rgba(76,65,43,.18)");
+        r(2, 7, 11, 2, "#937b55");
+        r(3, 6, 8, 1, "#c8b186");
+        r(4, 8, 5, 1, "#6f6149");
+        r(10, 5, 1, 3, "#aa926b");
+      } else if (n % 17 === 0) {
+        r(7, 9, 5, 1, "#aaa489");
+        r(7, 6, 4, 3, "#f3e6c4");
+        r(8, 5, 2, 1, "#fff1cc");
+        r(8, 7, 1, 2, "#c3b3a0");
+      } else if (n % 31 === 0) {
+        r(3, 9, 10, 1, "#8e9670");
+        r(5, 7, 3, 3, "#738360");
+        r(8, 8, 2, 3, "#637b5e");
+        r(3, 8, 2, 1, "#a0a57d");
+      } else if (n % 29 === 0) {
+        r(4, 7, 3, 2, "#a49e87");
+        r(9, 10, 2, 1, "#b8ad91");
+      }
+      return;
+    }
     if (tile === "grass" || tile === "wet") {
       const n = hash(x, y, 6);
+      if (tile === "grass" && grassDensity(map.id, x, y) === 2) {
+        for (let i = 0; i < 3; i++) {
+          const xx = 2 + ((n >>> (i * 4)) % 11),
+            yy = 6 + i * 3;
+          c.fillStyle = "#436d40";
+          c.fillRect(px + xx, py + yy, 1, 5);
+          c.fillRect(px + xx - 2, py + yy + 2, 1, 3);
+          c.fillStyle = "#a9be74";
+          c.fillRect(px + xx, py + yy - 1, 1, 2);
+          c.fillStyle = "#6c934f";
+          c.fillRect(px + xx + 2, py + yy + 1, 1, 3);
+        }
+      }
       const rect = (
         xx: number,
         yy: number,

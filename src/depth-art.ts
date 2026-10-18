@@ -213,9 +213,42 @@ export class DepthArt {
     blob(5.1, -3.5, 1.3, 3, coat);
     blob(-5, -0.2, 1.3, 1.5, "#efbe91");
     blob(5, -0.2, 1.3, 1.5, "#efbe91");
-    // A broad round face and two clear eyes stay readable on a phone.
-    e(0, -15, 6.3, 6.8, ink);
-    e(0, -14.7, 5.6, 6.1, "#f0c299");
+    // Different cheekbones and jaw lines remain visible beside the shared eye style.
+    if (look.face === "square" || look.face === "base") {
+      const points =
+        look.face === "square"
+          ? [
+              [-5, -21],
+              [-6.3, -18],
+              [-6, -12],
+              [-4.8, -9],
+              [4.8, -9],
+              [6, -12],
+              [6.3, -18],
+              [5, -21],
+            ]
+          : [
+              [-4.5, -21.5],
+              [-6, -18],
+              [-5.7, -13],
+              [-3.5, -10],
+              [0, -8.5],
+              [3.5, -10],
+              [5.7, -13],
+              [6, -18],
+              [4.5, -21.5],
+            ];
+      shape(points, ink);
+      shape(
+        points.map(([xx, yy]) => [xx * 0.86, -15 + (yy + 15) * 0.88]),
+        "#f0c299",
+      );
+    } else {
+      const rx = look.face === "long" ? 4.7 : look.face === "oval" ? 5.5 : 6.3,
+        ry = look.face === "long" ? 7.5 : 6.8;
+      e(0, -15, rx, ry, ink);
+      e(0, -14.7, rx - 0.7, ry - 0.7, "#f0c299");
+    }
     e(-5.7, -13.8, 1.1, 1.6, "#e5ac83");
     e(5.7, -13.8, 1.1, 1.6, "#e5ac83");
     shape(

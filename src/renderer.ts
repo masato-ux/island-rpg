@@ -1,3 +1,4 @@
+import { WorldProps } from "./world-props.ts";
 import { DepthArt } from "./depth-art.ts";
 import { rooms } from "./interiors.ts";
 import { Terrain } from "./terrain.ts";
@@ -9,10 +10,16 @@ import { World } from "./state.ts";
 export class Renderer {
   private terrain = new Terrain();
   private art: DepthArt;
+  private props: WorldProps;
+  private fishingTargets = new Map<
+    string,
+    { x: number; y: number } | undefined
+  >();
   constructor(private ctx: CanvasRenderingContext2D) {
     ctx.setTransform(2, 0, 0, 2, 0, 0);
     ctx.imageSmoothingEnabled = false;
     this.art = new DepthArt(ctx);
+    this.props = new WorldProps(ctx);
   }
   draw(world: World, session?: Session) {
     const layers: { y: number; paint: () => void }[] = [];
@@ -149,12 +156,13 @@ export class Renderer {
           grass = villagePoint(392, 488);
         label(d.x - camX, d.y - camY, "ダン", "#a06d4e");
         label(chief.x - camX, chief.y - camY, "ロアン", "#687a9a");
-        rect(
-          grass.x - 6 - camX,
-          grass.y - 4 - camY,
-          12,
-          8,
-          session.story.gathered ? "#9b885d" : "#4d7850",
+        add(grass.y, () =>
+          this.props.resource(
+            grass.x - camX,
+            grass.y - camY,
+            "草",
+            session.story.gathered,
+          ),
         );
         ctx.textAlign = "center";
         ctx.font = "7px sans-serif";
@@ -184,33 +192,71 @@ export class Renderer {
       if (session.story.wedge)
         for (const node of session.life.nodeList(world.mapId)) {
           const depleted = session.life.nodeState(node.id).left === 0;
-          rect(
-            node.x - 5 - camX,
-            node.y - 5 - camY,
-            10,
-            7,
-            depleted
-              ? "#9b885d"
-              : node.def.tool === "pick"
-                ? "#89969b"
-                : "#4d7850",
+          add(node.y, () =>
+            this.props.resource(
+              node.x - camX,
+              node.y - camY,
+              node.def.item,
+              depleted,
+            ),
           );
         }
       const fishingSpot = session.life.fishingSpot();
       if (fishingSpot) {
         const fx = fishingSpot.x,
           fy = fishingSpot.y;
-        rect(fx - 7 - camX, fy + 1 - camY, 14, 3, "#aa8a58");
+        const key = `${world.mapId}:${fx}:${fy}`;
+        if (!this.fishingTargets.has(key)) {
+          let target: { x: number; y: number } | undefined,
+            distance = 64;
+          for (
+            let yy = Math.floor(fy / 16) - 4;
+            yy <= Math.floor(fy / 16) + 4;
+            yy++
+          )
+            for (
+              let xx = Math.floor(fx / 16) - 4;
+              xx <= Math.floor(fx / 16) + 4;
+              xx++
+            ) {
+              if (
+                xx < 0 ||
+                yy < 0 ||
+                xx >= world.map.width ||
+                yy >= world.map.height
+              )
+                continue;
+              if (!["water", "shallow"].includes(tileAt(world.map, xx, yy)))
+                continue;
+              const x = xx * 16 + 8,
+                y = yy * 16 + 8,
+                d = Math.hypot(x - fx, y - fy);
+              if (d < distance) {
+                distance = d;
+                target = { x, y };
+              }
+            }
+          this.fishingTargets.set(key, target);
+        }
+        const target = this.fishingTargets.get(key);
+        add(fy + 3, () =>
+          this.props.fishing(
+            fx - camX,
+            fy - camY,
+            session.clock,
+            target ? { x: target.x - camX, y: target.y - camY } : undefined,
+          ),
+        );
         ctx.font = "7px sans-serif";
         ctx.fillStyle = "#fff3ce";
         ctx.textAlign = "center";
-        ctx.fillText("釣り場", fx - camX, fy - 6 - camY);
+        ctx.fillText("釣り場", fx - camX, fy - 25 - camY);
       }
       const stake = session.life.data.stakes[world.mapId];
-      if (stake) {
-        rect(stake.x - 2 - camX, stake.y - 14 - camY, 4, 16, "#c7a866");
-        rect(stake.x - 4 - camX, stake.y - 14 - camY, 8, 4, "#89c8c0");
-      }
+      if (stake)
+        add(stake.y, () =>
+          this.props.stake(stake.x - camX, stake.y - camY, session.clock),
+        );
       if (world.mapId === "NORTH") {
         rect(
           world.map.width * 8 - 16 - camX,

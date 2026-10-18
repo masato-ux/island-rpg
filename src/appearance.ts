@@ -1,4 +1,6 @@
+export type FaceShape = "round" | "long" | "base" | "square" | "oval";
 export interface Appearance {
+  face: FaceShape;
   age: "child" | "young" | "adult" | "elder";
   gender: "woman" | "man" | "girl" | "boy";
   hair: string;
@@ -20,6 +22,7 @@ export interface Appearance {
 }
 export const appearances: Appearance[] = [
   {
+    face: "base",
     age: "young",
     gender: "man",
     hair: "#302b30",
@@ -31,6 +34,7 @@ export const appearances: Appearance[] = [
     detail: "hero",
   },
   {
+    face: "long",
     age: "elder",
     gender: "man",
     hair: "#c4c0b3",
@@ -42,6 +46,7 @@ export const appearances: Appearance[] = [
     detail: "cane",
   },
   {
+    face: "oval",
     age: "adult",
     gender: "woman",
     hair: "#786d65",
@@ -53,6 +58,7 @@ export const appearances: Appearance[] = [
     detail: "brooch",
   },
   {
+    face: "round",
     age: "child",
     gender: "girl",
     hair: "#805534",
@@ -64,6 +70,7 @@ export const appearances: Appearance[] = [
     detail: "ribbon",
   },
   {
+    face: "square",
     age: "adult",
     gender: "man",
     hair: "#61412c",
@@ -75,6 +82,7 @@ export const appearances: Appearance[] = [
     detail: "straw",
   },
   {
+    face: "oval",
     age: "adult",
     gender: "woman",
     hair: "#7a4a2c",
@@ -86,6 +94,7 @@ export const appearances: Appearance[] = [
     detail: "kerchief",
   },
   {
+    face: "round",
     age: "child",
     gender: "boy",
     hair: "#6a422b",
@@ -97,6 +106,7 @@ export const appearances: Appearance[] = [
     detail: "shorts",
   },
   {
+    face: "base",
     age: "adult",
     gender: "man",
     hair: "#49352c",
@@ -108,6 +118,7 @@ export const appearances: Appearance[] = [
     detail: "rancher",
   },
   {
+    face: "long",
     age: "adult",
     gender: "woman",
     hair: "#8b4f38",
@@ -119,6 +130,7 @@ export const appearances: Appearance[] = [
     detail: "apron",
   },
   {
+    face: "round",
     age: "child",
     gender: "girl",
     hair: "#c49a55",
@@ -130,6 +142,7 @@ export const appearances: Appearance[] = [
     detail: "pinafore",
   },
   {
+    face: "square",
     age: "adult",
     gender: "man",
     hair: "#4b3832",
@@ -141,6 +154,7 @@ export const appearances: Appearance[] = [
     detail: "smith",
   },
   {
+    face: "oval",
     age: "young",
     gender: "woman",
     hair: "#423848",
@@ -152,6 +166,7 @@ export const appearances: Appearance[] = [
     detail: "herbalist",
   },
   {
+    face: "long",
     age: "elder",
     gender: "man",
     hair: "#d2ccbb",
