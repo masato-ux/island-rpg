@@ -92,3 +92,23 @@ test("FIELD 04の家具上セーブは進行を保って移動し、屋外は再
   assert.equal(restored.x, outside.x);
   assert.equal(restored.y, outside.y);
 });
+
+test("FIELD 05からの家具変更も安全に引き継ぎ、旧家具内の不正位置は拒否する", () => {
+  const s = game();
+  s.world.mapId = "CHIEF";
+  s.world.x = 120;
+  s.world.y = 42;
+  const previous = s.snapshot();
+  previous.terrainVersion = 5;
+  const restored = validateSnapshot(previous);
+  assert.ok(canStandOn(maps.CHIEF, restored.x, restored.y));
+  assert.ok(restored.x !== 120 || restored.y !== 42);
+  previous.x = 32;
+  previous.y = 40;
+  assert.throws(() => validateSnapshot(previous), /保存位置/);
+  previous.mapId = "APOTHECARY";
+  previous.x = 32;
+  previous.y = 60;
+  assert.ok(canStandOn(maps.APOTHECARY, previous.x, previous.y));
+  assert.throws(() => validateSnapshot(previous), /保存位置/);
+});

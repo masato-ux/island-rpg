@@ -10,6 +10,7 @@ export class Renderer {
   private terrain = new Terrain();
   private art: DepthArt;
   constructor(private ctx: CanvasRenderingContext2D) {
+    ctx.setTransform(2, 0, 0, 2, 0, 0);
     ctx.imageSmoothingEnabled = false;
     this.art = new DepthArt(ctx);
   }
@@ -127,7 +128,12 @@ export class Renderer {
       const label = (x: number, y: number, name: string, color: string) => {
         if (x < -20 || x > WIDTH + 20 || y < -20 || y > HEIGHT + 20) return;
         add(y + camY, () => {
-          this.art.person(x, y, color, name.length + name.charCodeAt(0));
+          this.art.person(
+            x,
+            y,
+            color,
+            people.findIndex((p) => p.name === name) + 1,
+          );
           ctx.textAlign = "center";
           ctx.font = "7px sans-serif";
           ctx.fillStyle = "#fff8d8";

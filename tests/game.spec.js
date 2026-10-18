@@ -115,8 +115,8 @@ test("北口で草原へ移動し南口から帰還する", async ({ page }) => 
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveAttribute("data-map", "VIL");
-  await expect(canvas).toHaveAttribute("width", "320");
-  await expect(canvas).toHaveAttribute("height", "180");
+  await expect(canvas).toHaveAttribute("width", "640");
+  await expect(canvas).toHaveAttribute("height", "360");
   await page.keyboard.down("Shift");
   await page.keyboard.down("ArrowUp");
   await expect(canvas).toHaveAttribute("data-map", "GRASS", { timeout: 10000 });

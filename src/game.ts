@@ -14,8 +14,8 @@ function fail(error: unknown) {
   notice.textContent = `ゲームを起動できませんでした。ページを再読み込みしてください。 ${error instanceof Error ? error.message : String(error)}`;
 }
 try {
-  canvas.width = WIDTH;
-  canvas.height = HEIGHT;
+  canvas.width = WIDTH * 2;
+  canvas.height = HEIGHT * 2;
   function resize() {
     const available = canvas.parentElement!.clientWidth;
     const scale =
@@ -323,6 +323,8 @@ try {
       `満腹 ${Math.floor(session.life.data.hunger)}${session.life.data.cold ? "・風邪" : ""}${session.life.fatigue ? "・疲労" : ""}`,
     );
     text("#map-name", world.map.name);
+    $("#room-guide").hidden = !world.map.interior || session.screen !== "field";
+    $("#room-exit").toggleAttribute("disabled", !session.life.canInteract());
     text(".location", `${world.mapId} / ${world.map.name}`);
     text(
       "#clock",

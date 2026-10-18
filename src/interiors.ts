@@ -9,7 +9,10 @@ export type FurnitureKind =
   | "anvil"
   | "counter"
   | "stool"
-  | "hay";
+  | "hay"
+  | "crate"
+  | "rack"
+  | "desk";
 export interface Furniture {
   kind: FurnitureKind;
   x: number;
@@ -20,6 +23,8 @@ export interface Furniture {
 }
 export interface Room {
   description: string;
+  title?: string;
+  theme?: "cottage" | "hall" | "farm" | "ranch" | "forge" | "herbal";
   floor: string;
   rug: string;
   furniture: Furniture[];
@@ -34,7 +39,7 @@ const f = (
 ): Furniture => ({ kind, x, y, w, h, color });
 // Coordinates describe the footprint on the floor, not the raised sprite.
 // The central passage and south doorway remain open in every home.
-export const rooms: Partial<Record<MapId, Room>> = {
+const field05Rooms: Partial<Record<MapId, Room>> = {
   HOME: {
     description: "干し草の香りがする小屋。寝床、調理台、飲み水の樽がある。",
     floor: "#a78b65",
@@ -113,7 +118,111 @@ export const rooms: Partial<Record<MapId, Room>> = {
     ],
   },
 };
+export const rooms: Partial<Record<MapId, Room>> = {
+  HOME: {
+    ...field05Rooms.HOME!,
+    title: "漂流者の小屋",
+    theme: "cottage",
+    floor: "#a48257",
+    rug: "#6f8561",
+    furniture: [
+      f("bed", 24, 32, 24, 32, "#6f997f"),
+      f("counter", 112, 32, 24, 16),
+      f("hearth", 112, 56, 24, 16),
+      f("barrel", 24, 88, 16, 16),
+      f("crate", 48, 96, 16, 12),
+    ],
+  },
+  CHIEF: {
+    ...field05Rooms.CHIEF!,
+    title: "村長の応接室",
+    theme: "hall",
+    floor: "#94704f",
+    rug: "#89505a",
+    furniture: [
+      f("bed", 112, 32, 24, 30, "#7484ac"),
+      f("desk", 24, 32, 34, 20),
+      f("shelf", 24, 88, 32, 12),
+      f("plant", 120, 92, 12, 14),
+      f("shelf", 64, 24, 32, 10),
+    ],
+  },
+  FARM: {
+    ...field05Rooms.FARM!,
+    title: "農家の台所",
+    theme: "farm",
+    floor: "#bba17d",
+    rug: "#b49c67",
+    furniture: [
+      f("bed", 24, 82, 24, 24, "#c6ab6c"),
+      f("counter", 24, 32, 34, 16),
+      f("crate", 112, 32, 24, 20),
+      f("barrel", 120, 88, 16, 16),
+      f("plant", 112, 58, 14, 12),
+    ],
+  },
+  RANCH: {
+    ...field05Rooms.RANCH!,
+    title: "牧畜家の居間",
+    theme: "ranch",
+    floor: "#9b805d",
+    rug: "#876b4c",
+    furniture: [
+      f("bed", 112, 82, 24, 24, "#ad7b63"),
+      f("hay", 24, 88, 32, 16),
+      f("hearth", 24, 32, 24, 24),
+      f("rack", 112, 32, 24, 16),
+      f("barrel", 56, 24, 16, 16),
+    ],
+  },
+  SMITH: {
+    ...field05Rooms.SMITH!,
+    title: "鍛冶屋の仕事場",
+    theme: "forge",
+    floor: "#676e72",
+    rug: "#474e52",
+    furniture: [
+      f("hearth", 24, 32, 32, 28),
+      f("anvil", 32, 84, 24, 16),
+      f("counter", 112, 84, 24, 20),
+      f("rack", 112, 32, 24, 20),
+      f("crate", 64, 24, 32, 10),
+    ],
+  },
+  APOTHECARY: {
+    ...field05Rooms.APOTHECARY!,
+    title: "薬師の調合室",
+    theme: "herbal",
+    floor: "#adbcab",
+    rug: "#658a86",
+    furniture: [
+      f("bed", 112, 32, 24, 30, "#dfd4bd"),
+      f("counter", 24, 32, 32, 20, "#729b91"),
+      f("plant", 24, 86, 16, 18),
+      f("shelf", 48, 94, 24, 12),
+      f("plant", 120, 88, 14, 16),
+      f("shelf", 64, 24, 32, 10),
+    ],
+  },
+};
+export function field05FurnitureBlocks(id: MapId, x: number, y: number) {
+  return [
+    [-5, -5],
+    [5, -5],
+    [-5, 5],
+    [5, 5],
+  ].some(([dx, dy]) =>
+    field05Rooms[id]?.furniture.some(
+      (p) =>
+        x + dx >= p.x &&
+        x + dx < p.x + p.w &&
+        y + dy >= p.y &&
+        y + dy < p.y + p.h,
+    ),
+  );
+}
 export function furnitureAt(id: MapId, x: number, y: number) {
+  if (rooms[id] && y < 28) return true;
   return (
     rooms[id]?.furniture.some(
       (p) => x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h,

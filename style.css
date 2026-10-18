@@ -511,3 +511,24 @@ summary {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+.room-guide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #2c493d;
+  color: #fff2bd;
+  font-size: 12px;
+}
+.room-guide[hidden] {
+  display: none;
+}
+.room-guide button {
+  border: 1px solid #e7c477;
+  color: #fff4cf;
+  background: #536d43;
+  padding: 10px 12px;
+  min-height: 44px;
+}

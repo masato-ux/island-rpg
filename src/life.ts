@@ -249,8 +249,11 @@ export class Life {
     if (hour < person.open || hour >= person.close)
       return {
         map: person.home,
-        x: (3 + (Number(person.id.slice(1)) % 4)) * 16 + 8,
-        y: 72,
+        ...safePosition(
+          maps[person.home],
+          (3 + (Number(person.id.slice(1)) % 4)) * 16 + 8,
+          72,
+        )!,
         sleeping: sleep,
       };
     // A deterministic commute along a collision-free path at the start/end of work.

@@ -11,7 +11,7 @@ export type {
 } from "./legacy-maps.ts";
 import type { MapId, Tile, GameMap, Terrace } from "./legacy-maps.ts";
 
-export const TERRAIN_VERSION = 5;
+export const TERRAIN_VERSION = 6;
 const sizes: Partial<Record<MapId, [number, number]>> = {
   VIL: [40, 34],
   GRASS: [48, 38],

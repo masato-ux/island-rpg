@@ -1,3 +1,4 @@
+import { field05FurnitureBlocks } from "./interiors.ts";
 import * as oldField from "./legacy-maps.ts";
 import { people, items, recipes, resourceIndices, fishByMap } from "./data.ts";
 import { defaults } from "./life.ts";
@@ -487,6 +488,12 @@ export function validateSnapshot(v: unknown): Snapshot {
   ) as unknown as Snapshot["activity"];
   const w = new World();
   w.mapId = result.mapId;
+  if (
+    v.terrainVersion === 5 &&
+    w.map.interior &&
+    field05FurnitureBlocks(result.mapId, result.x, result.y)
+  )
+    throw new Error("旧室内の保存位置が不正です。");
   if (oldTerrain) {
     if (
       !oldField.canStandOn(
@@ -565,9 +572,12 @@ export function validateSnapshot(v: unknown): Snapshot {
       }
     }
   } else if (!w.canStand(result.x, result.y)) {
-    // FIELD 04 rooms had no furniture collision. Preserve outdoor coordinates.
+    // Migrate earlier room layouts after validating their original floor/furniture.
+    // Outdoor FIELD 04/05 coordinates already use the current dimensions.
     if (
-      v.terrainVersion === 4 &&
+      (v.terrainVersion === 4 ||
+        (v.terrainVersion === 5 &&
+          !field05FurnitureBlocks(result.mapId, result.x, result.y))) &&
       w.map.interior &&
       oldField.canStandOn(oldField.maps[result.mapId], result.x, result.y)
     ) {
