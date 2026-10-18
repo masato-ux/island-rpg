@@ -1,3 +1,4 @@
+import { paintHero } from "./hero-art.ts";
 import { houseStyles } from "./architecture.ts";
 import { appearances } from "./appearance.ts";
 import type { Building } from "./maps.ts";
@@ -55,7 +56,8 @@ export class DepthArt {
       sprite.height = 44;
       const context = sprite.getContext("2d")!;
       context.imageSmoothingEnabled = false;
-      new DepthArt(context).paintPerson(20, 32, color, seed, step, facing);
+      if (seed === 0) paintHero(context, 20, 32, step, facing);
+      else new DepthArt(context).paintPerson(20, 32, color, seed, step, facing);
       this.peopleSprites.set(key, sprite);
     }
     this.c.drawImage(sprite, Math.round(x) - 20, Math.round(y) - 32);

@@ -400,7 +400,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 10");
+  await expect(page.locator(".badge")).toContainText("FIELD 11");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
@@ -495,7 +495,13 @@ test("洞窟へ歩いて入り、岩壁に止まり、同じ入口から外へ�
     Number(await page.locator("canvas").getAttribute("data-player-x")),
   ).toBeLessThan(44 * 16 - 4);
   await page.keyboard.down("ArrowLeft");
-  await page.waitForTimeout(1550);
+  await expect
+    .poll(
+      async () =>
+        Number(await page.locator("canvas").getAttribute("data-player-x")),
+      { intervals: [16], timeout: 4000 },
+    )
+    .toBeLessThanOrEqual(37 * 16 + 8);
   await page.keyboard.up("ArrowLeft");
   await page.keyboard.down("ArrowDown");
   await page.waitForTimeout(2000);

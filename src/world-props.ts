@@ -110,6 +110,49 @@ export class WorldProps {
       }
       return;
     }
+    if (item === "草") {
+      // Rooted tussock: dark inner blades, sunlit edges and bowed seed stems.
+      e(x, y + 1, 8, 2, "#65704a");
+      const blades = [
+        [-6, -11, -10],
+        [-4, -15, -7],
+        [-2, -12, 1],
+        [0, -18, -3],
+        [2, -14, 6],
+        [4, -11, 10],
+        [5, -8, 12],
+        [-3, -8, -11],
+        [1, -11, 4],
+      ];
+      blades.forEach(([base, top, tip], i) => {
+        const c = this.c;
+        c.fillStyle = ["#36573d", "#4e7445", "#71904e"][i % 3];
+        c.beginPath();
+        c.moveTo(x + base - 1, y + 1);
+        c.quadraticCurveTo(x + base - 2, y + top / 2, x + tip, y + top);
+        c.quadraticCurveTo(x + base + 3, y + top / 2, x + base + 1, y + 1);
+        c.fill();
+        c.strokeStyle = i % 2 ? "#a5b56b" : "#819d58";
+        c.lineWidth = 0.5;
+        c.beginPath();
+        c.moveTo(x + base, y);
+        c.quadraticCurveTo(x + base + 1, y + top / 2, x + tip, y + top + 1);
+        c.stroke();
+      });
+      for (const [dx, top] of [
+        [-2, -17],
+        [3, -14],
+      ]) {
+        r(x + dx, y + top, 0.5, -top, "#a19d60");
+        for (let j = 0; j < 4; j++) {
+          r(x + dx - 1, y + top + j * 1.5, 1.5, 0.5, "#c0b77c");
+          r(x + dx + 0.5, y + top + j * 1.5 + 0.5, 1, 0.5, "#8c9557");
+        }
+      }
+      r(x - 5, y + 1, 2, 0.5, "#b0a574");
+      r(x + 3, y + 2, 3, 0.5, "#81965c");
+      return;
+    }
     // Herb rosettes and grass blades have a recognizable base and individual leaves.
     const herb = item === "薬草",
       wet = item === "湿地草";
@@ -143,51 +186,144 @@ export class WorldProps {
       r = a.rect.bind(a),
       e = a.ellipse.bind(a),
       p = a.polygon.bind(a);
-    a.shadow(x, y + 3, 12, 20);
-    e(x, y + 3, 6, 2, "#6c7660");
-    r(x - 4, y - 1, 8, 4, "#97947a");
+    a.shadow(x, y + 3, 16, 28);
+    // Irregular stone footing, moss and a split, weathered timber pillar.
     p(
       [
-        [x - 3, y + 1],
-        [x - 3, y - 19],
-        [x + 1, y - 21],
-        [x + 4, y - 18],
-        [x + 4, y + 1],
+        [x - 9, y + 2],
+        [x - 6, y - 3],
+        [x + 5, y - 4],
+        [x + 9, y],
+        [x + 7, y + 5],
+        [x - 6, y + 5],
       ],
-      "#725437",
+      "#626b60",
     );
-    r(x - 2, y - 18, 2, 19, "#bd9b64");
-    r(x + 1, y - 18, 1, 18, "#997442");
-    r(x + 2, y - 15, 1, 13, "#4e4e38");
-    for (const yy of [-14, -6]) {
-      r(x - 4, y + yy, 9, 2, "#637c78");
-      r(x - 3, y + yy, 7, 0.5, "#b6c4aa");
-      r(x + 2, y + yy, 1, 1, "#d1cd9c");
+    p(
+      [
+        [x - 8, y + 1],
+        [x - 5, y - 3],
+        [x + 5, y - 3],
+        [x + 8, y],
+        [x + 3, y + 2],
+        [x - 4, y + 2],
+      ],
+      "#a4a68a",
+    );
+    r(x - 6, y + 2, 4, 1, "#7b8757");
+    r(x + 4, y + 1, 3, 2, "#6a8051");
+    p(
+      [
+        [x - 5, y],
+        [x - 5, y - 25],
+        [x - 2, y - 28],
+        [x + 4, y - 27],
+        [x + 6, y - 24],
+        [x + 5, y + 1],
+      ],
+      "#483e33",
+    );
+    p(
+      [
+        [x - 4, y - 24],
+        [x - 1, y - 26],
+        [x + 2, y - 25],
+        [x + 2, y],
+        [x - 4, y],
+      ],
+      "#a27d50",
+    );
+    r(x - 3, y - 23, 1, 22, "#c0a16a");
+    r(x + 2, y - 24, 2, 24, "#70563d");
+    for (const [dx, yy, h] of [
+      [-1, -23, 6],
+      [-2, -14, 5],
+      [1, -8, 7],
+      [3, -19, 8],
+    ]) {
+      r(x + dx, y + yy, 0.5, h, "#584932");
+      r(x + dx + 0.5, y + yy, 0.5, h - 1, "#b08d59");
+    }
+    e(x - 1, y - 8, 1.4, 2, "#665035");
+    e(x - 1, y - 8, 0.6, 1, "#b29461");
+    for (const yy of [-23, -5]) {
+      r(x - 6, y + yy, 12, 3, "#354d50");
+      r(x - 5, y + yy, 10, 0.5, "#a5b4a0");
+      r(x + 3, y + yy + 1, 2, 1, "#6d8580");
+      r(x - 4, y + yy + 1, 1, 1, "#c6c7a0");
+    }
+    // Woven cord and an inset bronze seal distinguish this from a fence post.
+    for (let i = 0; i < 3; i++) {
+      r(x - 5, y - 19 + i, 10, 0.5, "#b5a074");
+      r(x + 2 + i * 0.5, y - 19 + i, 1, 1, "#726247");
     }
     p(
       [
-        [x, y - 29],
-        [x + 4, y - 24],
-        [x + 2, y - 19],
-        [x - 3, y - 20],
-        [x - 4, y - 25],
+        [x - 3, y - 15],
+        [x + 1, y - 17],
+        [x + 4, y - 14],
+        [x + 1, y - 10],
+        [x - 3, y - 12],
       ],
-      "#477f8c",
+      "#544f3c",
+    );
+    r(x, y - 15, 1, 4, "#d9c385");
+    r(x - 1, y - 14, 3, 0.5, "#d9c385");
+    const glow = 0.09 + 0.035 * Math.sin(time / 15);
+    e(x, y - 30, 8, 8, `rgba(129,218,206,${glow})`);
+    p(
+      [
+        [x, y - 39],
+        [x + 5, y - 33],
+        [x + 4, y - 27],
+        [x, y - 24],
+        [x - 4, y - 28],
+        [x - 5, y - 33],
+      ],
+      "#304d5d",
     );
     p(
       [
-        [x, y - 28],
-        [x + 1, y - 21],
-        [x - 3, y - 22],
+        [x, y - 38],
+        [x, y - 29],
+        [x - 4, y - 32],
       ],
-      "#aadbd0",
+      "#c4e4cb",
     );
-    r(x - 1, y - 26, 1, 4, "#e8edb9");
-    const glow = 0.1 + 0.06 * Math.sin(time / 15);
-    e(x, y - 24, 6, 6, `rgba(129,218,206,${glow})`);
-    r(x - 1, y - 12, 2, 4, "#d5c591");
-    r(x - 2, y - 10, 4, 0.5, "#d5c591");
+    p(
+      [
+        [x, y - 38],
+        [x + 4, y - 33],
+        [x, y - 29],
+      ],
+      "#78bfb4",
+    );
+    p(
+      [
+        [x, y - 29],
+        [x + 4, y - 33],
+        [x + 3, y - 28],
+        [x, y - 25],
+      ],
+      "#438b94",
+    );
+    p(
+      [
+        [x - 4, y - 32],
+        [x, y - 29],
+        [x, y - 25],
+        [x - 3, y - 28],
+      ],
+      "#86c6bb",
+    );
+    r(x - 1, y - 36, 0.5, 5, "#eff4d8");
+    for (const dx of [-5, 4]) {
+      r(x + dx, y - 30, 1, 5, "#9da995");
+      r(x + dx, y - 30, 1, 1, "#e2d6ae");
+    }
+    r(x - 4, y - 25, 8, 1, "#b7b291");
   }
+
   fishing(
     x: number,
     y: number,

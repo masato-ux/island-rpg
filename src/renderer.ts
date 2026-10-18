@@ -167,7 +167,7 @@ export class Renderer {
         ctx.textAlign = "center";
         ctx.font = "7px sans-serif";
         ctx.fillStyle = "#f9efc9";
-        ctx.fillText("草", grass.x - camX, grass.y - 8 - camY);
+        ctx.fillText("草", grass.x - camX, grass.y - 23 - camY);
       }
       if (session.story.wedge)
         for (const p of people) {
