@@ -297,7 +297,8 @@ test("村から主道を通り祭壇に到着して結末後に保存・帰還�
   const s = game();
   Object.assign(s.world, vp(392, 380));
   s.world.mode = "run";
-  // A late-game departure uses ordinary equipment and combat commands; enemies remain active.
+  // Turn-based exploration uses equipment and recovery items; enemies remain active.
+  s.life.gain("回復薬", 30);
   for (const name of ["鋼剣", "革帽", "革鎧", "革靴", "鉄盾"]) {
     s.life.gain(name);
     s.life.equip(s.life.data.gear.at(-1)!.id);
@@ -313,7 +314,15 @@ test("村から主道を通り祭壇に到着して結末後に保存・帰還�
       !s.battle
     )
       break;
-    if (s.battle) s.command("attack");
+    if (s.battle) {
+      if (
+        s.canBattleAct &&
+        s.hp < s.life.maxHp * 0.65 &&
+        s.life.count("回復薬")
+      )
+        s.life.medicine("回復薬");
+      else s.command("attack");
+    }
     if (!s.world.transitioning && planned !== s.world.mapId) {
       planned = s.world.mapId;
       points = route(s, "up", s.world.mapId === "NORTH");
@@ -334,7 +343,15 @@ test("村から主道を通り祭壇に到着して結末後に保存・帰還�
   planned = "";
   points = [];
   for (let frame = 0; frame < 30000 && s.world.mapId !== "VIL"; frame++) {
-    if (s.battle) s.command("escape");
+    if (s.battle) {
+      if (
+        s.canBattleAct &&
+        s.hp < s.life.maxHp * 0.65 &&
+        s.life.count("回復薬")
+      )
+        s.life.medicine("回復薬");
+      else s.command("escape");
+    }
     if (!s.world.transitioning && planned !== s.world.mapId) {
       planned = s.world.mapId;
       points = route(s, "down");

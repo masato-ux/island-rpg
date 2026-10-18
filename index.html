@@ -30,7 +30,7 @@
     <main>
       <header>
         <a class="brand" href="./">ISLAND <span>RPG</span></a
-        ><span class="badge">v0.3 · FIELD 17</span>
+        ><span class="badge">v0.3 · FIELD 18</span>
       </header>
       <section class="intro">
         <p class="eyebrow">THE SILENT CASTAWAY</p>
@@ -87,11 +87,36 @@
       <section
         id="battle-panel"
         class="panel encounter"
+        role="dialog"
+        aria-modal="true"
         aria-label="戦闘"
         hidden
       >
-        <p class="eyebrow">BATTLE / 選択中も時間が進みます</p>
+        <div class="battle-top">
+          <span id="battle-turn"></span><span id="battle-player"></span>
+        </div>
+        <canvas
+          id="battle-scene"
+          width="1280"
+          height="480"
+          aria-label="正面から見た戦闘中の魔物と周辺の気配"
+        ></canvas>
         <h2 id="enemy-status"></h2>
+        <div
+          id="battle-roster"
+          class="battle-roster"
+          aria-label="攻撃対象"
+        ></div>
+        <p id="battle-reinforcement"></p>
+        <div
+          id="battle-log"
+          role="log"
+          aria-live="polite"
+          aria-label="戦闘の記録"
+        ></div>
+        <p id="battle-help">
+          コマンドを選ぶと敵が行動します。周囲の魔物は動き続け、援軍が来ることがあります。
+        </p>
         <div class="panel-buttons">
           <button data-command="attack">攻撃</button
           ><button data-command="defend">防御</button

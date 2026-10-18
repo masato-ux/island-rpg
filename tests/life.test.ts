@@ -416,7 +416,7 @@ test("旧v1保存は新規世界状態を補完して読める", () => {
   assert.ok(migrated.enemies.length > 6);
   assert.equal(migrated.inventory["流木"], undefined);
 });
-test("群れは最大3体、敵の個別攻撃タイマーが進む", () => {
+test("初期の群れは最大3体、選択中は待ち、敵ターンで全員が行動する", () => {
   const s = game();
   s.world.mapId = "MOUNT";
   s.world.x = 960;
@@ -428,9 +428,14 @@ test("群れは最大3体、敵の個別攻撃タイマーが進む", () => {
   }
   s.beginBattle(wolves[0]);
   assert.equal(s.battle!.members.length, 3);
-  const old = structuredClone(s.battle!.timers);
+  const hp = s.hp;
   s.update(0.1, new Set());
-  for (const id of s.battle!.members) assert.ok(s.battle!.timers[id] < old[id]);
+  assert.equal(s.hp, hp);
+  s.command("defend");
+  assert.equal(s.battle!.pending.length, 3);
+  for (let i = 0; i < 15; i++) s.update(0.1, new Set());
+  assert.equal(s.battle!.pending.length, 0);
+  assert.equal(s.battle!.turn, 2);
 });
 test("非戦闘の行動・遊び・メモ選択も途中から保存して再開", () => {
   const s = game(),

@@ -7,11 +7,11 @@ async function start(page) {
   await page.getByRole("button", { name: "最初から", exact: true }).click();
 }
 async function walk(page, axis, target) {
-  if ((await page.locator("canvas").getAttribute("data-map")) === "VIL")
+  if ((await page.locator("#world").getAttribute("data-map")) === "VIL")
     target =
       axis === "x" ? villagePoint(target, 0).x : villagePoint(0, target).y;
   const attribute = axis === "x" ? "data-player-x" : "data-player-y",
-    current = Number(await page.locator("canvas").getAttribute(attribute));
+    current = Number(await page.locator("#world").getAttribute(attribute));
   if (Math.abs(current - target) < 5) return;
   const key =
     axis === "x"
@@ -84,7 +84,7 @@ test("導入を操作で完走し、楔で保存→再読込→JSON書出し", a
   await walk(page, "y", (((home.y + home.h) * 16 + 8) * 40) / 34);
   await walk(page, "x", (((home.x + home.w / 2) * 16 + 8) * 48) / 40);
   await inspect(page);
-  await expect(page.locator("canvas")).toHaveAttribute("data-map", "HOME");
+  await expect(page.locator("#world")).toHaveAttribute("data-map", "HOME");
   await walk(page, "y", 56);
   await inspect(page);
   await page.getByRole("button", { name: "1時間眠る", exact: true }).click();
@@ -109,7 +109,7 @@ test("導入を操作で完走し、楔で保存→再読込→JSON書出し", a
     page.getByRole("button", { name: "続きから", exact: true }),
   ).toBeEnabled();
   await page.getByRole("button", { name: "続きから", exact: true }).click();
-  await expect(page.locator("canvas")).toHaveAttribute("data-screen", "field");
+  await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
   await expect(page.locator("#inventory")).toContainText("魂の楔");
   await expect(page.locator("#inventory")).toContainText("紙とペン");
@@ -146,15 +146,15 @@ test("保存機能を拒否されても起動・移動可能、壊れたJSONは�
     };
   });
   await start(page);
-  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   const initial = Number(
-    await page.locator("canvas").getAttribute("data-player-x"),
+    await page.locator("#world").getAttribute("data-player-x"),
   );
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(250);
   await page.keyboard.up("ArrowRight");
   expect(
-    Number(await page.locator("canvas").getAttribute("data-player-x")),
+    Number(await page.locator("#world").getAttribute("data-player-x")),
   ).toBeGreaterThan(initial);
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
   await page.getByRole("button", { name: "タイトルへ戻る" }).click();
@@ -191,14 +191,16 @@ test("JSON読込から通常戦闘・死亡・保存への復元", async ({ page
   await expect(page.locator("#battle-panel")).toBeVisible();
   await expect(page.locator("#enemy-status")).toContainText("野ネズミ");
   await expect(page.locator("#save-game")).toBeDisabled();
-  await page.getByRole("button", { name: "メニュー", exact: true }).click();
-  await expect(page.locator("#menu-panel")).toBeVisible();
+  await expect(page.locator("#battle-panel")).toHaveAttribute("role", "dialog");
+  await page.waitForTimeout(600);
+  await expect(page.locator("#death-panel")).toBeHidden();
+  await page.getByRole("button", { name: "防御", exact: true }).click();
   await expect(page.locator("#death-panel")).toBeVisible({ timeout: 10000 });
   const stopped = await page.locator("#clock").textContent();
   await page.waitForTimeout(300);
   expect(await page.locator("#clock").textContent()).toBe(stopped);
   await page.getByRole("button", { name: "魂を戻す", exact: true }).click();
-  await expect(page.locator("canvas")).toHaveAttribute("data-screen", "field");
+  await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
   await expect(page.locator("#stats")).toContainText("HP 1/120");
   const saved = await page.evaluate(
     () => JSON.parse(localStorage.getItem("silent-castaway.v1.A")).data,

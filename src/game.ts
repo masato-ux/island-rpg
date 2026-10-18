@@ -1,3 +1,4 @@
+import { BattleScene } from "./battle-scene.ts";
 import { biomeAt } from "./maps.ts";
 import { readController } from "./controller.ts";
 import { Interface } from "./ui.ts";
@@ -30,6 +31,9 @@ try {
   if (!ctx) throw new Error("Canvas 2Dを初期化できませんでした。");
   let session = new Session();
   const ui = new Interface(() => session);
+  const battleScene = new BattleScene(
+    $<HTMLCanvasElement>("#battle-scene").getContext("2d")!,
+  );
   const renderer = new Renderer(ctx),
     held = new Set<Direction>(),
     keyboard = new Set<Direction>(),
@@ -90,7 +94,7 @@ try {
     }
   }
   function toggleMenu() {
-    if (session.screen !== "field") return;
+    if (session.screen !== "field" || session.battle) return;
     $("#menu-panel").hidden = !$("#menu-panel").hidden;
     clear();
   }
@@ -105,6 +109,30 @@ try {
   }
   addEventListener("keydown", (e) => {
     if (e.ctrlKey || e.metaKey || e.target instanceof HTMLInputElement) return;
+    if (session.battle) {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const buttons = Array.from(
+          $("#battle-panel").querySelectorAll<HTMLButtonElement>(
+            "button:not(:disabled)",
+          ),
+        ).filter((button) => button.offsetParent !== null);
+        if (buttons.length) {
+          const current = buttons.indexOf(
+            document.activeElement as HTMLButtonElement,
+          );
+          const next =
+            (current + (e.shiftKey ? -1 : 1) + buttons.length) % buttons.length;
+          buttons[next].focus();
+        }
+        return;
+      }
+      if (["m", "j", "c", "x", "escape"].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        return;
+      }
+    }
+
     if (e.key === "Escape" || e.key.toLowerCase() === "x") {
       back();
       return;
@@ -305,6 +333,14 @@ try {
     const element = $(selector);
     if (element.textContent !== value) element.textContent = value;
   }
+  let rosterKey = "";
+  let previousBattlePhase = "";
+  $("#battle-roster").addEventListener("click", (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+      "[data-enemy-id]",
+    );
+    if (button) session.selectBattleTarget(button.dataset.enemyId!);
+  });
   function render() {
     const world = session.world;
     if (session.battle && !previousBattle) {
@@ -313,6 +349,8 @@ try {
       session.life.pendingMemo = null;
       clear();
     }
+    const openedBattle = !!session.battle && !previousBattle;
+    document.body.classList.toggle("in-battle", !!session.battle);
     previousBattle = !!session.battle;
     renderer.draw(world, session);
     canvas.dataset.playerX = world.x.toFixed(2);
@@ -375,14 +413,73 @@ try {
     );
     ui.render();
     if (session.battle) {
-      const enemy = session.enemy!;
+      const enemy = session.enemy!,
+        battle = session.battle;
+      battleScene.draw(session);
+      text(
+        "#battle-turn",
+        `TURN ${battle.turn} · ${battle.phase === "player" ? "コマンドを選択" : "敵の行動"}`,
+      );
+      text(
+        "#battle-player",
+        `旅人　HP ${session.hp}/${session.life.maxHp}　MP ${session.mp}/${session.life.maxMp}`,
+      );
       text(
         "#enemy-status",
-        `${species[enemy.kind].name} · HP ${enemy.hp}/${species[enemy.kind].hp}${session.battle.members.filter((id) => session.enemies.find((e) => e.id === id)!.hp > 0).length > 1 ? "（群れ" + session.battle.members.filter((id) => session.enemies.find((e) => e.id === id)!.hp > 0).length + "体）" : ""}`,
+        `${species[enemy.kind].name} · HP ${enemy.hp}/${species[enemy.kind].hp}`,
+      );
+      const members = battle.members
+        .map((id) => session.enemies.find((e) => e.id === id)!)
+        .filter((e) => e.hp > 0);
+      const key = members.map((e) => `${e.id}:${e.hp}`).join("|");
+      if (rosterKey !== key) {
+        rosterKey = key;
+        $("#battle-roster").replaceChildren(
+          ...members.map((e) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.dataset.enemyId = e.id;
+            button.textContent = `${species[e.kind].name}　HP ${e.hp}`;
+            return button;
+          }),
+        );
+      }
+      $("#battle-roster")
+        .querySelectorAll<HTMLButtonElement>("button")
+        .forEach((button) => {
+          button.disabled = !session.canBattleAct;
+          button.setAttribute(
+            "aria-pressed",
+            String(button.dataset.enemyId === battle.enemyId),
+          );
+        });
+      text("#battle-log", battle.log.slice(-4).join("\n"));
+      const join =
+        battle.joined && battle.elapsed - battle.joinedAt < 4
+          ? session.enemies.find((e) => e.id === battle.joined)
+          : undefined;
+      text(
+        "#battle-reinforcement",
+        join
+          ? `${species[join.kind].name}が乱入！　敵 ${members.length}体`
+          : `敵 ${members.length}体 ／ 周囲の魔物も行動中`,
       );
       document
-        .querySelectorAll<HTMLButtonElement>("[data-command]")
-        .forEach((b) => (b.disabled = session.battle!.inputTimer > 0));
+        .querySelectorAll<HTMLButtonElement>(
+          "[data-command], #battle-tools button",
+        )
+        .forEach((button) => (button.disabled = !session.canBattleAct));
+      if (
+        openedBattle ||
+        (battle.phase === "player" && previousBattlePhase === "enemy")
+      )
+        $<HTMLButtonElement>('[data-command="attack"]').focus({
+          preventScroll: true,
+        });
+      previousBattlePhase = battle.phase;
+    } else {
+      previousBattlePhase = "";
+      rosterKey = "";
     }
   }
   checkSave();

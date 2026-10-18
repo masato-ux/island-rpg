@@ -50,21 +50,32 @@ test("時計：タイトル/非表示/死亡中停止、通常/戦闘中進行�
   s.update(0.1, idle);
   assert.equal(s.timeLabel, "DAY 2 00:00");
 });
-test("戦闘：連打を抑制、時間経過で敵が攻撃、防御は1回だけ", () => {
+test("ターン制：選択中は攻撃されず、コマンド1回ごとに敵が行動する", () => {
   const s = new Session();
   s.start();
+  s.random = () => 0.5;
   s.beginBattle(s.enemies[1]);
-  const enemy = s.enemy!;
+  s.enemy!.hp = 100;
+  const initial = s.hp;
+  advance(s, 5);
+  assert.equal(s.hp, initial);
+  const clock = s.clock;
   assert.equal(s.command("defend"), true);
   assert.equal(s.command("attack"), false);
-  const hp = enemy.hp;
   advance(s, 0.5);
-  assert.equal(s.command("attack"), true);
-  assert.ok(enemy.hp <= hp);
-  const playerHp = s.hp;
-  advance(s, 4);
-  assert.ok(s.hp < playerHp);
+  const defended = initial - s.hp;
+  assert.ok(defended > 0);
+  assert.equal(s.battle!.phase, "player");
+  assert.equal(s.battle!.turn, 2);
   assert.equal(s.battle!.defending, false);
+  const hp = s.hp;
+  assert.equal(s.command("attack"), true);
+  advance(s, 0.5);
+  assert.ok(hp - s.hp >= defended);
+  const after = s.hp;
+  advance(s, 4);
+  assert.equal(s.hp, after);
+  assert.ok(s.clock > clock);
 });
 test("撃破で素材のみ入手、遠方の敵停止、再出現は時刻に従う", () => {
   const s = new Session();
@@ -99,6 +110,7 @@ test("家禽だけ気絶、通常敵では死亡し時計停止", () => {
   assert.equal(training.enemy!.kind, "fowl");
   training.hp = 1;
   training.rngSeed = 1;
+  training.command("defend");
   advance(training, 10);
   assert.equal(training.story.trained, true);
   assert.equal(training.hp, 120);
@@ -108,6 +120,7 @@ test("家禽だけ気絶、通常敵では死亡し時計停止", () => {
   s.hp = 1;
   s.beginBattle(s.enemies[1]);
   s.rngSeed = 1;
+  s.command("defend");
   advance(s, 5);
   assert.equal(s.screen, "dead");
   const clock = s.clock;

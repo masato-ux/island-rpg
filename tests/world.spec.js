@@ -34,7 +34,7 @@ async function load(page, s) {
     mimeType: "application/json",
     buffer: Buffer.from(raw),
   });
-  await expect(page.locator("canvas")).toHaveAttribute("data-screen", "field");
+  await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
 }
 async function inspect(page) {
   await page.getByRole("button", { name: "調べる", exact: true }).click();
@@ -154,7 +154,7 @@ for (const [name, choice] of [
           .sort((a, b) => b.generation - a.generation)[0].data,
     );
     expect(saved.life.ending).toBe(choice);
-    await expect(page.locator("canvas")).toHaveAttribute(
+    await expect(page.locator("#world")).toHaveAttribute(
       "data-screen",
       "field",
     );
@@ -166,19 +166,19 @@ test("初回キャッシュ後はネットワークなしで再起動・移動�
   await page.goto("/");
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
-  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   await context.setOffline(true);
   await page.reload();
-  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   const before = Number(
-    await page.locator("canvas").getAttribute("data-player-x"),
+    await page.locator("#world").getAttribute("data-player-x"),
   );
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(250);
   await page.keyboard.up("ArrowRight");
   expect(
-    Number(await page.locator("canvas").getAttribute("data-player-x")),
+    Number(await page.locator("#world").getAttribute("data-player-x")),
   ).toBeGreaterThan(before);
   await context.setOffline(false);
 });
@@ -231,7 +231,7 @@ test("ゲームパッド入力を読み、切断すると移動が止まる", as
   await page.goto("/");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   const before = Number(
-    await page.locator("canvas").getAttribute("data-player-x"),
+    await page.locator("#world").getAttribute("data-player-x"),
   );
   await page.evaluate(() => {
     window.testPad = {
@@ -242,15 +242,15 @@ test("ゲームパッド入力を読み、切断すると移動が止まる", as
   });
   await page.waitForTimeout(250);
   expect(
-    Number(await page.locator("canvas").getAttribute("data-player-x")),
+    Number(await page.locator("#world").getAttribute("data-player-x")),
   ).toBeGreaterThan(before);
   await page.evaluate(() => {
     window.testPad = null;
   });
   await page.waitForTimeout(80);
-  const stopped = await page.locator("canvas").getAttribute("data-player-x");
+  const stopped = await page.locator("#world").getAttribute("data-player-x");
   await page.waitForTimeout(200);
-  expect(await page.locator("canvas").getAttribute("data-player-x")).toBe(
+  expect(await page.locator("#world").getAttribute("data-player-x")).toBe(
     stopped,
   );
 });
@@ -363,9 +363,9 @@ test("ゲームパッドだけでタイトル開始と会話の選択・取消�
     await page.waitForTimeout(100);
   };
   await page.goto("/");
-  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   await press(0);
-  await expect(page.locator("canvas")).toHaveAttribute("data-screen", "field");
+  await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
   await load(page, fixture());
   await press(0);
   await expect(page.locator("#interaction-panel")).toContainText("ダン");
@@ -400,7 +400,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 17");
+  await expect(page.locator(".badge")).toContainText("FIELD 18");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
@@ -432,7 +432,7 @@ test("6軒すべてに入室し、室内を歩いて戸口から元の入口に�
     Object.assign(s.world, { x, y, facing: "up" });
     await load(page, s);
     await inspect(page);
-    await expect(page.locator("canvas")).toHaveAttribute(
+    await expect(page.locator("#world")).toHaveAttribute(
       "data-map",
       b.interior,
     );
@@ -441,17 +441,17 @@ test("6軒すべてに入室し、室内を歩いて戸口から元の入口に�
     await page.waitForTimeout(260);
     await page.keyboard.up("ArrowUp");
     const inside = Number(
-      await page.locator("canvas").getAttribute("data-player-y"),
+      await page.locator("#world").getAttribute("data-player-y"),
     );
     expect(inside).toBeLessThan(90);
     await page.keyboard.down("ArrowDown");
     await page.waitForTimeout(400);
     await page.keyboard.up("ArrowDown");
     await inspect(page);
-    await expect(page.locator("canvas")).toHaveAttribute("data-map", "VIL");
+    await expect(page.locator("#world")).toHaveAttribute("data-map", "VIL");
     await page.waitForTimeout(300);
     expect(
-      Number(await page.locator("canvas").getAttribute("data-player-x")),
+      Number(await page.locator("#world").getAttribute("data-player-x")),
     ).toBeCloseTo(x, 0);
   }
 });
@@ -462,12 +462,12 @@ test("室内の出口案内は常時表示され、奥からでも出口ボタ�
   await load(page, fixture("CHIEF", 88, 56));
   await expect(page.locator("#room-guide")).toBeVisible();
   await expect(page.locator("#room-guide")).toContainText("出口は南側");
-  await expect(page.locator("canvas")).toHaveAttribute("width", "1280");
-  await expect(page.locator("canvas")).toHaveAttribute("height", "720");
+  await expect(page.locator("#world")).toHaveAttribute("width", "1280");
+  await expect(page.locator("#world")).toHaveAttribute("height", "720");
   await page
     .getByRole("button", { name: "外へ出る（出口）", exact: true })
     .click();
-  await expect(page.locator("canvas")).toHaveAttribute("data-map", "VIL");
+  await expect(page.locator("#world")).toHaveAttribute("data-map", "VIL");
   await expect(page.locator("#room-guide")).toBeHidden();
 });
 
@@ -486,19 +486,19 @@ test("洞窟へ歩いて入り、岩壁に止まり、同じ入口から外へ�
   await page.keyboard.up("ArrowUp");
   await expect(page.locator(".location")).toContainText("洞窟");
   expect(
-    Number(await page.locator("canvas").getAttribute("data-player-y")),
+    Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeLessThan(240);
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(2000);
   await page.keyboard.up("ArrowRight");
   expect(
-    Number(await page.locator("canvas").getAttribute("data-player-x")),
+    Number(await page.locator("#world").getAttribute("data-player-x")),
   ).toBeLessThan(44 * 16 - 4);
   await page.keyboard.down("ArrowLeft");
   await expect
     .poll(
       async () =>
-        Number(await page.locator("canvas").getAttribute("data-player-x")),
+        Number(await page.locator("#world").getAttribute("data-player-x")),
       { intervals: [16], timeout: 4000 },
     )
     .toBeLessThanOrEqual(37 * 16 + 8);
@@ -507,7 +507,7 @@ test("洞窟へ歩いて入り、岩壁に止まり、同じ入口から外へ�
   await page.waitForTimeout(2000);
   await page.keyboard.up("ArrowDown");
   expect(
-    Number(await page.locator("canvas").getAttribute("data-player-y")),
+    Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeGreaterThan(17 * 16);
   await expect(page.locator(".location")).not.toContainText("洞窟");
 });
@@ -544,7 +544,7 @@ test("浅いぬかるみから深い沼へ進めず、沿岸の浅瀬は歩い�
     await page.waitForTimeout(400);
     await page.keyboard.up("ArrowRight");
     const delta =
-      Number(await page.locator("canvas").getAttribute("data-player-x")) -
+      Number(await page.locator("#world").getAttribute("data-player-x")) -
       point.x;
     if (map === "EAST") expect(delta).toBeLessThan(5);
     else {

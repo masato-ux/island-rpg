@@ -883,7 +883,7 @@ export class Life {
     if (
       this.action ||
       this.session.screen !== "field" ||
-      (this.session.battle && this.session.battle.inputTimer > 0)
+      (this.session.battle && !this.session.canBattleAct)
     )
       return;
     const g = this.data.gear.find((g) => g.id === id);
@@ -916,6 +916,7 @@ export class Life {
       g.enhancedUntil =
         this.session.clock + [120, 180, 240, 300][Math.min(3, stage)] * 60;
     this.session.message = "無詠唱で魔力を込めた。";
+    if (this.session.battle) this.session.completeBattleAction();
   }
   multiplier(g: Gear) {
     return g.enhancedUntil > this.session.clock
@@ -1042,7 +1043,7 @@ export class Life {
     if (
       this.session.screen !== "field" ||
       this.action ||
-      (this.session.battle && this.session.battle.inputTimer > 0) ||
+      (this.session.battle && !this.session.canBattleAct) ||
       !["回復薬", "風邪薬"].includes(name) ||
       !this.take(name, 1)
     )
@@ -1056,6 +1057,7 @@ export class Life {
       this.data.coldAt = this.session.clock;
     }
     this.session.message = `${name}を使った。`;
+    if (this.session.battle) this.session.completeBattleAction();
   }
   water() {
     if (this.canInteract() && this.session.world.mapId === "HOME")

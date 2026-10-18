@@ -104,13 +104,19 @@ export interface Enemy {
   state?: "wander" | "alert" | "chase" | "return" | "flee";
 }
 export interface Battle {
+  phase: "player" | "enemy";
+  turn: number;
+  pending: string[];
+  enemyTimer: number;
+  reinforcementTimer: number;
+  log: string[];
+  joined: string | null;
+  joinedAt: number;
   enemyId: string;
-  attackTimer: number;
   inputTimer: number;
   defending: boolean;
   elapsed: number;
   members: string[];
-  timers: Record<string, number>;
 }
 export interface Story {
   rescued: boolean;
@@ -296,14 +302,28 @@ export class Session {
       this.world.moving = false;
       this.battle.elapsed += dt;
       this.battle.inputTimer = Math.max(0, this.battle.inputTimer - dt);
-      for (const id of this.battle.members) {
-        if (!this.battle) break;
-        const e = this.enemies.find((e) => e.id === id);
-        if (!e || e.hp <= 0) continue;
-        this.battle.timers[id] -= dt;
-        if (this.battle.timers[id] <= 0) {
-          this.battle.timers[id] += species[e.kind].cooldown;
-          this.enemyAttack(e);
+      const battle = this.battle;
+      battle.reinforcementTimer -= dt;
+      const checkJoin = battle.reinforcementTimer <= 0;
+      if (checkJoin) battle.reinforcementTimer = 2.5;
+      this.updateEnemies(dt, checkJoin);
+      if (this.battle === battle && battle.phase === "enemy") {
+        battle.enemyTimer -= dt;
+        if (battle.enemyTimer <= 0) {
+          const id = battle.pending.shift(),
+            enemy = this.enemies.find((e) => e.id === id);
+          if (enemy && enemy.hp > 0) {
+            this.enemyAttack(enemy);
+            if (this.battle) this.battleLog(this.message);
+          }
+          if (this.battle === battle) {
+            battle.enemyTimer = 0.4;
+            if (!battle.pending.length) {
+              battle.phase = "player";
+              battle.turn++;
+              battle.defending = false;
+            }
+          }
         }
       }
       return;
@@ -317,11 +337,11 @@ export class Session {
     );
     this.updateEnemies(dt);
   }
-  private updateEnemies(dt: number) {
+  private updateEnemies(dt: number, checkJoin = false) {
     if (this.world.map.interior || this.world.mapId === "VIL") return;
     const w = this.world;
     for (const e of this.activeEnemies) {
-      if (e.kind === "fowl") continue;
+      if (e.kind === "fowl" || this.battle?.members.includes(e.id)) continue;
       if (e.hp <= 0) {
         if (this.clock < e.respawnAt) continue;
         e.hp = species[e.kind].hp;
@@ -398,7 +418,24 @@ export class Session {
         e.x = nx;
         e.y = ny;
       }
-      if (this.escapeGrace === 0 && distance < 13) {
+      if (this.battle) {
+        if (
+          checkJoin &&
+          this.battle.members.filter((id) =>
+            this.enemies.some((enemy) => enemy.id === id && enemy.hp > 0),
+          ).length < 4 &&
+          sight &&
+          Math.hypot(w.x - e.x, w.y - e.y) < 48 &&
+          this.random() < 0.45
+        ) {
+          this.battle.members.push(e.id);
+          this.battle.joined = e.id;
+          this.battle.joinedAt = this.battle.elapsed;
+          this.battleLog(`${species[e.kind].name}が援軍として加わった！`);
+        }
+        continue;
+      }
+      if (this.escapeGrace === 0 && Math.hypot(w.x - e.x, w.y - e.y) < 13) {
         this.life.cancelAction();
         this.life.interaction = null;
         this.beginBattle(e);
@@ -422,21 +459,53 @@ export class Session {
       .slice(0, 3)
       .map((e) => e.id);
     this.battle = {
+      phase: "player",
+      turn: 1,
+      pending: [],
+      enemyTimer: 0,
+      reinforcementTimer: 2.5,
+      log: [`${species[enemy.kind].name}が現れた！`],
+      joined: null,
+      joinedAt: -10,
       enemyId: enemy.id,
-      attackTimer: species[enemy.kind].cooldown,
       inputTimer: 0,
       defending: false,
       elapsed: 0,
       members,
-      timers: Object.fromEntries(
-        members.map((id, i) => [
-          id,
-          species[this.enemies.find((e) => e.id === id)!.kind].cooldown +
-            i * 0.3,
-        ]),
-      ),
     };
-    this.message = `${species[enemy.kind].name}と遭遇した。選択中も敵は攻撃する。`;
+    this.message = `${species[enemy.kind].name}と遭遇した。コマンドを選ぼう。周囲の魔物は動き続ける。`;
+  }
+  get canBattleAct() {
+    return (
+      !!this.battle &&
+      this.battle.phase === "player" &&
+      this.battle.inputTimer <= 0
+    );
+  }
+  battleLog(message: string) {
+    if (!this.battle) return;
+    this.battle.log.push(message);
+    this.battle.log = this.battle.log.slice(-8);
+    this.message = message;
+  }
+  completeBattleAction() {
+    const battle = this.battle;
+    if (!battle || battle.phase !== "player") return;
+    this.battleLog(this.message);
+    battle.phase = "enemy";
+    battle.pending = battle.members.filter((id) =>
+      this.enemies.some((e) => e.id === id && e.hp > 0),
+    );
+    battle.enemyTimer = 0.4;
+    battle.inputTimer = 0.4;
+  }
+  selectBattleTarget(id: string) {
+    if (
+      this.canBattleAct &&
+      this.battle!.members.includes(id) &&
+      this.enemies.some((e) => e.id === id && e.hp > 0)
+    )
+      this.battle!.enemyId = id;
   }
   get dangerMultiplier() {
     const danger =
@@ -490,9 +559,11 @@ export class Session {
       .filter((g) => g !== undefined);
     if (armor.some((g) => g.element && g.elementUntil > this.clock))
       damage = Math.ceil(damage * 0.75);
+    // One command now receives a full enemy response instead of several rapid attacks.
+    // Scale incoming damage to keep a group encounter viable with the existing HP curve.
+    damage = damage ? Math.max(1, Math.ceil(damage * 0.45)) : 0;
     if (this.battle!.defending) {
       damage = Math.ceil(damage * 0.5);
-      this.battle!.defending = false;
     }
     const ironWall =
       damage > 0 &&
@@ -525,14 +596,15 @@ export class Session {
     }
   }
   command(command: Command) {
-    if (!this.battle || this.battle.inputTimer > 0 || this.screen !== "field")
+    if (!this.battle || !this.canBattleAct || this.screen !== "field")
       return false;
-    this.battle.inputTimer = 0.4;
+    this.battle!.inputTimer = 0.4;
     const e = this.enemy!,
       s = species[e.kind];
     if (command === "defend") {
       this.battle.defending = true;
-      this.message = "次の敵の攻撃を半減する。";
+      this.message = "身を守った。このターンの敵の攻撃を半減する。";
+      this.completeBattleAction();
       return true;
     }
     if (command === "escape") {
@@ -551,6 +623,7 @@ export class Session {
         this.escapeGrace = 3;
         this.message = "距離をとって離脱した。";
       } else this.message = "逃げきれなかった。";
+      if (this.battle) this.completeBattleAction();
       return true;
     }
     let damage = this.hit(
@@ -594,23 +667,15 @@ export class Session {
         const remaining = this.battle!.members.filter(
           (id) => id !== e.id && this.enemies.find((e) => e.id === id)!.hp > 0,
         );
-        if (remaining.length && this.random() > 0.5)
-          this.battle!.enemyId = remaining[0];
+        if (remaining.length) this.battle!.enemyId = remaining[0];
         else {
-          for (const id of remaining) {
-            const mate = this.enemies.find((e) => e.id === id)!;
-            mate.state = "flee";
-            mate.heading = Math.atan2(
-              mate.y - this.world.y,
-              mate.x - this.world.x,
-            );
-          }
           this.battle = null;
           this.escapeGrace = 3;
         }
         this.message = `${s.name}を倒し、${s.drop}を手に入れた。銅貨は落とさない。`;
       }
     }
+    if (this.battle) this.completeBattleAction();
     return true;
   }
   private finishTraining() {

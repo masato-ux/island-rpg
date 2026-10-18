@@ -532,3 +532,108 @@ summary {
   padding: 10px 12px;
   min-height: 44px;
 }
+
+/* A dedicated command encounter, with a live world continuing behind it. */
+.in-battle::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 13, 20, 0.76);
+  z-index: 19;
+}
+#battle-panel {
+  position: fixed;
+  z-index: 20;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(700px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 18px;
+  background: #101d2d;
+  border: 2px solid #ded9bd;
+  box-shadow: 0 12px 60px #0009;
+  border-radius: 8px;
+}
+.battle-top {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: #f2e7c2;
+  margin-bottom: 12px;
+}
+#battle-scene {
+  display: block;
+  width: 100%;
+  aspect-ratio: 8/3;
+  height: auto;
+  border: 1px solid #64756b;
+  border-radius: 5px;
+}
+#battle-panel h2 {
+  font-size: 16px;
+  margin: 12px 0 8px;
+}
+.battle-roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+#battle-panel .battle-roster button {
+  font-size: 11px;
+  min-height: 36px;
+  padding: 6px 9px;
+  background: #273b47;
+  color: #e9dfbd;
+}
+#battle-panel .battle-roster button[aria-pressed="true"] {
+  border-color: #eed18a;
+  background: #465b58;
+}
+#battle-log {
+  white-space: pre-line;
+  min-height: 80px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  border: 1px solid #b8bea6;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 1.6;
+  background: #0a1420;
+  color: #f1e8cc;
+}
+#battle-panel #battle-help {
+  font-size: 11px;
+  line-height: 1.5;
+}
+#battle-panel #battle-reinforcement {
+  font-size: 12px;
+  color: #e7bd8f;
+  min-height: 18px;
+  margin: 8px 0;
+}
+#battle-panel .panel-buttons {
+  gap: 8px;
+}
+#battle-panel [data-command] {
+  flex: 1;
+}
+#battle-tools {
+  margin-top: 8px;
+}
+@media (max-width: 540px) {
+  #battle-panel {
+    padding: 12px;
+  }
+  #battle-log {
+    font-size: 12px;
+    min-height: 76px;
+  }
+  .battle-top {
+    font-size: 11px;
+  }
+}

@@ -1,15 +1,15 @@
 import { villagePoint } from "../src/maps.ts";
 import { test, expect } from "@playwright/test";
 async function x(page) {
-  return Number(await page.locator("canvas").getAttribute("data-player-x"));
+  return Number(await page.locator("#world").getAttribute("data-player-x"));
 }
 test("描画、キー移動、衝突、再開始", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
-  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
-  const pixels = await page.locator("canvas").evaluate((c) => {
+  await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
+  const pixels = await page.locator("#world").evaluate((c) => {
     const d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
     let lit = 0;
     const colors = new Set();
@@ -39,7 +39,7 @@ test("描画、キー移動、衝突、再開始", async ({ page }) => {
 test("タッチ操作、キャンセル、回転、復帰", async ({ page }, testInfo) => {
   await page.goto("/");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
-  await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
+  await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   const button = page.getByRole("button", { name: "左に移動" });
   await button.scrollIntoViewIfNeeded();
   if (testInfo.project.name === "mobile") {
@@ -75,7 +75,7 @@ test("タッチ操作、キャンセル、回転、復帰", async ({ page }, tes
   });
   await page.setViewportSize({ width: 844, height: 390 });
   await page.waitForTimeout(100);
-  await expect(page.locator("canvas")).toBeVisible();
+  await expect(page.locator("#world")).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -91,9 +91,9 @@ test("タッチ操作、キャンセル、回転、復帰", async ({ page }, tes
   await page.evaluate(() =>
     document.dispatchEvent(new Event("visibilitychange")),
   );
-  const resumed = await page.locator("canvas").getAttribute("data-player-y");
+  const resumed = await page.locator("#world").getAttribute("data-player-y");
   await page.waitForTimeout(150);
-  expect(await page.locator("canvas").getAttribute("data-player-y")).toBe(
+  expect(await page.locator("#world").getAttribute("data-player-y")).toBe(
     resumed,
   );
   await page.keyboard.up("ArrowDown");
@@ -114,7 +114,7 @@ test("Canvas初期化失敗時に案内を表示", async ({ page }) => {
 test("北口で草原へ移動し南口から帰還する", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
-  const canvas = page.locator("canvas");
+  const canvas = page.locator("#world");
   await expect(canvas).toHaveAttribute("data-map", "VIL");
   await expect(canvas).toHaveAttribute("width", "1280");
   await expect(canvas).toHaveAttribute("height", "720");
