@@ -1,0 +1,790 @@
+import * as field08 from "./field08-maps.ts";
+import * as field07 from "./field07-maps.ts";
+import { field05FurnitureBlocks } from "./interiors.ts";
+import * as oldField from "./legacy-maps.ts";
+import { people, items, recipes, resourceIndices, fishByMap } from "./data.ts";
+import { defaults } from "./life.ts";
+import { maps, TERRAIN_VERSION, safePosition, compactPoint } from "./maps.ts";
+import type { Snapshot } from "./session.ts";
+import { Session, species } from "./session.ts";
+import { World } from "./state.ts";
+export interface StorageLike {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+}
+interface RecordData {
+  generation: number;
+  checksum: string;
+  data: Snapshot;
+}
+const PREFIX = "silent-castaway.v1.";
+function object(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function number(v: unknown, min: number, max: number) {
+  return typeof v === "number" && Number.isFinite(v) && v >= min && v <= max;
+}
+export function checksum(text: string) {
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i++)
+    hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+  return (hash >>> 0).toString(16);
+}
+type Rule = string | { [key: string]: Rule } | Rule[];
+function shape(value: unknown, rule: Rule): boolean {
+  if (typeof rule === "string")
+    return rule === "number"
+      ? typeof value === "number" && Number.isFinite(value)
+      : rule === "nullableString"
+        ? value === null || typeof value === "string"
+        : typeof value === rule;
+  if (Array.isArray(rule))
+    return (
+      Array.isArray(value) &&
+      value.length < 10000 &&
+      value.every((v) => shape(v, rule[0]))
+    );
+  if (!object(value)) return false;
+  if ("*" in rule)
+    return (
+      Object.keys(value).length < 20000 &&
+      Object.values(value).every((v) => shape(v, rule["*"]))
+    );
+  return Object.entries(rule).every(([k, r]) => shape(value[k], r));
+}
+const lifeRule: Rule = {
+  money: "number",
+  hunger: "number",
+  awakeSince: "number",
+  wet: "number",
+  cold: "number",
+  coldAt: "number",
+  protectedUntil: "number",
+  weather: "string",
+  weatherUntil: "number",
+  social: {
+    "*": {
+      trust: "number",
+      giftDay: "number",
+      categories: ["string"],
+      seen: ["string"],
+    },
+  },
+  notes: [{ id: "number", npc: "string", at: "number", text: "string" }],
+  quests: [
+    {
+      id: "string",
+      giver: "string",
+      item: "string",
+      quantity: "number",
+      deadline: "number",
+      reward: "number",
+      state: "string",
+      wasMemoed: "boolean",
+      reaskedOnce: "boolean",
+    },
+  ],
+  gear: [
+    {
+      id: "string",
+      name: "string",
+      durability: "number",
+      enhancedUntil: "number",
+      element: "nullableString",
+      elementUntil: "number",
+    },
+  ],
+  equipment: { "*": "string" },
+  nextId: "number",
+  nodes: { "*": { left: "number", respawnAt: "number" } },
+  fish: { "*": { stock: "number", at: "number" } },
+  jobs: [
+    {
+      id: "number",
+      npc: "string",
+      recipe: "string",
+      remaining: "number",
+      state: "string",
+      ingredients: { "*": "number" },
+      price: "number",
+      result: "string",
+    },
+  ],
+  stocks: { "*": "number" },
+  stockDay: "number",
+  known: ["string"],
+  fog: { "*": "string" },
+  stakes: { "*": { x: "number", y: "number" } },
+  xp: { "*": "number" },
+  levels: { "*": "number" },
+  shoeMinutes: "number",
+  ending: "nullableString",
+  gamePlayed: { "*": "number" },
+};
+export function validateSnapshot(v: unknown): Snapshot {
+  if (
+    !object(v) ||
+    ![1, 2].includes(Number(v.version)) ||
+    !Number.isInteger(v.rngSeed) ||
+    !number(v.rngSeed, 0, 4294967295) ||
+    !number(v.clock, 0, 1e12) ||
+    !number(v.escapeGrace, 0, 3) ||
+    !Object.hasOwn(maps, String(v.mapId)) ||
+    !["up", "down", "left", "right"].includes(String(v.facing)) ||
+    !number(v.x, 0, 1920) ||
+    !number(v.y, 0, 1664)
+  )
+    throw new Error("保存データの形式・バージョンが正しくありません。");
+  if (!object(v.story)) throw new Error("物語データが不正です。");
+  const flags = v.story;
+  if (
+    !["rescued", "gathered", "trained", "wedge"].every((k) => flags[k] === true)
+  )
+    throw new Error("魂の楔の取得前のデータは保存できません。");
+  if (
+    !object(v.inventory) ||
+    Object.keys(v.inventory).length > 1000 ||
+    !Object.values(v.inventory).every(
+      (n) => Number.isInteger(n) && number(n, 0, 1e6),
+    ) ||
+    v.inventory["魂の楔"] !== 1
+  )
+    throw new Error("所持品データが不正です。");
+  if (
+    v.terrainVersion !== undefined &&
+    (!Number.isInteger(v.terrainVersion) ||
+      !number(v.terrainVersion, 1, TERRAIN_VERSION))
+  )
+    throw new Error("地形バージョンが不正です。");
+  const oldVillage =
+    Number(v.terrainVersion) >= 4 && Number(v.terrainVersion) <= 7;
+  const resculpted =
+    Number(v.terrainVersion) >= 4 && Number(v.terrainVersion) <= 8;
+  const oldTerrain =
+    v.terrainVersion === undefined || Number(v.terrainVersion) < 4;
+  const life = v.version === 1 ? defaults() : v.life;
+  if (!shape(life, lifeRule))
+    throw new Error("生活・人物・探索の保存データが不正です。");
+  const systems = life as Snapshot["life"];
+  if (
+    !number(systems.money, 0, 1e9) ||
+    !number(systems.hunger, 0, 100) ||
+    !Number.isSafeInteger(systems.nextId) ||
+    systems.nextId < 1 ||
+    !number(systems.awakeSince, 0, Number(v.clock)) ||
+    !number(systems.wet, 0, 3600) ||
+    !Number.isInteger(systems.cold) ||
+    !number(systems.cold, 0, 3) ||
+    !number(systems.coldAt, 0, 1e12) ||
+    !number(systems.protectedUntil, 0, 1e12) ||
+    !number(systems.weatherUntil, 0, 1e12) ||
+    !number(systems.shoeMinutes, 0, 100) ||
+    ![null, "released", "silent"].includes(systems.ending) ||
+    !["clear", "rain", "fog"].includes(systems.weather) ||
+    !["sword", "magic", "hp", "mp"].every(
+      (k) =>
+        Number.isInteger(systems.levels[k]) &&
+        number(systems.levels[k], 1, 30) &&
+        number(systems.xp[k], 0, 1e9),
+    ) ||
+    !Object.keys(defaults().social).every(
+      (k) => systems.social[k] && number(systems.social[k].trust, -50, 100),
+    )
+  )
+    throw new Error("生活データの数値が不正です。");
+  const peopleIds = new Set(people.map((p) => p.id)),
+    gearIds = new Set(systems.gear.map((g) => g.id));
+  if (
+    Object.keys(v.inventory).some(
+      (id) =>
+        !Object.hasOwn(items, id) ||
+        (v.version !== 1 && items[id].category === "gear"),
+    )
+  )
+    throw new Error("所持品の種類が不正です。");
+  if (
+    Object.keys(systems.social).some((id) => !peopleIds.has(id)) ||
+    Object.entries(systems.fish).some(
+      ([id, f]) =>
+        !Object.hasOwn(fishByMap, id) ||
+        !Number.isInteger(f.stock) ||
+        !number(f.stock, 0, 5) ||
+        !number(f.at, 0, 1e12),
+    ) ||
+    Object.entries(systems.stocks).some(([key, n]) => {
+      const [npc, item] = key.split(":");
+      return (
+        !(
+          people.find((p) => p.id === npc)?.shop?.includes(item) ||
+          (npc === "N01" && item === "転移杭")
+        ) ||
+        !Number.isInteger(n) ||
+        !number(n, 0, 10)
+      );
+    })
+  )
+    throw new Error("人物・在庫データが不正です。");
+  if (
+    gearIds.size !== systems.gear.length ||
+    systems.gear.some(
+      (g) =>
+        !items[g.name] ||
+        items[g.name].category !== "gear" ||
+        !Number.isInteger(g.durability) ||
+        !number(g.durability, 1, items[g.name].durability!) ||
+        !number(g.enhancedUntil, 0, 1e12) ||
+        !number(g.elementUntil, 0, 1e12) ||
+        !["fire", "water", "thunder", null].includes(g.element),
+    )
+  )
+    throw new Error("装備データが不正です。");
+  if (
+    Object.entries(systems.equipment).some(
+      ([slot, id]) =>
+        !["weapon", "head", "body", "shoes", "shield"].includes(slot) ||
+        !gearIds.has(id) ||
+        items[systems.gear.find((g) => g.id === id)!.name].slot !== slot,
+    )
+  )
+    throw new Error("装備部位が不正です。");
+  if (
+    systems.notes.some(
+      (n) =>
+        (n.quest !== undefined && typeof n.quest !== "string") ||
+        !peopleIds.has(n.npc) ||
+        n.text.length > 10000 ||
+        !number(n.at, 0, 1e12),
+    ) ||
+    systems.quests.some(
+      (q) =>
+        !peopleIds.has(q.giver) ||
+        (!Object.hasOwn(items, q.item) &&
+          q.item !== "アジ" &&
+          q.item !== "魚") ||
+        !Number.isInteger(q.quantity) ||
+        !number(q.quantity, 1, 1e6) ||
+        !number(q.deadline, 0, 1e12) ||
+        !number(q.reward, 0, 1e9) ||
+        !["accepted", "completed", "failed", "declined"].includes(q.state),
+    )
+  )
+    throw new Error("メモ・依頼データが不正です。");
+  if (
+    systems.jobs.some(
+      (j) =>
+        !peopleIds.has(j.npc) ||
+        !items[j.result] ||
+        !["queued", "working", "ready"].includes(j.state) ||
+        !number(j.remaining, 0, 1e6) ||
+        !number(j.price, 0, 1e9) ||
+        !Number.isSafeInteger(j.id) ||
+        Object.entries(j.ingredients).some(
+          ([id, n]) =>
+            !Object.hasOwn(items, id) ||
+            !Number.isInteger(n) ||
+            !number(n, 1, 1e6),
+        ) ||
+        (j.gear
+          ? !gearIds.has(j.gear) || j.recipe !== "repair" || j.npc !== "N10"
+          : !recipes.some(
+              (r) =>
+                r.id === j.recipe &&
+                r.crafter === j.npc &&
+                r.result === j.result,
+            )),
+    )
+  )
+    throw new Error("作業データが不正です。");
+  for (const [map, mask] of Object.entries(systems.fog))
+    if (
+      !Object.hasOwn(maps, map) ||
+      mask.length !==
+        (oldTerrain
+          ? oldField.maps[map as keyof typeof maps]
+          : maps[map as keyof typeof maps]
+        ).width *
+          (oldTerrain
+            ? oldField.maps[map as keyof typeof maps]
+            : maps[map as keyof typeof maps]
+          ).height ||
+      !/^[01]*$/.test(mask)
+    )
+      throw new Error("探索地図データが不正です。");
+  for (const [map, stake] of Object.entries(systems.stakes)) {
+    if (!Object.hasOwn(maps, map) || maps[map as keyof typeof maps].interior)
+      throw new Error("転移杭データが不正です。");
+    const w = new World();
+    w.mapId = map as keyof typeof maps;
+    if (
+      !(oldTerrain && v.version !== 1
+        ? oldField.canStandOn(
+            oldField.maps[map as keyof typeof maps],
+            stake.x,
+            stake.y,
+            v.terrainVersion !== 3,
+          )
+        : oldVillage && map === "VIL"
+          ? field07.canStandOn(
+              v.terrainVersion === 7
+                ? field07.maps.VIL
+                : field07.field06Village,
+              stake.x,
+              stake.y,
+            )
+          : oldVillage && map === "GRASS"
+            ? field07.canStandOn(field07.maps.GRASS, stake.x, stake.y)
+            : oldVillage
+              ? field07.canStandOn(
+                  field07.maps[map as keyof typeof maps],
+                  stake.x,
+                  stake.y,
+                )
+              : v.terrainVersion === 8
+                ? field08.canStandOn(
+                    field08.maps[map as keyof typeof maps],
+                    stake.x,
+                    stake.y,
+                  )
+                : w.canStand(stake.x, stake.y))
+    )
+      throw new Error("転移杭の位置が不正です。");
+  }
+  for (const [key, node] of Object.entries(systems.nodes)) {
+    const [map, index] = key.split(":");
+    if (
+      !Object.hasOwn(maps, map) ||
+      !resourceIndices[map as keyof typeof resourceIndices]?.includes(
+        Number(index),
+      ) ||
+      !Number.isInteger(node.left) ||
+      !number(node.left, 0, 3) ||
+      !number(node.respawnAt, 0, 1e12)
+    )
+      throw new Error("資源データが不正です。");
+  }
+  if (
+    !number(v.hp, 1, 120 + 8 * (systems.levels.hp - 1)) ||
+    !number(v.mp, 0, 160 + 10 * (systems.levels.mp - 1))
+  )
+    throw new Error("能力値が不正です。");
+  if (
+    !Array.isArray(v.enemies) ||
+    v.enemies.length < 6 ||
+    v.enemies.length > 100
+  )
+    throw new Error("魔物データが不正です。");
+  const ids = new Set();
+  for (const e of v.enemies) {
+    if (
+      !object(e) ||
+      !Object.hasOwn(species, String(e.kind)) ||
+      e.kind === "fowl" ||
+      (e.mapId !== undefined &&
+        (!Object.hasOwn(maps, String(e.mapId)) ||
+          maps[e.mapId as keyof typeof maps].interior)) ||
+      typeof e.id !== "string" ||
+      ids.has(e.id) ||
+      !number(e.x, 0, 1920) ||
+      !number(e.y, 0, 1664) ||
+      !number(e.hp, 0, species[e.kind as keyof typeof species].hp) ||
+      !number(e.respawnAt, 0, 1e12) ||
+      !number(e.heading, -100, 100) ||
+      !number(e.aiTimer, -1, 10) ||
+      (e.spawnX !== undefined && !number(e.spawnX, 0, 1920)) ||
+      (e.spawnY !== undefined && !number(e.spawnY, 0, 1664)) ||
+      (e.spawnX === undefined) !== (e.spawnY === undefined)
+    )
+      throw new Error("魔物データが不正です。");
+    ids.add(e.id);
+  }
+  const result = structuredClone({
+    ...v,
+    version: 2,
+    life: systems,
+  }) as unknown as Snapshot;
+  if (v.version === 1) {
+    delete result.inventory["流木"];
+  }
+  const activity = object(v.activity)
+    ? v.activity
+    : { action: null, play: null, pendingMemo: null, interaction: null };
+  if (activity.action !== null) {
+    const a = activity.action;
+    if (
+      !object(a) ||
+      !["gather", "fish"].includes(String(a.kind)) ||
+      typeof a.id !== "string" ||
+      !number(a.remaining, 0, 3600) ||
+      !number(a.minutes, 3, 60) ||
+      typeof a.enhanced !== "boolean" ||
+      (a.tool !== undefined && !gearIds.has(String(a.tool)))
+    )
+      throw new Error("行動中の保存データが不正です。");
+  }
+  if (
+    activity.play !== null &&
+    (!shape(activity.play, {
+      npc: "string",
+      kind: "string",
+      until: "number",
+      x: "number",
+      y: "number",
+    }) ||
+      !people.some(
+        (p) => p.id === (activity.play as { npc: string }).npc && p.child,
+      ) ||
+      !object(activity.play) ||
+      !["tag", "hide"].includes(String(activity.play.kind)) ||
+      !number(activity.play.until, 0, 1e12) ||
+      !number(activity.play.x, 0, 768) ||
+      !number(activity.play.y, 0, 640))
+  )
+    throw new Error("遊びの保存データが不正です。");
+  if (
+    activity.pendingMemo !== null &&
+    !shape(activity.pendingMemo, { npc: "string", text: "string" })
+  )
+    throw new Error("会話の保存データが不正です。");
+  if (
+    activity.interaction !== null &&
+    !shape(activity.interaction, {
+      kind: "string",
+      id: "string",
+      title: "string",
+      text: "string",
+    })
+  )
+    throw new Error("会話の保存データが不正です。");
+  if (object(activity.action)) {
+    const a = activity.action;
+    if (a.kind === "gather") {
+      const [map, index] = String(a.id).split(":");
+      if (
+        map !== v.mapId ||
+        !resourceIndices[map as keyof typeof resourceIndices]?.includes(
+          Number(index),
+        )
+      )
+        throw new Error("採集中の対象が不正です。");
+    } else if (
+      a.id !== v.mapId ||
+      !Object.hasOwn(fishByMap, String(a.id)) ||
+      !gearIds.has(String(a.tool)) ||
+      items[systems.gear.find((g) => g.id === a.tool)!.name].tool !== "rod" ||
+      items[String(a.bait)]?.category !== "bait"
+    )
+      throw new Error("釣り場が不正です。");
+  }
+  if (object(activity.interaction)) {
+    const i = activity.interaction;
+    if (
+      ![
+        "person",
+        "resource",
+        "fishing",
+        "home",
+        "stake",
+        "altar",
+        "room",
+      ].includes(String(i.kind)) ||
+      (i.kind === "person" && !peopleIds.has(String(i.id))) ||
+      (i.kind === "resource" &&
+        (() => {
+          const [map, index] = String(i.id).split(":");
+          return !resourceIndices[
+            map as keyof typeof resourceIndices
+          ]?.includes(Number(index));
+        })()) ||
+      (i.kind === "fishing" && !Object.hasOwn(fishByMap, String(i.id))) ||
+      (i.kind === "stake" && !Object.hasOwn(systems.stakes, String(i.id))) ||
+      (i.kind === "home" && i.id !== "HOME") ||
+      (i.kind === "altar" && i.id !== "altar") ||
+      (i.kind === "room" &&
+        !(
+          typeof i.id === "string" && maps[i.id as keyof typeof maps]?.interior
+        ))
+    )
+      throw new Error("会話相手が不正です。");
+  }
+  if (
+    object(activity.pendingMemo) &&
+    !peopleIds.has(String(activity.pendingMemo.npc))
+  )
+    throw new Error("メモの話者が不正です。");
+  result.activity = structuredClone(
+    activity,
+  ) as unknown as Snapshot["activity"];
+  const w = new World();
+  w.mapId = result.mapId;
+  if (
+    v.terrainVersion === 5 &&
+    w.map.interior &&
+    field05FurnitureBlocks(result.mapId, result.x, result.y)
+  )
+    throw new Error("旧室内の保存位置が不正です。");
+  if (oldVillage && result.mapId === "VIL") {
+    if (
+      !field07.canStandOn(
+        v.terrainVersion === 7 ? field07.maps.VIL : field07.field06Village,
+        result.x,
+        result.y,
+      )
+    )
+      throw new Error("旧村の保存位置が不正です。");
+    const pos = safePosition(maps.VIL, result.x, result.y);
+    if (!pos) throw new Error("安全な保存位置が見つかりません。");
+    Object.assign(result, pos);
+    result.activity.interaction = null;
+    result.activity.action = null;
+  }
+  if (oldVillage && result.mapId === "GRASS") {
+    if (!field07.canStandOn(field07.maps.GRASS, result.x, result.y))
+      throw new Error("旧草原の保存位置が不正です。");
+    const pos = safePosition(maps.GRASS, result.x, result.y);
+    if (!pos) throw new Error("安全な保存位置が見つかりません。");
+    Object.assign(result, pos);
+    result.activity.interaction = null;
+    result.activity.action = null;
+  }
+  if (oldVillage) {
+    const stake = result.life.stakes.GRASS;
+    if (stake) {
+      const pos = safePosition(maps.GRASS, stake.x, stake.y);
+      if (pos) Object.assign(stake, pos);
+      else throw new Error("転移杭の安全な位置が見つかりません。");
+    }
+    for (const e of result.enemies)
+      if ((e.mapId || "GRASS") === "GRASS") {
+        const pos = safePosition(maps.GRASS, e.x, e.y);
+        if (pos) Object.assign(e, pos);
+        if (e.spawnX !== undefined) {
+          const spawn = safePosition(maps.GRASS, e.spawnX, e.spawnY!);
+          if (spawn) {
+            e.spawnX = spawn.x;
+            e.spawnY = spawn.y;
+          }
+        }
+      }
+  }
+  if (oldVillage) {
+    const stake = result.life.stakes.VIL;
+    if (stake) {
+      const pos = safePosition(maps.VIL, stake.x, stake.y);
+      if (!pos) throw new Error("転移杭の安全な位置が見つかりません。");
+      Object.assign(stake, pos);
+    }
+    if (result.activity.play) {
+      const pos = safePosition(
+        maps.VIL,
+        result.activity.play.x,
+        result.activity.play.y,
+      );
+      if (pos) Object.assign(result.activity.play, pos);
+      else result.activity.play = null;
+    }
+  }
+  if (
+    resculpted &&
+    !w.map.interior &&
+    !(oldVillage && ["VIL", "GRASS"].includes(result.mapId))
+  ) {
+    const source = v.terrainVersion === 8 ? field08 : field07;
+    if (!source.canStandOn(source.maps[result.mapId], result.x, result.y))
+      throw new Error("旧地形の保存位置が不正です。");
+    const pos = safePosition(w.map, result.x, result.y);
+    if (!pos) throw new Error("安全な保存位置が見つかりません。");
+    Object.assign(result, pos);
+    result.activity.action = null;
+    result.activity.interaction = null;
+  }
+  if (resculpted) {
+    for (const [id, stake] of Object.entries(result.life.stakes)) {
+      const pos = safePosition(maps[id as keyof typeof maps], stake.x, stake.y);
+      if (!pos) throw new Error("転移杭の安全な位置が見つかりません。");
+      Object.assign(stake, pos);
+    }
+    for (const e of result.enemies) {
+      const map = maps[e.mapId || "GRASS"],
+        pos = safePosition(map, e.x, e.y);
+      if (pos) Object.assign(e, pos);
+      if (e.spawnX !== undefined) {
+        const spawn = safePosition(map, e.spawnX, e.spawnY!);
+        if (spawn) {
+          e.spawnX = spawn.x;
+          e.spawnY = spawn.y;
+        }
+      }
+    }
+  }
+  if (oldTerrain) {
+    if (
+      !oldField.canStandOn(
+        oldField.maps[result.mapId],
+        result.x,
+        result.y,
+        v.terrainVersion !== 3,
+      )
+    )
+      throw new Error("旧地形の保存位置が不正です。");
+    const scaled = compactPoint(result.mapId, result.x, result.y),
+      pos = safePosition(w.map, scaled.x, scaled.y);
+    if (!pos) throw new Error("安全な保存位置が見つかりません。");
+    result.x = pos.x;
+    result.y = pos.y;
+    result.activity.action = null;
+    result.activity.interaction = null;
+    if (result.activity.play) {
+      const p = compactPoint(
+        "VIL",
+        result.activity.play.x,
+        result.activity.play.y,
+      );
+      const target = safePosition(maps.VIL, p.x, p.y);
+      if (target) Object.assign(result.activity.play, target);
+      else result.activity.play = null;
+    }
+    if (v.version !== 1)
+      for (const [id, stake] of Object.entries(result.life.stakes)) {
+        const scaled = compactPoint(id as keyof typeof maps, stake.x, stake.y),
+          pos = safePosition(maps[id as keyof typeof maps], scaled.x, scaled.y);
+        if (!pos) throw new Error("転移杭の安全な位置が見つかりません。");
+        result.life.stakes[id] = pos;
+      }
+    for (const [id, mask] of Object.entries(result.life.fog)) {
+      const old = oldField.maps[id as keyof typeof maps],
+        map = maps[id as keyof typeof maps];
+      let compact = "";
+      for (let y = 0; y < map.height; y++)
+        for (let x = 0; x < map.width; x++) {
+          let found = false;
+          for (
+            let yy = Math.floor((y * old.height) / map.height);
+            yy < Math.ceil(((y + 1) * old.height) / map.height) && !found;
+            yy++
+          )
+            for (
+              let xx = Math.floor((x * old.width) / map.width);
+              xx < Math.ceil(((x + 1) * old.width) / map.width);
+              xx++
+            )
+              if (mask[yy * old.width + xx] === "1") {
+                found = true;
+                break;
+              }
+          compact += found ? "1" : "0";
+        }
+      result.life.fog[id] = compact;
+    }
+    for (const e of result.enemies) {
+      const id = e.mapId || "GRASS",
+        map = maps[id],
+        scaled = compactPoint(id, e.x, e.y),
+        pos = safePosition(map, scaled.x, scaled.y);
+      if (pos) {
+        e.x = pos.x;
+        e.y = pos.y;
+      }
+      if (e.spawnX !== undefined) {
+        const scaled = compactPoint(id, e.spawnX, e.spawnY!),
+          pos = safePosition(map, scaled.x, scaled.y);
+        if (pos) {
+          e.spawnX = pos.x;
+          e.spawnY = pos.y;
+        }
+      }
+    }
+  } else if (!w.canStand(result.x, result.y)) {
+    // Migrate earlier room layouts after validating their original floor/furniture.
+    // Outdoor FIELD 04/05 coordinates already use the current dimensions.
+    if (
+      (v.terrainVersion === 4 ||
+        (v.terrainVersion === 5 &&
+          !field05FurnitureBlocks(result.mapId, result.x, result.y))) &&
+      w.map.interior &&
+      oldField.canStandOn(oldField.maps[result.mapId], result.x, result.y)
+    ) {
+      const pos = safePosition(w.map, result.x, result.y);
+      if (!pos) throw new Error("室内の安全な位置が見つかりません。");
+      Object.assign(result, pos);
+      result.activity.interaction = null;
+      result.activity.action = null;
+    } else throw new Error("保存位置が通行できない場所です。");
+  }
+  if (v.version === 1) result.enemies.push(...new Session().enemies.slice(6));
+  result.terrainVersion = TERRAIN_VERSION;
+  return result;
+}
+
+function parse(raw: string): RecordData {
+  if (raw.length > 1_000_000) throw new Error("保存データが大きすぎます。");
+  const record: unknown = JSON.parse(raw);
+  if (
+    !object(record) ||
+    !Number.isSafeInteger(record.generation) ||
+    !number(record.generation, 1, Number.MAX_SAFE_INTEGER) ||
+    typeof record.checksum !== "string" ||
+    record.checksum !== checksum(JSON.stringify(record.data))
+  )
+    throw new Error("保存データのチェックサムが一致しません。");
+  return {
+    generation: record.generation as number,
+    checksum: record.checksum,
+    data: validateSnapshot(record.data),
+  };
+}
+export class SaveStore {
+  private storage: StorageLike;
+  constructor(storage: StorageLike) {
+    this.storage = storage;
+  }
+  private entries() {
+    return ["A", "B"]
+      .map((slot) => {
+        const raw = this.storage.getItem(PREFIX + slot);
+        if (!raw) return null;
+        try {
+          return { slot, record: parse(raw) };
+        } catch {
+          return null;
+        }
+      })
+      .filter((e) => e !== null)
+      .sort((a, b) => b.record.generation - a.record.generation);
+  }
+  load() {
+    const data = this.entries()[0]?.record.data;
+    if (data) return data;
+    if (["A", "B"].some((slot) => this.storage.getItem(PREFIX + slot) !== null))
+      throw new Error(
+        "保存データが破損しています。正常なJSONを読み込んでください。",
+      );
+    return null;
+  }
+  save(snapshot: Snapshot) {
+    const data = validateSnapshot(snapshot),
+      previous = this.entries()[0];
+    const generation = (previous?.record.generation ?? 0) + 1;
+    const raw = JSON.stringify({
+      generation,
+      checksum: checksum(JSON.stringify(data)),
+      data,
+    });
+    // Write the older slot; never overwrite the newest valid generation first.
+    const slot = previous?.slot === "A" ? "B" : "A";
+    this.storage.setItem(PREFIX + slot, raw);
+    return data;
+  }
+  export(snapshot: Snapshot) {
+    const data = validateSnapshot(snapshot);
+    return JSON.stringify(
+      { generation: 1, checksum: checksum(JSON.stringify(data)), data },
+      null,
+      2,
+    );
+  }
+  import(raw: string) {
+    const data = parse(raw).data;
+    this.save(data);
+    return data;
+  }
+}

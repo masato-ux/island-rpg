@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#1c292a" />
+    <script>
+      addEventListener(
+        "error",
+        (event) => {
+          if (event.target instanceof HTMLScriptElement) {
+            const notice = document.getElementById("office-notice");
+            if (notice) {
+              notice.hidden = false;
+              notice.textContent =
+                "ゲームのファイルを読み込めませんでした。通信状態を確認し、再読み込みしてください。";
+            }
+          }
+        },
+        true,
+      );
+    </script>
+    <title>無詠唱の魔法使い ─ OFFICE REBIRTH</title>
+    <link rel="stylesheet" href="./office.css" />
+  </head>
+  <body>
+    <main class="office-shell">
+      <header>
+        <a href="./">OFFICE <span>REBIRTH</span></a
+        ><span class="badge">OFFICE 02</span>
+      </header>
+      <section class="heading">
+        <p>PROLOGUE — A SECOND LIFE</p>
+        <h1>声のない魔法使いと、月曜のオフィス。</h1>
+        <span>魔王城のその先で、見知らぬ日常が始まる。</span>
+      </section>
+      <section class="office-game" aria-label="現代のオフィス">
+        <div class="office-bar">
+          <span id="scene-name">●　あおばオフィス・執務フロア</span
+          ><button id="view-mode">全体表示</button>
+        </div>
+        <div class="office-view">
+          <canvas
+            id="office"
+            width="960"
+            height="624"
+            aria-label="会議室・執務机・休憩室のあるオフィス。矢印キーまたは画面の十字ボタンで移動できます"
+            >Canvasに対応したブラウザで開いてください。</canvas
+          >
+          <div id="office-notice" role="status">オフィスを準備しています…</div>
+        </div>
+        <div class="office-status">
+          <b>◆ 魔法使い</b><span id="workday">1日目（月）</span
+          ><span id="stamina">体力 65/100</span
+          ><span>声：失われたまま　／　魔力：0</span
+          ><span id="office-location">南側エントランス</span>
+        </div>
+      </section>
+      <section id="office-story" class="story-card" aria-label="新しい物語">
+        <p class="kicker">魔王に、声と魔力を奪われた。</p>
+        <h2 id="story-title">勇者がくれた、もう一度の人生。</h2>
+        <p id="story-text">
+          勇者一行の魔法使いだったあなた。魔王との戦いで倒れたあなたを救うため、勇者は残された魔力のすべてを転生魔法に注いだ。
+        </p>
+        <div>
+          <button id="office-start">物語を始める</button
+          ><button id="office-skip" class="secondary">オフィスから始める</button
+          ><button id="office-continue" class="secondary" disabled>
+            続きから
+          </button>
+        </div>
+      </section>
+      <div
+        id="office-dialog"
+        class="dialog-card"
+        role="dialog"
+        aria-modal="true"
+        aria-label="調べる"
+        hidden
+      >
+        <b id="dialog-name"></b>
+        <p id="dialog-text"></p>
+        <button id="dialog-close">閉じる</button>
+      </div>
+      <div class="office-bottom">
+        <p id="office-message" role="status">
+          勇者の最後の魔法が、あなたをこの場所へ運んだ。
+        </p>
+        <div class="utility">
+          <button id="commute" hidden>退勤して自宅へ</button
+          ><button id="office-save">記録する</button
+          ><button id="office-intro">物語を読む</button>
+        </div>
+      </div>
+      <section class="controls" aria-label="移動操作">
+        <div class="dpad">
+          <button data-move="up" aria-label="上へ移動">▲</button
+          ><button data-move="left" aria-label="左へ移動">◀</button
+          ><span>✦</span
+          ><button data-move="right" aria-label="右へ移動">▶</button
+          ><button data-move="down" aria-label="下へ移動">▼</button>
+        </div>
+        <button id="office-interact">
+          調べる<br /><small>E / Space</small>
+        </button>
+      </section>
+      <footer>
+        矢印キー / WASDで移動 · Shiftで早歩き · E / Spaceで調べる<br />机や壁を避けて、会議室・個室・休憩スペースを歩いてみよう。
+      </footer>
+    </main>
+    <noscript>ゲームを起動するにはJavaScriptを有効にしてください。</noscript>
+    <script type="module" src="./src/office.ts"></script>
+  </body>
+</html>

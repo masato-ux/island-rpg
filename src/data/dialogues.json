@@ -1,0 +1,674 @@
+[
+  {
+    "id": "N01-0",
+    "speaker": "N01",
+    "kind": "normal",
+    "text": "島の北には沈黙の祭壇がある。呪いの痕跡を探すなら、主道を北へ進みなさい。",
+    "memoSummary": "島の北には沈黙の祭壇がある。呪いの痕跡を探すなら、主道を北へ進みなさい。"
+  },
+  {
+    "id": "N01-1",
+    "speaker": "N01",
+    "kind": "normal",
+    "text": "転移杭は村にもある。各地に設置すれば、杭の前から帰ってこられる。",
+    "memoSummary": "転移杭は村にもある。各地に設置すれば、杭の前から帰ってこられる。"
+  },
+  {
+    "id": "N01-2",
+    "speaker": "N01",
+    "kind": "normal",
+    "text": "魔力結晶を見つけたら持ってきなさい。正体を鑑定しよう。",
+    "memoSummary": "魔力結晶を見つけたら持ってきなさい。正体を鑑定しよう。"
+  },
+  {
+    "id": "N01-3",
+    "speaker": "N01",
+    "kind": "time",
+    "text": "朝の村は静かだ。旅に出るなら食事と道具を確かめて。",
+    "memoSummary": "朝の村は静かだ。旅に出るなら食事と道具を確かめて。"
+  },
+  {
+    "id": "N01-4",
+    "speaker": "N01",
+    "kind": "trust25",
+    "text": "君の働きは皆も見ている。自分の居場所を作れたな。",
+    "memoSummary": "君の働きは皆も見ている。自分の居場所を作れたな。"
+  },
+  {
+    "id": "N01-5",
+    "speaker": "N01",
+    "kind": "trust60",
+    "text": "かつてこの島では、声を使わない魔法が研究されていた。",
+    "memoSummary": "かつてこの島では、声を使わない魔法が研究されていた。"
+  },
+  {
+    "id": "N01-6",
+    "speaker": "N01",
+    "kind": "location",
+    "text": "祭壇で何を選ぶかは君に任せよう。",
+    "memoSummary": "祭壇で何を選ぶかは君に任せよう。"
+  },
+  {
+    "id": "N01-7",
+    "speaker": "N01",
+    "kind": "info",
+    "text": "転移杭は木材3つと魔力結晶1つ、銅貨80で作れる。",
+    "memoSummary": "転移杭は木材3つと魔力結晶1つ、銅貨80で作れる。"
+  },
+  {
+    "id": "N02-0",
+    "speaker": "N02",
+    "kind": "normal",
+    "text": "台所の水は自由に使っていいのよ。",
+    "memoSummary": "台所の水は自由に使っていいのよ。"
+  },
+  {
+    "id": "N02-1",
+    "speaker": "N02",
+    "kind": "normal",
+    "text": "魚と木の枝があれば焼き魚になるわ。",
+    "memoSummary": "魚と木の枝があれば焼き魚になるわ。"
+  },
+  {
+    "id": "N02-2",
+    "speaker": "N02",
+    "kind": "normal",
+    "text": "きのこ2つを炒めれば食べられるわ。",
+    "memoSummary": "きのこ2つを炒めれば食べられるわ。"
+  },
+  {
+    "id": "N02-3",
+    "speaker": "N02",
+    "kind": "time",
+    "text": "野菜2つと草を少し。スープで体を温めましょう。",
+    "memoSummary": "野菜2つと草を少し。スープで体を温めましょう。"
+  },
+  {
+    "id": "N02-4",
+    "speaker": "N02",
+    "kind": "trust25",
+    "text": "旅人さんの書く文字、ずいぶん読めるようになったわ。",
+    "memoSummary": "旅人さんの書く文字、ずいぶん読めるようになったわ。"
+  },
+  {
+    "id": "N02-5",
+    "speaker": "N02",
+    "kind": "trust60",
+    "text": "好きな生き方を選んでいいのよ。",
+    "memoSummary": "好きな生き方を選んでいいのよ。"
+  },
+  {
+    "id": "N02-6",
+    "speaker": "N02",
+    "kind": "location",
+    "text": "保存食は肉と草を合わせて作れるの。",
+    "memoSummary": "保存食は肉と草を合わせて作れるの。"
+  },
+  {
+    "id": "N02-7",
+    "speaker": "N02",
+    "kind": "info",
+    "text": "薬草2つと水で風邪薬を作れるわ。",
+    "memoSummary": "薬草2つと水で風邪薬を作れるわ。"
+  },
+  {
+    "id": "N03-0",
+    "speaker": "N03",
+    "kind": "normal",
+    "text": "文字は読めないよ。でも指で教えてくれたら分かる。",
+    "memoSummary": "文字は読めないよ。でも指で教えてくれたら分かる。"
+  },
+  {
+    "id": "N03-1",
+    "speaker": "N03",
+    "kind": "normal",
+    "text": "鬼ごっこをしようよ。",
+    "memoSummary": "鬼ごっこをしようよ。"
+  },
+  {
+    "id": "N03-2",
+    "speaker": "N03",
+    "kind": "normal",
+    "text": "おうちの陰に隠れるのが好き。",
+    "memoSummary": "おうちの陰に隠れるのが好き。"
+  },
+  {
+    "id": "N03-3",
+    "speaker": "N03",
+    "kind": "time",
+    "text": "日が暮れたらおうちに帰るんだ。",
+    "memoSummary": "日が暮れたらおうちに帰るんだ。"
+  },
+  {
+    "id": "N03-4",
+    "speaker": "N03",
+    "kind": "trust25",
+    "text": "北の山に光る石があるって聞いた。",
+    "memoSummary": "北の山に光る石があるって聞いた。"
+  },
+  {
+    "id": "N03-5",
+    "speaker": "N03",
+    "kind": "trust60",
+    "text": "ねえ、また遊びに来てくれる？",
+    "memoSummary": "ねえ、また遊びに来てくれる？"
+  },
+  {
+    "id": "N03-6",
+    "speaker": "N03",
+    "kind": "location",
+    "text": "声がなくても、お友達だよ。",
+    "memoSummary": "声がなくても、お友達だよ。"
+  },
+  {
+    "id": "N03-7",
+    "speaker": "N03",
+    "kind": "info",
+    "text": "村の中だけで遊ぼうね。",
+    "memoSummary": "村の中だけで遊ぼうね。"
+  },
+  {
+    "id": "N04-0",
+    "speaker": "N04",
+    "kind": "normal",
+    "text": "枝があれば畑の支えを直せる。",
+    "memoSummary": "枝があれば畑の支えを直せる。"
+  },
+  {
+    "id": "N04-1",
+    "speaker": "N04",
+    "kind": "normal",
+    "text": "雨の日も畑の様子は見ておかないとな。",
+    "memoSummary": "雨の日も畑の様子は見ておかないとな。"
+  },
+  {
+    "id": "N04-2",
+    "speaker": "N04",
+    "kind": "normal",
+    "text": "道沿いの草はすぐに伸びる。",
+    "memoSummary": "道沿いの草はすぐに伸びる。"
+  },
+  {
+    "id": "N04-3",
+    "speaker": "N04",
+    "kind": "time",
+    "text": "夜は家で休むことにしている。",
+    "memoSummary": "夜は家で休むことにしている。"
+  },
+  {
+    "id": "N04-4",
+    "speaker": "N04",
+    "kind": "trust25",
+    "text": "仕事を丁寧にする人は信用できる。",
+    "memoSummary": "仕事を丁寧にする人は信用できる。"
+  },
+  {
+    "id": "N04-5",
+    "speaker": "N04",
+    "kind": "trust60",
+    "text": "いつか君にも畑の収穫を見てもらいたいな。",
+    "memoSummary": "いつか君にも畑の収穫を見てもらいたいな。"
+  },
+  {
+    "id": "N04-6",
+    "speaker": "N04",
+    "kind": "location",
+    "text": "閉店しても依頼の報告なら聞こう。",
+    "memoSummary": "閉店しても依頼の報告なら聞こう。"
+  },
+  {
+    "id": "N04-7",
+    "speaker": "N04",
+    "kind": "info",
+    "text": "依頼は品物が全部そろってから届けてくれ。",
+    "memoSummary": "依頼は品物が全部そろってから届けてくれ。"
+  },
+  {
+    "id": "N05-0",
+    "speaker": "N05",
+    "kind": "normal",
+    "text": "野菜と料理を買っていく？",
+    "memoSummary": "野菜と料理を買っていく？"
+  },
+  {
+    "id": "N05-1",
+    "speaker": "N05",
+    "kind": "normal",
+    "text": "売る品を選んで、金額を確かめてね。",
+    "memoSummary": "売る品を選んで、金額を確かめてね。"
+  },
+  {
+    "id": "N05-2",
+    "speaker": "N05",
+    "kind": "normal",
+    "text": "商品は夜中に補充するの。",
+    "memoSummary": "商品は夜中に補充するの。"
+  },
+  {
+    "id": "N05-3",
+    "speaker": "N05",
+    "kind": "time",
+    "text": "仕事が終わったら家に帰るわ。",
+    "memoSummary": "仕事が終わったら家に帰るわ。"
+  },
+  {
+    "id": "N05-4",
+    "speaker": "N05",
+    "kind": "trust25",
+    "text": "いつも助けてくれてありがとう。",
+    "memoSummary": "いつも助けてくれてありがとう。"
+  },
+  {
+    "id": "N05-5",
+    "speaker": "N05",
+    "kind": "trust60",
+    "text": "美味しいものを食べる時間も大事よ。",
+    "memoSummary": "美味しいものを食べる時間も大事よ。"
+  },
+  {
+    "id": "N05-6",
+    "speaker": "N05",
+    "kind": "location",
+    "text": "買い取りできるのは農家向けのものだけよ。",
+    "memoSummary": "買い取りできるのは農家向けのものだけよ。"
+  },
+  {
+    "id": "N05-7",
+    "speaker": "N05",
+    "kind": "info",
+    "text": "野菜スープの材料は野菜2つと草1つ。",
+    "memoSummary": "野菜スープの材料は野菜2つと草1つ。"
+  },
+  {
+    "id": "N06-0",
+    "speaker": "N06",
+    "kind": "normal",
+    "text": "文字より鬼ごっこがいいな。",
+    "memoSummary": "文字より鬼ごっこがいいな。"
+  },
+  {
+    "id": "N06-1",
+    "speaker": "N06",
+    "kind": "normal",
+    "text": "僕は負けないぞ。",
+    "memoSummary": "僕は負けないぞ。"
+  },
+  {
+    "id": "N06-2",
+    "speaker": "N06",
+    "kind": "normal",
+    "text": "建物の裏にいたら見つかりにくいよ。",
+    "memoSummary": "建物の裏にいたら見つかりにくいよ。"
+  },
+  {
+    "id": "N06-3",
+    "speaker": "N06",
+    "kind": "time",
+    "text": "暗くなる前に帰らなきゃ。",
+    "memoSummary": "暗くなる前に帰らなきゃ。"
+  },
+  {
+    "id": "N06-4",
+    "speaker": "N06",
+    "kind": "trust25",
+    "text": "川には橋がかかってるんだ。",
+    "memoSummary": "川には橋がかかってるんだ。"
+  },
+  {
+    "id": "N06-5",
+    "speaker": "N06",
+    "kind": "trust60",
+    "text": "君はすばしっこいね。",
+    "memoSummary": "君はすばしっこいね。"
+  },
+  {
+    "id": "N06-6",
+    "speaker": "N06",
+    "kind": "location",
+    "text": "また勝負しよう。",
+    "memoSummary": "また勝負しよう。"
+  },
+  {
+    "id": "N06-7",
+    "speaker": "N06",
+    "kind": "info",
+    "text": "魔法を使うのはなしだよ。",
+    "memoSummary": "魔法を使うのはなしだよ。"
+  },
+  {
+    "id": "N07-0",
+    "speaker": "N07",
+    "kind": "normal",
+    "text": "無理はするな。小屋で寝ていくといい。",
+    "memoSummary": "無理はするな。小屋で寝ていくといい。"
+  },
+  {
+    "id": "N07-1",
+    "speaker": "N07",
+    "kind": "normal",
+    "text": "草を採って家禽の世話を覚えよう。",
+    "memoSummary": "草を採って家禽の世話を覚えよう。"
+  },
+  {
+    "id": "N07-2",
+    "speaker": "N07",
+    "kind": "normal",
+    "text": "紙とペンがあれば、大人には話が伝わるさ。",
+    "memoSummary": "紙とペンがあれば、大人には話が伝わるさ。"
+  },
+  {
+    "id": "N07-3",
+    "speaker": "N07",
+    "kind": "time",
+    "text": "家畜は朝早くから起きている。",
+    "memoSummary": "家畜は朝早くから起きている。"
+  },
+  {
+    "id": "N07-4",
+    "speaker": "N07",
+    "kind": "trust25",
+    "text": "君はもう立派な村の一員だ。",
+    "memoSummary": "君はもう立派な村の一員だ。"
+  },
+  {
+    "id": "N07-5",
+    "speaker": "N07",
+    "kind": "trust60",
+    "text": "声がなくても手を動かせば伝わることは多い。",
+    "memoSummary": "声がなくても手を動かせば伝わることは多い。"
+  },
+  {
+    "id": "N07-6",
+    "speaker": "N07",
+    "kind": "location",
+    "text": "村長に会って居住を認めてもらおう。",
+    "memoSummary": "村長に会って居住を認めてもらおう。"
+  },
+  {
+    "id": "N07-7",
+    "speaker": "N07",
+    "kind": "info",
+    "text": "自宅の寝床は小屋の奥だ。空腹のまま長く寝るなよ。",
+    "memoSummary": "自宅の寝床は小屋の奥だ。空腹のまま長く寝るなよ。"
+  },
+  {
+    "id": "N08-0",
+    "speaker": "N08",
+    "kind": "normal",
+    "text": "肉や皮、飼料を扱っているよ。",
+    "memoSummary": "肉や皮、飼料を扱っているよ。"
+  },
+  {
+    "id": "N08-1",
+    "speaker": "N08",
+    "kind": "normal",
+    "text": "生肉は料理してから食べな。",
+    "memoSummary": "生肉は料理してから食べな。"
+  },
+  {
+    "id": "N08-2",
+    "speaker": "N08",
+    "kind": "normal",
+    "text": "肉と木の枝で焼き肉ができるよ。",
+    "memoSummary": "肉と木の枝で焼き肉ができるよ。"
+  },
+  {
+    "id": "N08-3",
+    "speaker": "N08",
+    "kind": "time",
+    "text": "夜は家族で食卓を囲むのさ。",
+    "memoSummary": "夜は家族で食卓を囲むのさ。"
+  },
+  {
+    "id": "N08-4",
+    "speaker": "N08",
+    "kind": "trust25",
+    "text": "最近、家畜も君に慣れてきたね。",
+    "memoSummary": "最近、家畜も君に慣れてきたね。"
+  },
+  {
+    "id": "N08-5",
+    "speaker": "N08",
+    "kind": "trust60",
+    "text": "疲れた日は早く寝るんだよ。",
+    "memoSummary": "疲れた日は早く寝るんだよ。"
+  },
+  {
+    "id": "N08-6",
+    "speaker": "N08",
+    "kind": "location",
+    "text": "傷んだ道具はガルムに見せてみな。",
+    "memoSummary": "傷んだ道具はガルムに見せてみな。"
+  },
+  {
+    "id": "N08-7",
+    "speaker": "N08",
+    "kind": "info",
+    "text": "食事には15分かかる。魔物のそばでは食べないで。",
+    "memoSummary": "食事には15分かかる。魔物のそばでは食べないで。"
+  },
+  {
+    "id": "N09-0",
+    "speaker": "N09",
+    "kind": "normal",
+    "text": "……こんにちは。文字は読めないの。",
+    "memoSummary": "……こんにちは。文字は読めないの。"
+  },
+  {
+    "id": "N09-1",
+    "speaker": "N09",
+    "kind": "normal",
+    "text": "かくれんぼなら、やってみたい。",
+    "memoSummary": "かくれんぼなら、やってみたい。"
+  },
+  {
+    "id": "N09-2",
+    "speaker": "N09",
+    "kind": "normal",
+    "text": "小屋のそばはあったかいね。",
+    "memoSummary": "小屋のそばはあったかいね。"
+  },
+  {
+    "id": "N09-3",
+    "speaker": "N09",
+    "kind": "time",
+    "text": "夕方には帰らないと。",
+    "memoSummary": "夕方には帰らないと。"
+  },
+  {
+    "id": "N09-4",
+    "speaker": "N09",
+    "kind": "trust25",
+    "text": "村の北の道をたどると森に行けるんだって。",
+    "memoSummary": "村の北の道をたどると森に行けるんだって。"
+  },
+  {
+    "id": "N09-5",
+    "speaker": "N09",
+    "kind": "trust60",
+    "text": "また会えて、うれしい。",
+    "memoSummary": "また会えて、うれしい。"
+  },
+  {
+    "id": "N09-6",
+    "speaker": "N09",
+    "kind": "location",
+    "text": "言葉がなくても、分かる気がする。",
+    "memoSummary": "言葉がなくても、分かる気がする。"
+  },
+  {
+    "id": "N09-7",
+    "speaker": "N09",
+    "kind": "info",
+    "text": "隠れたら、探してね。",
+    "memoSummary": "隠れたら、探してね。"
+  },
+  {
+    "id": "N10-0",
+    "speaker": "N10",
+    "kind": "normal",
+    "text": "道具が壊れる前に持ってこい。",
+    "memoSummary": "道具が壊れる前に持ってこい。"
+  },
+  {
+    "id": "N10-1",
+    "speaker": "N10",
+    "kind": "normal",
+    "text": "耐久がなくなれば消える。修理はできん。",
+    "memoSummary": "耐久がなくなれば消える。修理はできん。"
+  },
+  {
+    "id": "N10-2",
+    "speaker": "N10",
+    "kind": "normal",
+    "text": "石や鉱石なら鑑定してやる。",
+    "memoSummary": "石や鉱石なら鑑定してやる。"
+  },
+  {
+    "id": "N10-3",
+    "speaker": "N10",
+    "kind": "time",
+    "text": "仕事は店にいる時間だけ進める。",
+    "memoSummary": "仕事は店にいる時間だけ進める。"
+  },
+  {
+    "id": "N10-4",
+    "speaker": "N10",
+    "kind": "trust25",
+    "text": "よく使い込んだ道具だな。",
+    "memoSummary": "よく使い込んだ道具だな。"
+  },
+  {
+    "id": "N10-5",
+    "speaker": "N10",
+    "kind": "trust60",
+    "text": "強い道具だけが答えではない。",
+    "memoSummary": "強い道具だけが答えではない。"
+  },
+  {
+    "id": "N10-6",
+    "speaker": "N10",
+    "kind": "location",
+    "text": "作業前なら委託を取り消せる。",
+    "memoSummary": "作業前なら委託を取り消せる。"
+  },
+  {
+    "id": "N10-7",
+    "speaker": "N10",
+    "kind": "info",
+    "text": "上級鉱石には上級のツルハシが要る。",
+    "memoSummary": "上級鉱石には上級のツルハシが要る。"
+  },
+  {
+    "id": "N11-0",
+    "speaker": "N11",
+    "kind": "normal",
+    "text": "薬草と湿地の素材を扱っている。",
+    "memoSummary": "薬草と湿地の素材を扱っている。"
+  },
+  {
+    "id": "N11-1",
+    "speaker": "N11",
+    "kind": "normal",
+    "text": "雨に長く当たると風邪をひくわ。",
+    "memoSummary": "雨に長く当たると風邪をひくわ。"
+  },
+  {
+    "id": "N11-2",
+    "speaker": "N11",
+    "kind": "normal",
+    "text": "軽い風邪なら薬と睡眠で治しましょう。",
+    "memoSummary": "軽い風邪なら薬と睡眠で治しましょう。"
+  },
+  {
+    "id": "N11-3",
+    "speaker": "N11",
+    "kind": "time",
+    "text": "夜は店を閉めるけれど、依頼の報告なら聞けるわ。",
+    "memoSummary": "夜は店を閉めるけれど、依頼の報告なら聞けるわ。"
+  },
+  {
+    "id": "N11-4",
+    "speaker": "N11",
+    "kind": "trust25",
+    "text": "自分の体調にも気を配れるようになったわね。",
+    "memoSummary": "自分の体調にも気を配れるようになったわね。"
+  },
+  {
+    "id": "N11-5",
+    "speaker": "N11",
+    "kind": "trust60",
+    "text": "力が強くても、休まなければ倒れるわ。",
+    "memoSummary": "力が強くても、休まなければ倒れるわ。"
+  },
+  {
+    "id": "N11-6",
+    "speaker": "N11",
+    "kind": "location",
+    "text": "見慣れない薬草は鑑定してあげる。",
+    "memoSummary": "見慣れない薬草は鑑定してあげる。"
+  },
+  {
+    "id": "N11-7",
+    "speaker": "N11",
+    "kind": "info",
+    "text": "風邪薬は進行を止める。回復には十分な睡眠を。",
+    "memoSummary": "風邪薬は進行を止める。回復には十分な睡眠を。"
+  },
+  {
+    "id": "N12-0",
+    "speaker": "N12",
+    "kind": "normal",
+    "text": "海の魚ならいくらでも買うぞ。",
+    "memoSummary": "海の魚ならいくらでも買うぞ。"
+  },
+  {
+    "id": "N12-1",
+    "speaker": "N12",
+    "kind": "normal",
+    "text": "餌と竿を忘れるな。",
+    "memoSummary": "餌と竿を忘れるな。"
+  },
+  {
+    "id": "N12-2",
+    "speaker": "N12",
+    "kind": "normal",
+    "text": "雨や時間で釣れる魚も変わる。",
+    "memoSummary": "雨や時間で釣れる魚も変わる。"
+  },
+  {
+    "id": "N12-3",
+    "speaker": "N12",
+    "kind": "time",
+    "text": "仕事は昼までだ。夜は早く寝る。",
+    "memoSummary": "仕事は昼までだ。夜は早く寝る。"
+  },
+  {
+    "id": "N12-4",
+    "speaker": "N12",
+    "kind": "trust25",
+    "text": "釣りの手つきが良くなったな。",
+    "memoSummary": "釣りの手つきが良くなったな。"
+  },
+  {
+    "id": "N12-5",
+    "speaker": "N12",
+    "kind": "trust60",
+    "text": "いい魚は料理にしてもいい。",
+    "memoSummary": "いい魚は料理にしてもいい。"
+  },
+  {
+    "id": "N12-6",
+    "speaker": "N12",
+    "kind": "location",
+    "text": "魚影が薄くなったら別の場所へ行ってみろ。",
+    "memoSummary": "魚影が薄くなったら別の場所へ行ってみろ。"
+  },
+  {
+    "id": "N12-7",
+    "speaker": "N12",
+    "kind": "info",
+    "text": "竿を魔法で強化すると釣りやすくなるが、魚の種類は変わらん。",
+    "memoSummary": "竿を魔法で強化すると釣りやすくなるが、魚の種類は変わらん。"
+  }
+]
