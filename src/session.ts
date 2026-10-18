@@ -313,6 +313,7 @@ export class Session {
       dt,
       held,
       this.life.play ? 1 : 1 + this.life.stat("spd") / 100,
+      this.life.solidBodies(this.world.mapId),
     );
     this.updateEnemies(dt);
   }

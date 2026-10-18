@@ -50,7 +50,7 @@ test("導入を操作で完走し、楔で保存→再読込→JSON書出し", a
   await expect(page.locator("#objective")).toContainText("模擬戦", {
     timeout: 5000,
   });
-  await walk(page, "x", 264);
+  await walk(page, "x", 280);
   await inspect(page);
   await expect(page.locator("#battle-panel")).toBeVisible();
   for (
@@ -66,10 +66,18 @@ test("導入を操作で完走し、楔で保存→再読込→JSON書出し", a
   await expect(page.locator("#battle-panel")).toBeHidden();
   await expect(page.locator("#objective")).toContainText("ロアン");
   await walk(page, "x", 392);
+  await walk(page, "y", 450);
+  await walk(page, "x", 360);
+  await walk(page, "y", 385);
+  await walk(page, "x", 392);
   await walk(page, "y", 280);
-  await walk(page, "x", 472);
+  await walk(page, "x", 456);
   await inspect(page);
   await expect(page.locator("#action-info")).toContainText("魂の楔");
+  await walk(page, "x", 392);
+  await walk(page, "y", 385);
+  await walk(page, "x", 360);
+  await walk(page, "y", 450);
   await walk(page, "x", 392);
   await walk(page, "y", 488);
   const home = maps.VIL.buildings.find((b) => b.interior === "HOME");

@@ -25,7 +25,8 @@ test("描画、キー移動、衝突、再開始", async ({ page }) => {
   await page.keyboard.down("ArrowRight");
   await page.waitForTimeout(350);
   await page.keyboard.up("ArrowRight");
-  expect(await x(page)).toBeGreaterThan(initial + 10);
+  expect(await x(page)).toBeGreaterThan(initial + 1);
+  expect(await x(page)).toBeLessThanOrEqual(villagePoint(408, 552).x - 10);
   await page.keyboard.down("a");
   await page.waitForTimeout(3500);
   await page.keyboard.up("a");
@@ -39,7 +40,7 @@ test("タッチ操作、キャンセル、回転、復帰", async ({ page }, tes
   await page.goto("/");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   await expect(page.locator("canvas")).toHaveAttribute("data-ready", "true");
-  const button = page.getByRole("button", { name: "右に移動" });
+  const button = page.getByRole("button", { name: "左に移動" });
   await button.scrollIntoViewIfNeeded();
   if (testInfo.project.name === "mobile") {
     const session = await page.context().newCDPSession(page);
@@ -59,7 +60,7 @@ test("タッチ操作、キャンセル、回転、復帰", async ({ page }, tes
     await page.waitForTimeout(400);
     await page.mouse.up();
   }
-  expect(await x(page)).toBeGreaterThan(villagePoint(392, 552).x + 10);
+  expect(await x(page)).toBeLessThan(villagePoint(392, 552).x - 10);
   const stopped = await x(page);
   await page.waitForTimeout(150);
   expect(await x(page)).toBe(stopped);
@@ -118,6 +119,26 @@ test("北口で草原へ移動し南口から帰還する", async ({ page }) => 
   await expect(canvas).toHaveAttribute("width", "640");
   await expect(canvas).toHaveAttribute("height", "360");
   await page.keyboard.down("Shift");
+  // The central teleport stake now blocks the direct route: walk around it.
+  for (const [key, attribute, target, forward] of [
+    ["ArrowUp", "data-player-y", 380, false],
+    ["ArrowLeft", "data-player-x", 300, false],
+    ["ArrowUp", "data-player-y", 328, false],
+    ["ArrowRight", "data-player-x", villagePoint(392, 0).x, true],
+  ]) {
+    await page.keyboard.down(key);
+    await page.waitForFunction(
+      ({ attribute, target, forward }) => {
+        const value = Number(
+          document.querySelector("canvas").getAttribute(attribute),
+        );
+        return forward ? value >= target - 2 : value <= target + 2;
+      },
+      { attribute, target, forward },
+      { timeout: 5000 },
+    );
+    await page.keyboard.up(key);
+  }
   await page.keyboard.down("ArrowUp");
   await expect(canvas).toHaveAttribute("data-map", "GRASS", { timeout: 10000 });
   await page.keyboard.up("ArrowUp");

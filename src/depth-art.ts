@@ -753,7 +753,28 @@ export class DepthArt {
     }
     c.restore();
   }
+  private buildingSprites = new Map<string, HTMLCanvasElement>();
   building(b: Building, x: number, y: number) {
+    const key = `${b.interior}:${b.w}:${b.h}`;
+    let sprite = this.buildingSprites.get(key);
+    if (!sprite) {
+      sprite = document.createElement("canvas");
+      sprite.width = (b.w * 16 + 64) * 2;
+      sprite.height = (b.h * 16 + 80) * 2;
+      const context = sprite.getContext("2d")!;
+      context.scale(2, 2);
+      new DepthArt(context).paintBuilding(b, 24, 32);
+      this.buildingSprites.set(key, sprite);
+    }
+    this.c.drawImage(
+      sprite,
+      x - 24,
+      y - 32,
+      sprite.width / 2,
+      sprite.height / 2,
+    );
+  }
+  private paintBuilding(b: Building, x: number, y: number) {
     const r = this.rect.bind(this),
       e = this.ellipse.bind(this),
       p = this.polygon.bind(this),
@@ -779,6 +800,27 @@ export class DepthArt {
       for (let xx = 10; xx < w - 10; xx += 19) {
         r(x + xx, y + yy + 2, 12, 0.5, "rgba(239,209,158,.28)");
         r(x + xx + 3, y + yy + 3, 7, 0.5, "rgba(53,35,27,.20)");
+      }
+      for (let xx = 11; xx < w - 12; xx += 4) {
+        const seed = (xx * 17 + yy * 23) >>> 0;
+        r(
+          x + xx,
+          y + yy + 1 + (seed % 4) * 0.5,
+          1 + (seed % 5),
+          0.5,
+          "rgba(55,34,23,.23)",
+        );
+        r(
+          x + xx + 0.5,
+          y + yy + 1.5 + (seed % 3) * 0.5,
+          1 + (seed % 3),
+          0.5,
+          "rgba(244,217,168,.22)",
+        );
+        if (seed % 11 === 0) {
+          e(x + xx, y + yy + 2, 1.8, 0.8, "#705137");
+          e(x + xx, y + yy + 2, 1, 0.35, style.light);
+        }
       }
       for (const xx of [6, w - 7]) {
         e(x + xx, y + yy + 2, 3, 2.2, "#674a35");
@@ -814,6 +856,12 @@ export class DepthArt {
         r(x + xx, y + yy, width, 0.5, style.roofLight);
         r(x + xx + width - 0.5, y + yy + 0.5, 0.5, 3, "rgba(26,34,35,.28)");
         r(x + xx + 1, y + yy + 1, 0.5, 1.7, "rgba(245,227,183,.22)");
+        r(x + xx + 2, y + yy + 2, 0.5, 0.5, "rgba(30,34,31,.4)");
+        r(x + xx + 3, y + yy + 1.5, 1, 0.5, "rgba(234,217,177,.2)");
+        if ((Math.floor(xx) * 3 + row) % 9 === 0) {
+          r(x + xx + 1.5, y + yy + 2.5, 2, 0.5, "rgba(91,116,76,.5)");
+          r(x + xx + 2, y + yy + 2, 1, 0.5, "rgba(165,168,114,.35)");
+        }
       }
     }
     r(x + 12, y - 9, w - 27, 2, style.roofLight);
@@ -834,6 +882,18 @@ export class DepthArt {
       r(x + xx + 7.5, y + yy, 1, 14, "#e5c88e");
       r(x + xx, y + yy + 7, 16, 0.7, "#e5c88e");
       r(x + xx - 3, y + yy + 15, 22, 2, "#d4b07c");
+      // Recessed inner frame, curtains behind glass, glints and tiny joinery.
+      r(x + xx, y + yy, 16, 0.5, "#385860");
+      r(x + xx, y + yy, 0.5, 14, "#3d5b60");
+      for (const dx of [1, 13]) {
+        r(x + xx + dx, y + yy + 1, 1.5, 11, "rgba(221,217,175,.35)");
+        r(x + xx + dx + 0.5, y + yy + 2, 0.5, 8, "rgba(249,234,190,.28)");
+      }
+      r(x + xx + 3, y + yy + 2, 0.5, 3, "#d6e3cb");
+      r(x + xx + 4, y + yy + 2, 2, 0.5, "#d6e3cb");
+      for (const dx of [-1, 16])
+        for (const dy of [-1, 15])
+          r(x + xx + dx, y + yy + dy, 0.5, 0.5, "#e2c595");
       if (shutters)
         for (const sx of [-7, 19]) {
           r(x + xx + sx, y + yy - 1, 5, 15, style.roof);
@@ -879,6 +939,23 @@ export class DepthArt {
         r(x + w - 25 + (yy % 2), y + yy, 1, 3, "#5b665d");
       }
       r(x + w - 30, y - 17, 12, 2, "#c1bda2");
+    }
+    // Weathered foundation stones, moss in mortar and hand-forged hinges.
+    for (let xx = 7; xx < w - 8; xx += 5) {
+      r(x + xx, y + h - 4, 0.5, 1, "rgba(58,66,58,.5)");
+      r(x + xx + 1, y + h - 5, 1, 0.5, "rgba(222,216,185,.5)");
+      if (xx % 3 === 0) r(x + xx, y + h - 1, 2, 0.5, "#6e8059");
+    }
+    for (const yy of [-26, -8]) {
+      r(x + door - 7, y + h + yy, 3, 1.5, "#39494a");
+      r(x + door - 6.5, y + h + yy, 0.5, 0.5, "#a5ac99");
+    }
+    r(x + door + 3, y + h - 16, 2, 3, "#65593d");
+    e(x + door + 4, y + h - 15, 0.75, 0.75, "#dec07e");
+    for (let i = 0; i < 7; i++) {
+      const dx = door - 5 + ((i * 5) % 11),
+        yy = h - 29 + ((i * 7) % 21);
+      r(x + dx, y + yy, 0.5, 2, "rgba(56,39,26,.3)");
     }
     const sign =
       b.interior === "SMITH"

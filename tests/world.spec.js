@@ -290,18 +290,18 @@ test("住人から離れると会話が閉じ、釣り場を離れても餌を�
   await load(page, fixture("VIL", 344, 408));
   await inspect(page);
   await expect(page.locator("#interaction-panel")).toContainText("ガルム");
-  await page.keyboard.down("ArrowLeft");
+  await page.keyboard.down("ArrowDown");
   await page.waitForTimeout(900);
-  await page.keyboard.up("ArrowLeft");
+  await page.keyboard.up("ArrowDown");
   await expect(page.locator("#interaction-panel")).toBeHidden();
   const s = fixture("VIL", 552, 568);
   s.life.gain("木竿");
   s.life.gain("ミミズ", 2);
   await load(page, s);
   await inspect(page);
-  await page.keyboard.down("ArrowLeft");
+  await page.keyboard.down("ArrowUp");
   await page.waitForTimeout(1000);
-  await page.keyboard.up("ArrowLeft");
+  await page.keyboard.up("ArrowUp");
   await page.getByRole("button", { name: "木竿＋ミミズ" }).click();
   await expect(page.locator("#action-info")).toContainText("釣り場の近く");
   await page.getByRole("button", { name: "メニュー", exact: true }).click();
@@ -400,7 +400,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 12");
+  await expect(page.locator(".badge")).toContainText("FIELD 13");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,

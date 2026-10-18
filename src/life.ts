@@ -276,6 +276,19 @@ export class Life {
       at = path[index] || target;
     return { map: "VIL", ...at, sleeping: false };
   }
+  solidBodies(map: MapId) {
+    const bodies: { x: number; y: number; radius: number }[] = [];
+    for (const person of people) {
+      if (!this.session.story.wedge && !["N01", "N07"].includes(person.id))
+        continue;
+      const pos = this.position(person);
+      if (pos.map === map && !pos.sleeping)
+        bodies.push({ x: pos.x, y: pos.y, radius: person.child ? 4 : 5 });
+    }
+    const stake = this.data.stakes[map];
+    if (stake) bodies.push({ ...stake, radius: 7 });
+    return bodies;
+  }
   private routes = new Map<string, { x: number; y: number }[]>();
   private route(ax: number, ay: number, bx: number, by: number) {
     const key = `${ax},${ay},${bx},${by}`;
@@ -1515,7 +1528,43 @@ export class Life {
     )
       return;
     this.session.advance(300);
-    this.session.world.travel(id as MapId, there.x, there.y);
+    const destination = id as MapId,
+      bodies = this.solidBodies(destination);
+    let landing: { x: number; y: number } | null = null;
+    for (let radius = 16; radius <= 32 && !landing; radius += 8) {
+      for (const [dx, dy] of [
+        [0, 1],
+        [1, 0],
+        [-1, 0],
+        [0, -1],
+        [1, 1],
+        [-1, 1],
+        [1, -1],
+        [-1, -1],
+      ]) {
+        const candidate = safePosition(
+          maps[destination],
+          there.x + dx * radius,
+          there.y + dy * radius,
+        );
+        if (
+          candidate &&
+          Math.hypot(candidate.x - there.x, candidate.y - there.y) <= 36 &&
+          bodies.every(
+            (b) =>
+              Math.hypot(candidate.x - b.x, candidate.y - b.y) >= b.radius + 5,
+          )
+        ) {
+          landing = candidate;
+          break;
+        }
+      }
+    }
+    if (!landing) {
+      this.session.message = "転移先の杭の周囲が塞がれている。";
+      return;
+    }
+    this.session.world.travel(destination, landing.x, landing.y);
     this.interaction = null;
   }
   end(choice: "released" | "silent") {

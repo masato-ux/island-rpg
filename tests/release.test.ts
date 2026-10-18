@@ -250,7 +250,16 @@ function route(s: Session, side: "up" | "down", altar = false) {
       const x = queue[i][0] + dx,
         y = queue[i][1] + dy,
         key = `${x},${y}`;
-      if (!previous.has(key) && !isBlocked(m, x, y)) {
+      if (
+        !previous.has(key) &&
+        !isBlocked(m, x, y) &&
+        s.life
+          .solidBodies(m.id)
+          .every(
+            (b) =>
+              Math.hypot(x * 16 + 8 - b.x, y * 16 + 8 - b.y) >= b.radius + 7,
+          )
+      ) {
         previous.set(key, queue[i].join(","));
         queue.push([x, y]);
       }
@@ -286,7 +295,7 @@ function follow(s: Session, points: number[][]) {
 }
 test("村から主道を通り祭壇に到着して結末後に保存・帰還できる", () => {
   const s = game();
-  Object.assign(s.world, vp(392, 400));
+  Object.assign(s.world, vp(392, 380));
   s.world.mode = "run";
   // A late-game departure uses ordinary equipment and combat commands; enemies remain active.
   for (const name of ["鋼剣", "革帽", "革鎧", "革靴", "鉄盾"]) {

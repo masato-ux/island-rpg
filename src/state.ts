@@ -8,6 +8,11 @@ import {
 } from "./constants.ts";
 import { maps, isBlocked, tileAt, villagePoint, type MapId } from "./maps.ts";
 import { furnitureBlocks } from "./interiors.ts";
+export interface SolidBody {
+  x: number;
+  y: number;
+  radius: number;
+}
 interface Transition {
   to: MapId;
   x: number;
@@ -59,7 +64,12 @@ export class World {
     this.next = { to, x, y, switched: false };
     this.transition = 0;
   }
-  update(seconds: number, held: ReadonlySet<Direction>, speedMultiplier = 1) {
+  update(
+    seconds: number,
+    held: ReadonlySet<Direction>,
+    speedMultiplier = 1,
+    bodies: readonly SolidBody[] = [],
+  ) {
     const dt = Math.max(0, Math.min(seconds, 0.1));
     this.moving = false;
     if (this.next) {
@@ -100,8 +110,20 @@ export class World {
     for (let i = 0; i < count; i++) {
       const nx = this.x + ((dx / norm) * speed * dt) / count,
         ny = this.y + ((dy / norm) * speed * dt) / count;
-      if (this.canStand(nx, this.y)) this.x = nx;
-      if (this.canStand(this.x, ny)) this.y = ny;
+      const clear = (x: number, y: number) =>
+        this.canStand(x, y) &&
+        bodies.every((b) => {
+          const next = Math.hypot(x - b.x, y - b.y),
+            current = Math.hypot(this.x - b.x, this.y - b.y);
+          // Old saves, moving villagers and freshly placed stakes may overlap.
+          // Permit escape from an overlap, but never movement deeper into one.
+          return (
+            next >= RADIUS + b.radius ||
+            (current < RADIUS + b.radius && next > current)
+          );
+        });
+      if (clear(nx, this.y)) this.x = nx;
+      if (clear(this.x, ny)) this.y = ny;
       for (const [side, exit] of Object.entries(this.map.exits)) {
         const vertical = side === "up" || side === "down",
           cross = vertical
