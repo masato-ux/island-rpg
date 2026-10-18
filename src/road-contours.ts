@@ -1,30 +1,89 @@
-import { tileAt, type GameMap, type Tile } from "./maps.ts";
-const soft = (tile: Tile) => ["grass", "sand", "wet", "path"].includes(tile);
-/** Corners only soften into walkable ground; cliffs and water retain their boundary. */
-export function roadCorners(map: GameMap, x: number, y: number) {
-  const t = (dx: number, dy: number) => tileAt(map, x + dx, y + dy);
-  return [
-    [-1, 0, 0, -1],
-    [1, 0, 0, -1],
-    [1, 0, 0, 1],
-    [-1, 0, 0, 1],
-  ].map(([ax, ay, bx, by]) => {
-    const a = t(ax, ay),
-      b = t(bx, by);
-    return a !== "path" && b !== "path" && soft(a) && soft(b) ? 8 : 0;
-  });
+import { tileAt, type GameMap } from "./maps.ts";
+type Point = [number, number];
+interface Edge {
+  a: Point;
+  b: Point;
+  used: boolean;
 }
-export function roundRoad(c: CanvasRenderingContext2D, radii: number[]) {
-  const [tl, tr, br, bl] = radii;
-  c.beginPath();
-  c.moveTo(tl, 0);
-  c.lineTo(16 - tr, 0);
-  c.quadraticCurveTo(16, 0, 16, tr);
-  c.lineTo(16, 16 - br);
-  c.quadraticCurveTo(16, 16, 16 - br, 16);
-  c.lineTo(bl, 16);
-  c.quadraticCurveTo(0, 16, 0, 16 - bl);
-  c.lineTo(0, tl);
-  c.quadraticCurveTo(0, 0, tl, 0);
-  c.closePath();
+/** Trace the whole road boundary before rounding, so curves cross tile seams. */
+export class RoadContours {
+  private cache = new Map<string, Path2D>();
+  path(map: GameMap) {
+    const cached = this.cache.get(map.id);
+    if (cached) return cached;
+    const edges: Edge[] = [];
+    const starts = new Map<string, number[]>();
+    const add = (a: Point, b: Point) => {
+      const index = edges.length;
+      edges.push({ a, b, used: false });
+      const key = a.join(",");
+      starts.set(key, [...(starts.get(key) || []), index]);
+    };
+    for (let y = 0; y < map.height; y++)
+      for (let x = 0; x < map.width; x++)
+        if (tileAt(map, x, y) === "path") {
+          if (tileAt(map, x, y - 1) !== "path")
+            add([x * 16, y * 16], [(x + 1) * 16, y * 16]);
+          if (tileAt(map, x + 1, y) !== "path")
+            add([(x + 1) * 16, y * 16], [(x + 1) * 16, (y + 1) * 16]);
+          if (tileAt(map, x, y + 1) !== "path")
+            add([(x + 1) * 16, (y + 1) * 16], [x * 16, (y + 1) * 16]);
+          if (tileAt(map, x - 1, y) !== "path")
+            add([x * 16, (y + 1) * 16], [x * 16, y * 16]);
+        }
+    const path = new Path2D();
+    for (const edge of edges) {
+      if (edge.used) continue;
+      const loop: Point[] = [];
+      let current: Edge | undefined = edge;
+      while (current && !current.used) {
+        current.used = true;
+        loop.push(current.a);
+        const options: Edge[] = (starts.get(current.b.join(",")) || [])
+          .map((i) => edges[i])
+          .filter((e) => !e.used);
+        // Prefer a right turn where two regions meet at only one corner.
+        const dx: number = current.b[0] - current.a[0],
+          dy: number = current.b[1] - current.a[1];
+        current = options.sort(
+          (a, b): number =>
+            dx * (b.b[1] - b.a[1]) -
+            dy * (b.b[0] - b.a[0]) -
+            (dx * (a.b[1] - a.a[1]) - dy * (a.b[0] - a.a[0])),
+        )[0];
+      }
+      const points = loop.filter((p, i) => {
+        const a = loop[(i + loop.length - 1) % loop.length],
+          b = loop[(i + 1) % loop.length];
+        return (p[0] - a[0]) * (b[1] - p[1]) !== (p[1] - a[1]) * (b[0] - p[0]);
+      });
+      if (points.length < 3) continue;
+      const corners = points.map((p, i) => {
+        const a = points[(i + points.length - 1) % points.length],
+          b = points[(i + 1) % points.length];
+        const before = Math.hypot(p[0] - a[0], p[1] - a[1]),
+          after = Math.hypot(b[0] - p[0], b[1] - p[1]);
+        const radius = Math.min(20, before * 0.49, after * 0.49);
+        return {
+          p,
+          enter: [
+            p[0] + ((a[0] - p[0]) * radius) / before,
+            p[1] + ((a[1] - p[1]) * radius) / before,
+          ] as Point,
+          exit: [
+            p[0] + ((b[0] - p[0]) * radius) / after,
+            p[1] + ((b[1] - p[1]) * radius) / after,
+          ] as Point,
+        };
+      });
+      path.moveTo(...corners[0].enter);
+      for (const corner of corners) {
+        path.lineTo(...corner.enter);
+        path.quadraticCurveTo(...corner.p, ...corner.exit);
+      }
+      path.closePath();
+    }
+    this.cache.set(map.id, path);
+    return path;
+  }
 }
