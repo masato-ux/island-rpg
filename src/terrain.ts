@@ -407,6 +407,17 @@ export class Terrain {
             ctx.fillRect((seed % 64) / 4, ((seed >>> 8) % 64) / 4, 0.5, 0.25);
           }
           ctx.restore();
+          ctx.save();
+          ctx.translate(-x * 16, -y * 16);
+          ctx.lineJoin = "round";
+          ctx.lineCap = "round";
+          for (const width of [6, 4, 2]) {
+            ctx.globalAlpha = 0.075;
+            ctx.lineWidth = width;
+            ctx.strokeStyle = palette[surface][0];
+            ctx.stroke(this.roads.path(map, surface));
+          }
+          ctx.restore();
         }
         if (shoreline && !sea(tile)) ctx.restore();
         if (shoreline) {
@@ -423,21 +434,31 @@ export class Terrain {
           ctx.translate(-x * 16, -y * 16);
           ctx.lineJoin = "round";
           ctx.lineCap = "round";
+          // Layer translucent bands instead of a dark ink contour. Painted in
+          // world coordinates so the feather stays continuous across tile seams.
+          for (const [width, alpha] of [
+            [10, 0.035],
+            [8, 0.045],
+            [6, 0.06],
+            [4, 0.08],
+            [2, 0.1],
+          ]) {
+            ctx.lineWidth = width;
+            ctx.strokeStyle = `rgba(189,209,208,${alpha})`;
+            ctx.stroke(shoreline);
+          }
           ctx.save();
-          ctx.translate(0, 3);
-          ctx.lineWidth = 5;
-          ctx.strokeStyle = "#414c37";
-          ctx.stroke(shoreline);
-          ctx.lineWidth = 3;
-          ctx.strokeStyle = "#d5cc96";
-          ctx.stroke(shoreline);
+          ctx.translate(0, 1.5);
+          for (const [width, alpha] of [
+            [6, 0.035],
+            [4, 0.05],
+            [2, 0.08],
+          ]) {
+            ctx.lineWidth = width;
+            ctx.strokeStyle = `rgba(238,235,205,${alpha})`;
+            ctx.stroke(shoreline);
+          }
           ctx.restore();
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = "#314d37";
-          ctx.stroke(shoreline);
-          ctx.lineWidth = 0.75;
-          ctx.strokeStyle = "#9bcc8e";
-          ctx.stroke(shoreline);
           ctx.restore();
         }
         if (!map.interior && !["cliff", "stairs"].includes(tile)) {
