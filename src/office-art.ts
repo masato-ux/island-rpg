@@ -336,3 +336,81 @@ export function paintCoworkers(c: CanvasRenderingContext2D) {
   person(c, 188, 120, 5);
   person(c, 865, 172, 6);
 }
+
+export function makeHome() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1920;
+  canvas.height = 1248;
+  const c = canvas.getContext("2d")!;
+  c.scale(2, 2);
+  box(c, 0, 0, 960, 624, "#243638");
+  box(c, 170, 120, 620, 432, "#665746");
+  box(c, 180, 138, 600, 402, "#af916a");
+  for (let y = 140; y < 540; y += 20) {
+    box(c, 180, y, 600, 1, "#78634b");
+    for (let x = 180 + (y % 40 ? 0 : 50); x < 780; x += 100) {
+      box(c, x, y, 1, 20, "#887052");
+      box(c, x + 3, y + 4, 70, 1, "#cfad7e44");
+    }
+  }
+  box(c, 170, 110, 620, 29, "#e0d0ad");
+  box(c, 170, 110, 620, 5, "#f0e1bd");
+  box(c, 170, 110, 10, 442, "#d1bd94");
+  box(c, 780, 110, 10, 442, "#c4ad85");
+  box(c, 170, 540, 306, 12, "#d1bd94");
+  box(c, 526, 540, 264, 12, "#d1bd94");
+  box(c, 408, 115, 110, 28, "#736b54");
+  box(c, 412, 118, 102, 22, "#a7c2b8");
+  box(c, 460, 118, 4, 22, "#ece1c3");
+  poly(
+    c,
+    [
+      [412, 143],
+      [514, 143],
+      [650, 480],
+      [518, 480],
+    ],
+    "#fff0bb25",
+  );
+  // Bed, folded quilt, side table, wardrobe, sofa, dinner table and kitchenette.
+  box(c, 238, 180, 112, 118, "#71553f");
+  box(c, 242, 184, 104, 108, "#ded5bb");
+  box(c, 246, 188, 96, 25, "#f1e9d1");
+  box(c, 244, 219, 100, 70, "#788f8f");
+  box(c, 244, 219, 100, 9, "#a8bdb1");
+  for (let x = 250; x < 344; x += 12) box(c, x, 231, 1, 55, "#a8b4a04a");
+  box(c, 238, 177, 112, 8, "#95724d");
+  box(c, 362, 206, 40, 38, "#92704d");
+  box(c, 365, 207, 34, 4, "#c6a477");
+  ellipse(c, 381, 207, 10, 4, "#d7c494");
+  box(c, 378, 184, 5, 23, "#b09a6e");
+  ellipse(c, 381, 184, 14, 8, "#eddb9b");
+  box(c, 650, 151, 92, 50, "#745b43");
+  box(c, 654, 153, 84, 44, "#ab8558");
+  box(c, 695, 154, 2, 42, "#70553b");
+  box(c, 686, 172, 3, 8, "#d6bb83");
+  box(c, 703, 172, 3, 8, "#d6bb83");
+  box(c, 250, 386, 124, 55, "#465e53");
+  box(c, 254, 390, 116, 42, "#6f8b76");
+  box(c, 260, 405, 49, 24, "#95a58a");
+  box(c, 316, 405, 49, 24, "#889c83");
+  box(c, 250, 386, 124, 14, "#7e9880");
+  box(c, 554, 298, 90, 54, "#7f5e3f");
+  box(c, 557, 299, 84, 46, "#c8a16c");
+  ellipse(c, 596, 321, 13, 7, "#ded2ae");
+  ellipse(c, 596, 320, 9, 5, "#818e63");
+  box(c, 579, 422, 134, 48, "#987952");
+  box(c, 579, 418, 134, 10, "#d7ccac");
+  box(c, 650, 419, 40, 7, "#819e96");
+  box(c, 669, 409, 2, 12, "#c6cbb5");
+  box(c, 590, 403, 30, 17, "#566457");
+  box(c, 591, 404, 28, 3, "#a9b5a0");
+  plant(c, 742, 508);
+  box(c, 476, 532, 50, 14, "#b9a57a");
+  c.font = "12px sans-serif";
+  c.textAlign = "center";
+  c.fillStyle = "#e1dfc6";
+  c.fillText("自宅 · HOME", 480, 88);
+  c.fillText("出社する ↓", 501, 575);
+  return canvas;
+}

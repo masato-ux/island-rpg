@@ -30,7 +30,7 @@
     <main class="office-shell">
       <header>
         <a href="./">OFFICE <span>REBIRTH</span></a
-        ><span class="badge">OFFICE 01</span>
+        ><span class="badge">OFFICE 02</span>
       </header>
       <section class="heading">
         <p>PROLOGUE — A SECOND LIFE</p>
@@ -39,7 +39,7 @@
       </section>
       <section class="office-game" aria-label="現代のオフィス">
         <div class="office-bar">
-          <span>●　あおばオフィス・執務フロア</span
+          <span id="scene-name">●　あおばオフィス・執務フロア</span
           ><button id="view-mode">全体表示</button>
         </div>
         <div class="office-view">
@@ -53,7 +53,9 @@
           <div id="office-notice" role="status">オフィスを準備しています…</div>
         </div>
         <div class="office-status">
-          <b>◆ 魔法使い</b><span>声：失われたまま　／　魔力：0</span
+          <b>◆ 魔法使い</b><span id="workday">1日目（月）</span
+          ><span id="stamina">体力 65/100</span
+          ><span>声：失われたまま　／　魔力：0</span
           ><span id="office-location">南側エントランス</span>
         </div>
       </section>
@@ -88,7 +90,8 @@
           勇者の最後の魔法が、あなたをこの場所へ運んだ。
         </p>
         <div class="utility">
-          <button id="office-save">記録する</button
+          <button id="commute" hidden>退勤して自宅へ</button
+          ><button id="office-save">記録する</button
           ><button id="office-intro">物語を読む</button>
         </div>
       </div>

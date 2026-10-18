@@ -77,21 +77,17 @@ test("タッチ移動・キャンセル・回転・全体表示でも黒画面�
     ),
   ).toBe(true);
 });
-test("入口で調べると声を失った魔法使いの会話が開き、壁で止まる", async ({
-  page,
-}) => {
+test("入口で退勤の案内が開き、南へ歩くと自宅へ帰る", async ({ page }) => {
   await start(page);
   await page.locator("#view-mode").click();
   await page.keyboard.press("e");
   await expect(page.locator("#office-dialog")).toBeVisible();
-  await expect(page.locator("#dialog-text")).toContainText("オフィスを調べて");
+  await expect(page.locator("#dialog-text")).toContainText("退勤して自宅へ");
   await page.getByRole("button", { name: "閉じる", exact: true }).click();
   await page.keyboard.down("ArrowDown");
   await page.waitForTimeout(600);
   await page.keyboard.up("ArrowDown");
-  expect(
-    Number(await page.locator("#office").getAttribute("data-player-y")),
-  ).toBeLessThanOrEqual(586);
+  await expect(page.locator("#office")).toHaveAttribute("data-screen", "home");
 });
 test("保存を拒否されても起動でき、Canvas失敗時は説明を出す", async ({
   page,
@@ -145,4 +141,49 @@ test("ゲームの読込失敗でも真っ黒な画面で放置しない", async
   await expect(page.locator("#office-notice")).toContainText(
     "ゲームのファイルを読み込めませんでした",
   );
+});
+
+test("金曜退勤で自宅へ帰って50回復し、保存後も二重回復せず土曜に出社する", async ({
+  page,
+}, info) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("office-rebirth-save-v1"))
+      localStorage.setItem(
+        "office-rebirth-save-v1",
+        JSON.stringify({
+          version: 1,
+          x: 500,
+          y: 562,
+          life: {
+            day: 5,
+            stamina: 20,
+            place: "office",
+            recovered: 0,
+            fridayRest: false,
+          },
+        }),
+      );
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "続きから", exact: true }).click();
+  await expect(page.locator("#workday")).toHaveText("5日目（金）");
+  await page.locator("#commute").click();
+  await expect(page.locator("#office")).toHaveAttribute("data-screen", "home");
+  await expect(page.locator("#stamina")).toHaveText("体力 70/100");
+  await expect(page.locator("#office-message")).toContainText(
+    "金曜日の特別休息",
+  );
+  await page.getByRole("button", { name: "記録する", exact: true }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "続きから", exact: true }).click();
+  await expect(page.locator("#office")).toHaveAttribute("data-screen", "home");
+  await expect(page.locator("#stamina")).toHaveText("体力 70/100");
+  await page.screenshot({ path: `test-results/home-${info.project.name}.png` });
+  await page.locator("#commute").click();
+  await expect(page.locator("#office")).toHaveAttribute(
+    "data-screen",
+    "office",
+  );
+  await expect(page.locator("#workday")).toHaveText("6日目（土）");
+  await expect(page.locator("#stamina")).toHaveText("体力 70/100");
 });
