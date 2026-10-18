@@ -1,3 +1,4 @@
+import { paintNature, groundMood } from "./nature-art.ts";
 import { roundedBox } from "./rounded-box.ts";
 import { RoadContours } from "./road-contours.ts";
 import { grassDensity } from "./surface-detail.ts";
@@ -26,6 +27,10 @@ export class Terrain {
     resolution = 1,
   ) {
     let canvas = this.tiles.get(key);
+    if (canvas) {
+      this.tiles.delete(key);
+      this.tiles.set(key, canvas);
+    }
     if (!canvas) {
       canvas = document.createElement("canvas");
       canvas.width = width * resolution;
@@ -34,6 +39,8 @@ export class Terrain {
       context.scale(resolution, resolution);
       paint(context);
       this.tiles.set(key, canvas);
+      if (this.tiles.size > 1536)
+        this.tiles.delete(this.tiles.keys().next().value!);
     }
     return canvas;
   }
@@ -94,7 +101,7 @@ export class Terrain {
           ? (["sand", "wet"] as Tile[]).filter((t) => neighbors.includes(t))
           : [];
     const image = this.sprite(
-      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}:${nearRoad || coastal || shaped || blends.length ? `${map.id}:${x}:${y}` : ""}`,
+      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}:${map.id}:${x}:${y}`,
       16,
       16,
       (ctx) => {
@@ -371,6 +378,18 @@ export class Terrain {
           }
           ctx.restore();
         }
+        if (["grass", "path", "sand", "wet", "tree", "rock"].includes(tile)) {
+          for (let sy = 0; sy < 16; sy += 4)
+            for (let sx = 0; sx < 16; sx += 4) {
+              const mood = groundMood(map.id, x * 16 + sx, y * 16 + sy),
+                alpha = Math.abs(mood) * 0.32;
+              ctx.fillStyle =
+                mood > 0
+                  ? `rgba(173,137,73,${alpha})`
+                  : `rgba(32,75,66,${alpha})`;
+              ctx.fillRect(sx, sy, 4, 4);
+            }
+        }
         if (shaped) ctx.restore();
         for (const surface of blends) {
           ctx.save();
@@ -618,75 +637,15 @@ export class Terrain {
       return;
     }
     if (tile !== "tree" && tile !== "rock") return;
-    const variant = hash(x, y) % 4;
-    const image = this.sprite(`object:${tile}:${variant}`, 32, 40, (ctx) => {
-      const rect = (
-        x: number,
-        y: number,
-        w: number,
-        h: number,
-        color: string,
-      ) => {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, w, h);
-      };
-      if (tile === "tree") {
-        // Stepped silhouettes and fixed dither clusters keep the art sharp at integer scales.
-        rect(5, 33, 23, 3, "rgba(38,70,51,.18)");
-        rect(9, 31, 16, 5, "rgba(38,70,51,.12)");
-        rect(15, 21, 4, 16, "#485b49");
-        rect(16, 22, 3, 14, "#c1b78d");
-        rect(17, 24, 1, 10, "#e0cea0");
-        rect(12, 36, 3, 2, "#d1c399");
-        rect(19, 35, 2, 3, "#a39d76");
-        const autumn = variant === 3;
-        const colors = autumn
-          ? ["#4b7050", "#6c8e52", "#9eac59", "#c8bf67", "#e0ce7b"]
-          : ["#3d6650", "#4f8053", "#72a15d", "#9fbd6e", "#c3ce83"];
-        const disk = (
-          cx: number,
-          cy: number,
-          rx: number,
-          ry: number,
-          color: string,
-        ) => {
-          for (let row = -ry; row <= ry; row++) {
-            const w = Math.round(
-              rx * Math.sqrt(Math.max(0, 1 - (row * row) / (ry * ry))),
-            );
-            rect(cx - w, cy + row, w * 2 + 1, 1, color);
-          }
-        };
-        disk(16, 20, 14, 12, colors[0]);
-        disk(10, 17, 9, 10, colors[1]);
-        disk(22, 17, 8, 10, colors[1]);
-        disk(15, 12, 10, 10, colors[2]);
-        disk(10, 10, 6, 7, colors[3]);
-        disk(18, 7, 6, 6, colors[3]);
-        for (let i = 0; i < 70; i++) {
-          const seed = hash(i, variant),
-            xx = 4 + (seed % 24),
-            yy = 4 + ((seed >>> 8) % 26);
-          if ((xx - 15) ** 2 / 145 + (yy - 17) ** 2 / 155 > 1) continue;
-          rect(xx, yy, 2, 1, colors[yy < 12 ? 3 + (i % 2) : i % 3]);
-        }
-        rect(10, 6, 3, 1, colors[4]);
-        rect(8, 13, 2, 1, colors[3]);
-      } else {
-        rect(8, 33, 18, 3, "#64855b");
-        rect(7, 22, 18, 10, "#415c63");
-        rect(5, 21, 21, 7, "#587a7a");
-        rect(8, 16, 15, 13, "#71938b");
-        rect(10, 14, 10, 3, "#a0b5a0");
-        rect(6, 20, 4, 6, "#a0b5a0");
-        rect(10, 17, 10, 5, "#93ac9c");
-        rect(19, 22, 5, 8, "#4c6d71");
-        rect(11, 26, 7, 4, "#83a090");
-        rect(13, 15, 6, 1, "#c1c8a4");
-        rect(12, 20, 1, 4, "#64877f");
-        rect(13, 23, 3, 1, "#64877f");
-      }
-    });
-    c.drawImage(image, px - 8, py - 22);
+    const variant = hash(x, y, 17) % 64,
+      forest = biomeAt(map, x, y) === "森林";
+    const image = this.sprite(
+      `nature:${tile}:${variant}:${forest}`,
+      40,
+      48,
+      (ctx) => paintNature(ctx, tile, variant, forest),
+      2,
+    );
+    c.drawImage(image, px - 12, py - 30, 40, 48);
   }
 }

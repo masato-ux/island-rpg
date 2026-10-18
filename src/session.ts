@@ -435,7 +435,10 @@ export class Session {
         }
         continue;
       }
-      if (this.escapeGrace === 0 && Math.hypot(w.x - e.x, w.y - e.y) < 13) {
+      if (
+        this.escapeGrace === 0 &&
+        Math.hypot(w.x - e.x, w.y - e.y) < (e.kind === "dragon" ? 24 : 18)
+      ) {
         this.life.cancelAction();
         this.life.interaction = null;
         this.beginBattle(e);
@@ -580,8 +583,8 @@ export class Session {
       this.life.xp("magic", this.dangerMultiplier);
     this.hp = Math.max(0, this.hp - damage);
     this.message = damage
-      ? `${s.name}の攻撃。${damage}ダメージ。${ironWall ? "鉄壁の守りが発動。" : ""}`
-      : `${s.name}の攻撃をかわした。`;
+      ? `${s.name}は攻撃をした。\n旅人は${damage}のダメージを受けた。${ironWall ? "鉄壁の守りが発動。" : ""}`
+      : `${s.name}は攻撃をした。\n旅人は身をかわした。`;
     if (!this.hp) {
       if (e.kind === "fowl") {
         this.hp = this.life.maxHp;
@@ -657,7 +660,9 @@ export class Session {
       }
     }
     e.hp = Math.max(0, e.hp - damage);
-    this.message = damage ? `${s.name}に${damage}ダメージ。` : "攻撃が外れた。";
+    this.message = damage
+      ? `旅人は攻撃をした。\n${s.name}に${damage}ダメージ。`
+      : "旅人は攻撃をした。\nしかし、攻撃は外れた。";
     if (!e.hp) {
       if (e.kind === "fowl") {
         this.finishTraining();
@@ -672,7 +677,7 @@ export class Session {
           this.battle = null;
           this.escapeGrace = 3;
         }
-        this.message = `${s.name}を倒し、${s.drop}を手に入れた。銅貨は落とさない。`;
+        this.message = `旅人は攻撃をした。\n${s.name}を倒し、${s.drop}を手に入れた。銅貨は落とさない。`;
       }
     }
     if (this.battle) this.completeBattleAction();

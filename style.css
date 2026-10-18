@@ -637,3 +637,52 @@ summary {
     font-size: 11px;
   }
 }
+
+/* Classic high-contrast battle windows. */
+#battle-panel {
+  background: #000;
+  color: #fff;
+  border: 3px solid #fff;
+  border-radius: 5px;
+  box-shadow:
+    0 0 0 3px #000,
+    0 12px 60px #000b;
+}
+#battle-panel h2,
+.battle-top {
+  color: #fff;
+}
+#battle-scene {
+  background: #000;
+  border-color: #fff;
+  border-radius: 3px;
+}
+#battle-log {
+  background: #000;
+  border: 2px solid #fff;
+  color: #fff;
+  line-height: 1.5;
+  min-height: 110px;
+}
+#battle-panel .panel-buttons button,
+#battle-panel .battle-roster button {
+  background: #000;
+  color: #fff;
+  border-color: #fff;
+}
+#battle-panel .battle-roster button[aria-pressed="true"] {
+  background: #333;
+  border-color: #fff;
+  box-shadow: inset 3px 0 #fff;
+}
+#battle-panel button:hover:not(:disabled),
+#battle-panel button:focus-visible {
+  background: #292929;
+  outline-color: #fff;
+}
+#battle-panel #battle-help {
+  color: #bbb;
+}
+#battle-panel #battle-reinforcement {
+  color: #fff;
+}

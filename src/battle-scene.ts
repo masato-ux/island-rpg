@@ -1,6 +1,6 @@
 import { DepthArt } from "./depth-art.ts";
 import { species, type Session } from "./session.ts";
-import { biomeAt, isBlocked } from "./maps.ts";
+import { isBlocked } from "./maps.ts";
 export class BattleScene {
   private art: DepthArt;
   constructor(private c: CanvasRenderingContext2D) {
@@ -12,34 +12,8 @@ export class BattleScene {
     const c = this.c,
       b = s.battle;
     if (!b) return;
-    const biome = biomeAt(
-      s.world.map,
-      Math.floor(s.world.x / 16),
-      Math.floor(s.world.y / 16),
-    );
-    const cave = biome === "洞窟",
-      night = s.clock % 86400 >= 19 * 3600 || s.clock % 86400 < 6 * 3600;
-    c.fillStyle = cave ? "#202e3c" : night ? "#23364e" : "#668c99";
+    c.fillStyle = "#000";
     c.fillRect(0, 0, 320, 120);
-    c.fillStyle = cave ? "#394857" : night ? "#354d52" : "#8aa89c";
-    c.beginPath();
-    c.moveTo(0, 65);
-    for (let x = 0; x <= 320; x += 20) c.lineTo(x, 45 + Math.sin(x / 37) * 12);
-    c.lineTo(320, 120);
-    c.lineTo(0, 120);
-    c.fill();
-    c.fillStyle = cave
-      ? "#454d55"
-      : biome === "沿岸"
-        ? "#aeab7c"
-        : biome === "沼地"
-          ? "#4c6c60"
-          : "#66845c";
-    c.fillRect(0, 66, 320, 54);
-    for (let i = 0; i < 95; i++) {
-      c.fillStyle = i % 2 ? "rgba(207,213,163,.18)" : "rgba(21,43,35,.16)";
-      c.fillRect((i * 47) % 320, 69 + ((i * 13) % 49), 2 + (i % 3), 0.5);
-    }
     const members = b.members
       .map((id) => s.enemies.find((e) => e.id === id)!)
       .filter((e) => e.hp > 0);

@@ -33,8 +33,14 @@ function fixture() {
   s.rngSeed = 1;
   return s;
 }
-async function load(page) {
+async function load(page, approaching = false) {
   const s = fixture();
+  if (approaching) {
+    s.enemies[0].x = s.world.x + 32;
+    s.enemies[0].spawnX = s.enemies[0].x;
+    s.enemies[1].hp = 0;
+    s.enemies[2].hp = 0;
+  }
   const raw = new SaveStore({ getItem: () => null, setItem: () => {} }).export(
     s.snapshot(),
   );
@@ -129,4 +135,25 @@ test("戦闘の正面画面には魔物と背景が描画される", async ({ pa
     return colors.size;
   });
   expect(count).toBeGreaterThan(40);
+});
+
+test("フィールドを歩いて敵に接触すると黒地・白枠の戦闘画面が開く", async ({
+  page,
+}) => {
+  await load(page, true);
+  await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
+  await expect(page.locator("#battle-panel")).toBeHidden();
+  await page.keyboard.down("ArrowRight");
+  await expect(page.locator("#battle-panel")).toBeVisible({ timeout: 5000 });
+  await page.keyboard.up("ArrowRight");
+  const colors = await page.locator("#battle-panel").evaluate((e) => ({
+    background: getComputedStyle(e).backgroundColor,
+    border: getComputedStyle(e).borderTopColor,
+  }));
+  expect(colors).toEqual({
+    background: "rgb(0, 0, 0)",
+    border: "rgb(255, 255, 255)",
+  });
+  await page.getByRole("button", { name: "攻撃", exact: true }).click();
+  await expect(page.locator("#battle-log")).toContainText("旅人は攻撃をした");
 });
