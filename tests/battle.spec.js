@@ -44,7 +44,7 @@ async function load(page, approaching = false) {
   const raw = new SaveStore({ getItem: () => null, setItem: () => {} }).export(
     s.snapshot(),
   );
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.locator("#import-save").setInputFiles({
     name: "battle.json",
     mimeType: "application/json",

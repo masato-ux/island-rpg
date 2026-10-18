@@ -1,0 +1,298 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Noto Sans JP",
+    sans-serif;
+  color: #eee9db;
+  background: #1c292a;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at 50% 15%, #324344, transparent 70%);
+  min-height: 100dvh;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #8e9c8b;
+  background: #d1d9b9;
+  color: #273b36;
+  border-radius: 8px;
+  padding: 11px 18px;
+  touch-action: none;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+button:focus-visible {
+  outline: 3px solid #f4d695;
+  outline-offset: 3px;
+}
+.office-shell {
+  max-width: 1040px;
+  margin: auto;
+  padding: 24px 20px 36px;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header a {
+  color: #eee9db;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+header a span {
+  font-weight: 400;
+  color: #aec0af;
+}
+.badge {
+  font-size: 11px;
+  letter-spacing: 2px;
+  border: 1px solid #647574;
+  padding: 9px 12px;
+  border-radius: 4px;
+}
+.heading {
+  margin: 34px 0 24px;
+}
+.heading > p,
+.kicker {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #d1bc88;
+}
+.heading h1 {
+  font-size: clamp(20px, 3.5vw, 30px);
+  letter-spacing: 2px;
+  margin: 10px 0;
+}
+.heading > span {
+  font-size: 13px;
+  color: #bac6bd;
+}
+.office-game {
+  border: 1px solid #778476;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 65px #07181766;
+}
+.office-bar,
+.office-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #263838;
+  padding: 12px 16px;
+  font-size: 12px;
+  gap: 12px;
+}
+.office-bar button {
+  padding: 6px 10px;
+  font-size: 11px;
+  background: #354946;
+  color: #dfe7d2;
+}
+.office-view {
+  position: relative;
+  background: #101c20;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;
+  image-rendering: pixelated;
+}
+#office-notice {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #1e3435dd;
+  padding: 20px;
+  color: #fff;
+}
+#office-notice[hidden] {
+  display: none;
+}
+.office-status {
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #c9d4c9;
+}
+.office-status b {
+  color: #ece9d8;
+}
+.story-card,
+.dialog-card {
+  background: #283a3b;
+  border: 1px solid #899585;
+  border-radius: 10px;
+  padding: 22px;
+  margin-top: 18px;
+  line-height: 1.8;
+}
+.story-card h2 {
+  font-size: 22px;
+  margin: 8px 0;
+}
+.story-card p {
+  font-size: 14px;
+  max-width: 760px;
+}
+.story-card > div {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.secondary {
+  background: transparent;
+  color: #d5decf;
+}
+.dialog-card {
+  position: fixed;
+  z-index: 5;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92vw, 650px);
+  box-shadow: 0 0 0 100vmax #07141680;
+}
+.dialog-card[hidden],
+.story-card[hidden] {
+  display: none;
+}
+.office-bottom {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0;
+}
+.office-bottom p {
+  font-size: 13px;
+  line-height: 1.8;
+  flex: 1;
+  border-left: 2px solid #b2c091;
+  padding-left: 12px;
+}
+.utility {
+  display: flex;
+  gap: 8px;
+}
+.utility button {
+  font-size: 12px;
+  padding: 9px 12px;
+  background: transparent;
+  color: #c8d6c7;
+}
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 600px;
+  margin: 20px auto;
+}
+.dpad {
+  display: grid;
+  grid-template-columns: 54px 54px 54px;
+  gap: 7px;
+}
+.dpad button {
+  width: 54px;
+  height: 50px;
+  padding: 0;
+  font-size: 20px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dpad [data-move="up"] {
+  grid-column: 2;
+}
+.dpad [data-move="left"] {
+  grid-column: 1;
+}
+.dpad [data-move="down"] {
+  grid-column: 2;
+  grid-row: 3;
+}
+.dpad span {
+  display: grid;
+  place-items: center;
+  color: #c5d2bd;
+}
+.dpad button[data-held="true"] {
+  background: #8fbcaa;
+}
+#office-interact {
+  min-width: 116px;
+  line-height: 1.6;
+}
+#office-interact small {
+  font-size: 10px;
+}
+footer {
+  text-align: center;
+  font-size: 11px;
+  line-height: 2;
+  color: #99b0a5;
+  margin-top: 25px;
+}
+@media (max-width: 600px) {
+  .office-shell {
+    padding: 18px 12px 30px;
+  }
+  .heading {
+    margin: 25px 0 18px;
+  }
+  .heading h1 {
+    font-size: 20px;
+    line-height: 1.6;
+  }
+  .office-status {
+    padding: 10px;
+    font-size: 10px;
+  }
+  .office-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0;
+  }
+  .office-bottom p {
+    margin-bottom: 8px;
+  }
+  .story-card {
+    padding: 16px;
+  }
+  .story-card h2 {
+    font-size: 19px;
+  }
+  .story-card button {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+  .controls {
+    margin: 15px 10px;
+  }
+  .office-bar {
+    font-size: 10px;
+    padding: 9px;
+  }
+  .utility {
+    align-self: flex-end;
+  }
+  .dialog-card {
+    bottom: 12px;
+    padding: 16px;
+  }
+}

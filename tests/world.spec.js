@@ -28,7 +28,7 @@ async function load(page, s) {
   const raw = new SaveStore({ getItem: () => null, setItem: () => {} }).export(
     s.snapshot(),
   );
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.locator("#import-save").setInputFiles({
     name: "world-save.json",
     mimeType: "application/json",
@@ -163,7 +163,7 @@ test("初回キャッシュ後はネットワークなしで再起動・移動�
   page,
   context,
 }) => {
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload();
   await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
@@ -228,7 +228,7 @@ test("ゲームパッド入力を読み、切断すると移動が止まる", as
       value: () => [window.testPad],
     });
   });
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   const before = Number(
     await page.locator("#world").getAttribute("data-player-x"),
@@ -362,7 +362,7 @@ test("ゲームパッドだけでタイトル開始と会話の選択・取消�
     }, n);
     await page.waitForTimeout(100);
   };
-  await page.goto("/");
+  await page.goto("/island.html");
   await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   await press(0);
   await expect(page.locator("#world")).toHaveAttribute("data-screen", "field");
@@ -379,7 +379,7 @@ test("ゲームパッドだけでタイトル開始と会話の選択・取消�
 });
 test("ゲームのJS読込失敗でも再読み込みの案内が出る", async ({ page }) => {
   await page.route("**/assets/*.js", (route) => route.abort());
-  await page.goto("/");
+  await page.goto("/island.html");
   await expect(page.locator("#notice")).toContainText(
     "ゲームのファイルを読み込めませんでした",
   );
@@ -408,7 +408,7 @@ test("旧セーブを縮小した村へ移しても進行を保って読込で�
   const raw = readFileSync(
     new URL("./fixtures/field03-save.json", import.meta.url),
   );
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.locator("#import-save").setInputFiles({
     name: "old-field.json",
     mimeType: "application/json",

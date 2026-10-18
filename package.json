@@ -10,8 +10,8 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test:unit": "node --experimental-strip-types --test --test-isolation=none tests/*.test.ts",
-    "format": "prettier --write src tests scripts index.html style.css *.json *.ts *.js README.md docs/validation.md docs/acceptance.md docs/github-pages.md .github/workflows/*.yml",
-    "format:check": "prettier --check src tests scripts index.html style.css *.json *.ts *.js README.md docs/validation.md docs/acceptance.md docs/github-pages.md .github/workflows/*.yml",
+    "format": "prettier --write src tests scripts index.html island.html style.css office.css *.json *.ts *.js README.md README-island.md docs/office-story.md docs/validation.md docs/acceptance.md docs/github-pages.md .github/workflows/*.yml",
+    "format:check": "prettier --check src tests scripts index.html island.html style.css office.css *.json *.ts *.js README.md README-island.md docs/office-story.md docs/validation.md docs/acceptance.md docs/github-pages.md .github/workflows/*.yml",
     "test:webkit": "TEST_WEBKIT=1 playwright test --project=webkit-mobile"
   },
   "devDependencies": {

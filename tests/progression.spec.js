@@ -3,7 +3,7 @@ import { Session } from "../src/session.ts";
 import { SaveStore } from "../src/save.ts";
 import { test, expect } from "@playwright/test";
 async function start(page) {
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
 }
 async function walk(page, axis, target) {
@@ -121,7 +121,7 @@ test("導入を操作で完走し、楔で保存→再読込→JSON書出し", a
 test("タイトルでは時計停止、メニュー中は進行、保存前の続きは無効", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/island.html");
   await expect(
     page.getByRole("button", { name: "続きから", exact: true }),
   ).toBeDisabled();
@@ -182,7 +182,7 @@ test("JSON読込から通常戦闘・死亡・保存への復元", async ({ page
   const raw = new SaveStore({ getItem: () => null, setItem: () => {} }).export(
     fixture.snapshot(),
   );
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.locator("#import-save").setInputFiles({
     name: "combat-save.json",
     mimeType: "application/json",

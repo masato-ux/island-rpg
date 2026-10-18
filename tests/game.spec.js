@@ -6,7 +6,7 @@ async function x(page) {
 test("描画、キー移動、衝突、再開始", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   const pixels = await page.locator("#world").evaluate((c) => {
@@ -37,7 +37,7 @@ test("描画、キー移動、衝突、再開始", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 test("タッチ操作、キャンセル、回転、復帰", async ({ page }, testInfo) => {
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   await expect(page.locator("#world")).toHaveAttribute("data-ready", "true");
   const button = page.getByRole("button", { name: "左に移動" });
@@ -106,13 +106,13 @@ test("Canvas初期化失敗時に案内を表示", async ({ page }) => {
   await page.addInitScript(() => {
     HTMLCanvasElement.prototype.getContext = () => null;
   });
-  await page.goto("/");
+  await page.goto("/island.html");
   await expect(page.locator("#notice")).toContainText(
     "ゲームを起動できませんでした",
   );
 });
 test("北口で草原へ移動し南口から帰還する", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/island.html");
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   const canvas = page.locator("#world");
   await expect(canvas).toHaveAttribute("data-map", "VIL");

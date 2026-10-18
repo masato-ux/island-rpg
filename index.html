@@ -4,196 +4,111 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
     />
-    <meta name="theme-color" content="#142f32" />
+    <meta name="theme-color" content="#1c292a" />
     <script>
       addEventListener(
         "error",
         (event) => {
           if (event.target instanceof HTMLScriptElement) {
-            const notice = document.getElementById("notice");
+            const notice = document.getElementById("office-notice");
             if (notice) {
               notice.hidden = false;
               notice.textContent =
-                "ゲームのファイルを読み込めませんでした。通信状態を確認して、ページを再読み込みしてください。";
+                "ゲームのファイルを読み込めませんでした。通信状態を確認し、再読み込みしてください。";
             }
           }
         },
         true,
       );
     </script>
-    <title>無詠唱の漂流者</title>
-    <link rel="stylesheet" href="./style.css" />
+    <title>無詠唱の魔法使い ─ OFFICE REBIRTH</title>
+    <link rel="stylesheet" href="./office.css" />
   </head>
   <body>
-    <main>
+    <main class="office-shell">
       <header>
-        <a class="brand" href="./">ISLAND <span>RPG</span></a
-        ><span class="badge">v0.3 · FIELD 22</span>
+        <a href="./">OFFICE <span>REBIRTH</span></a
+        ><span class="badge">OFFICE 01</span>
       </header>
-      <section class="intro">
-        <p class="eyebrow">THE SILENT CASTAWAY</p>
-        <h1>無詠唱の漂流者</h1>
-        <p>潮風の向こうへ、最初の一歩。</p>
+      <section class="heading">
+        <p>PROLOGUE — A SECOND LIFE</p>
+        <h1>声のない魔法使いと、月曜のオフィス。</h1>
+        <span>魔王城のその先で、見知らぬ日常が始まる。</span>
       </section>
-      <section class="game" aria-label="島の探索">
-        <div class="gamebar">
-          <span><i></i> <span id="map-name">南の村・海岸</span></span
-          ><span><span id="clock">DAY 01 08:00</span></span>
+      <section class="office-game" aria-label="現代のオフィス">
+        <div class="office-bar">
+          <span>●　あおばオフィス・執務フロア</span
+          ><button id="view-mode">全体表示</button>
         </div>
-        <div id="room-guide" class="room-guide" hidden>
-          <span>出口は南側の明るい扉 ↓</span>
-          <button id="room-exit" data-life="leave">外へ出る（出口）</button>
-        </div>
-        <div class="viewport">
+        <div class="office-view">
           <canvas
-            id="world"
-            width="320"
-            height="180"
-            aria-label="南の村・海岸に立つ主人公。下の方向ボタンまたは矢印キーで移動できます"
-            >Canvasを利用できません。対応ブラウザで開いてください。</canvas
+            id="office"
+            width="960"
+            height="624"
+            aria-label="会議室・執務机・休憩室のあるオフィス。矢印キーまたは画面の十字ボタンで移動できます"
+            >Canvasに対応したブラウザで開いてください。</canvas
           >
-          <div id="notice" role="status">島を準備しています…</div>
-          <div class="location">SOUTH SHORE / 南の浜辺</div>
+          <div id="office-notice" role="status">オフィスを準備しています…</div>
         </div>
-        <div class="gamefoot">
-          <span
-            >◆ <b>旅人</b>
-            <span class="muted" id="stats">HP 120/120 · MP 160/160</span></span
-          ><span id="position">座標 12, 8</span>
+        <div class="office-status">
+          <b>◆ 魔法使い</b><span>声：失われたまま　／　魔力：0</span
+          ><span id="office-location">南側エントランス</span>
         </div>
       </section>
-      <section id="title-panel" class="panel" aria-label="タイトル">
-        <p class="eyebrow">PROLOGUE / 声を失った魔法使い</p>
-        <h2>島で、もう一度生きる。</h2>
-        <p>
-          魔王に声と防具を奪われ、勇者に救われた魔法使いは、孤島の南海岸へ漂着する。
+      <section id="office-story" class="story-card" aria-label="新しい物語">
+        <p class="kicker">魔王に、声と魔力を奪われた。</p>
+        <h2 id="story-title">勇者がくれた、もう一度の人生。</h2>
+        <p id="story-text">
+          勇者一行の魔法使いだったあなた。魔王との戦いで倒れたあなたを救うため、勇者は残された魔力のすべてを転生魔法に注いだ。
         </p>
-        <p class="save-warning">
-          保存はこのブラウザの端末内です。ブラウザのデータ削除で消えます。入手後の魂の楔で保存し、JSONでもバックアップしてください。
-        </p>
-        <div class="panel-buttons">
-          <button id="new-game">最初から</button
-          ><button id="continue" disabled>続きから</button
-          ><label class="file-button"
-            >セーブ読込<input
-              id="import-save"
-              type="file"
-              accept=".json,application/json"
-          /></label>
+        <div>
+          <button id="office-start">物語を始める</button
+          ><button id="office-skip" class="secondary">オフィスから始める</button
+          ><button id="office-continue" class="secondary" disabled>
+            続きから
+          </button>
         </div>
       </section>
-      <section
-        id="battle-panel"
-        class="panel encounter"
+      <div
+        id="office-dialog"
+        class="dialog-card"
         role="dialog"
         aria-modal="true"
-        aria-label="戦闘"
+        aria-label="調べる"
         hidden
       >
-        <div class="battle-top">
-          <span id="battle-turn"></span><span id="battle-player"></span>
-        </div>
-        <canvas
-          id="battle-scene"
-          width="1280"
-          height="480"
-          aria-label="正面から見た戦闘中の魔物と周辺の気配"
-        ></canvas>
-        <h2 id="enemy-status"></h2>
-        <div
-          id="battle-roster"
-          class="battle-roster"
-          aria-label="攻撃対象"
-        ></div>
-        <p id="battle-reinforcement"></p>
-        <div
-          id="battle-log"
-          role="log"
-          aria-live="polite"
-          aria-label="戦闘の記録"
-        ></div>
-        <p id="battle-help">
-          コマンドを選ぶと敵が行動します。周囲の魔物は動き続け、援軍が来ることがあります。
+        <b id="dialog-name"></b>
+        <p id="dialog-text"></p>
+        <button id="dialog-close">閉じる</button>
+      </div>
+      <div class="office-bottom">
+        <p id="office-message" role="status">
+          勇者の最後の魔法が、あなたをこの場所へ運んだ。
         </p>
-        <div class="panel-buttons">
-          <button data-command="attack">攻撃</button
-          ><button data-command="defend">防御</button
-          ><button data-command="escape">逃走</button>
+        <div class="utility">
+          <button id="office-save">記録する</button
+          ><button id="office-intro">物語を読む</button>
         </div>
-        <div id="battle-tools" class="panel-buttons"></div>
+      </div>
+      <section class="controls" aria-label="移動操作">
+        <div class="dpad">
+          <button data-move="up" aria-label="上へ移動">▲</button
+          ><button data-move="left" aria-label="左へ移動">◀</button
+          ><span>✦</span
+          ><button data-move="right" aria-label="右へ移動">▶</button
+          ><button data-move="down" aria-label="下へ移動">▼</button>
+        </div>
+        <button id="office-interact">
+          調べる<br /><small>E / Space</small>
+        </button>
       </section>
-      <section
-        id="death-panel"
-        class="panel"
-        aria-label="ゲームオーバー"
-        hidden
-      >
-        <h2>命が尽きた</h2>
-        <p>
-          保存後の出来事は巻き戻ります。楔を得る前なら漂着時点から再開します。
-        </p>
-        <div class="panel-buttons">
-          <button id="revive">魂を戻す</button
-          ><button id="death-title">タイトルへ</button>
-        </div>
-      </section>
-      <section id="menu-panel" class="panel" aria-label="メニュー画面" hidden>
-        <h2>旅の記録</h2>
-        <p>メニュー中も時間と周囲の魔物は動きます。</p>
-        <div id="detail"></div>
-        <p id="inventory"></p>
-        <p id="save-hint"></p>
-        <div class="panel-buttons">
-          <button id="save-game">魂の楔で保存</button
-          ><button id="load-game">保存から戻る</button
-          ><button id="export-save">JSON書き出し</button
-          ><button id="return-title">タイトルへ戻る</button
-          ><button id="close-menu">閉じる</button>
-        </div>
-      </section>
-      <section
-        id="interaction-panel"
-        class="panel"
-        aria-label="会話と行動"
-        hidden
-      ></section>
-      <p id="objective" class="objective"></p>
-      <section class="controls">
-        <div class="guide">
-          <p class="eyebrow">EXPLORE AT YOUR OWN PACE</p>
-          <h2>まずは、歩いてみよう。</h2>
-          <p>
-            ダンに近づき「調べる」で話せます。<br />北口の先は魔物のいる草原です。
-          </p>
-          <p class="keyboard">
-            <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> / WASD で移動
-          </p>
-          <button id="reset" class="reset">↺ スタート位置へ</button>
-        </div>
-        <div class="dpad" role="group" aria-label="移動操作">
-          <button data-dir="up" aria-label="上に移動">▲</button
-          ><button data-dir="left" aria-label="左に移動">◀</button
-          ><span aria-hidden="true">✦</span
-          ><button data-dir="right" aria-label="右に移動">▶</button
-          ><button data-dir="down" aria-label="下に移動">▼</button>
-        </div>
-        <div class="actions">
-          <button id="inspect">調べる</button><button id="menu">メニュー</button
-          ><button id="mode">歩く</button>
-        </div>
-      </section>
-      <p id="action-info" role="status"></p>
       <footer>
-        <span>ISLAND RPG</span><span>小さな冒険は、ここから。</span>
+        矢印キー / WASDで移動 · Shiftで早歩き · E / Spaceで調べる<br />机や壁を避けて、会議室・個室・休憩スペースを歩いてみよう。
       </footer>
     </main>
-    <noscript
-      ><p class="error">
-        ゲームを起動するにはJavaScriptを有効にしてください。
-      </p></noscript
-    >
-    <script type="module" src="./src/game.ts"></script>
+    <noscript>ゲームを起動するにはJavaScriptを有効にしてください。</noscript>
+    <script type="module" src="./src/office.ts"></script>
   </body>
 </html>
