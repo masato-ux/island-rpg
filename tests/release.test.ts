@@ -2,6 +2,7 @@ import {
   villagePoint as vp,
   compactPoint as cp,
   maps as fieldMaps,
+  isBlocked,
 } from "../src/maps.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -231,6 +232,58 @@ test("漁師の依頼は魚種を限定せず、生魚2匹で完納できる", (
   assert.equal(s.life.data.quests[0].state, "completed");
   validateSnapshot(s.snapshot());
 });
+function route(s: Session, side: "up" | "down", altar = false) {
+  const m = s.world.map,
+    sx = Math.floor(s.world.x / 16),
+    sy = Math.floor(s.world.y / 16),
+    tx = Math.floor(m.width / 2),
+    ty = altar ? 7 : side === "up" ? 0 : m.height - 1;
+  const queue = [[sx, sy]],
+    previous = new Map<string, string | null>([[`${sx},${sy}`, null]]);
+  for (let i = 0; i < queue.length; i++)
+    for (const [dx, dy] of [
+      [0, side === "up" ? -1 : 1],
+      [1, 0],
+      [-1, 0],
+      [0, side === "up" ? 1 : -1],
+    ]) {
+      const x = queue[i][0] + dx,
+        y = queue[i][1] + dy,
+        key = `${x},${y}`;
+      if (!previous.has(key) && !isBlocked(m, x, y)) {
+        previous.set(key, queue[i].join(","));
+        queue.push([x, y]);
+      }
+    }
+  const points: number[][] = [];
+  let key: string | null = `${tx},${ty}`;
+  assert.ok(previous.has(key), m.id);
+  while (key) {
+    points.unshift(key.split(",").map((v) => Number(v) * 16 + 8));
+    key = previous.get(key)!;
+  }
+  return points;
+}
+function follow(s: Session, points: number[][]) {
+  while (
+    points.length &&
+    Math.hypot(points[0][0] - s.world.x, points[0][1] - s.world.y) < 2
+  )
+    points.shift();
+  const p = points[0];
+  if (!p) return new Set<"up" | "down" | "left" | "right">();
+  const dx = p[0] - s.world.x,
+    dy = p[1] - s.world.y;
+  return new Set<"up" | "down" | "left" | "right">([
+    Math.abs(dx) > Math.abs(dy)
+      ? dx > 0
+        ? "right"
+        : "left"
+      : dy > 0
+        ? "down"
+        : "up",
+  ]);
+}
 test("村から主道を通り祭壇に到着して結末後に保存・帰還できる", () => {
   const s = game();
   Object.assign(s.world, vp(392, 400));
@@ -241,7 +294,9 @@ test("村から主道を通り祭壇に到着して結末後に保存・帰還�
     s.life.equip(s.life.data.gear.at(-1)!.id);
   }
   const visited = new Set([s.world.mapId]);
-  for (let frame = 0; frame < 15000; frame++) {
+  let planned = "",
+    points: number[][] = [];
+  for (let frame = 0; frame < 30000; frame++) {
     if (
       s.world.mapId === "NORTH" &&
       s.world.y <= 136 &&
@@ -250,7 +305,11 @@ test("村から主道を通り祭壇に到着して結末後に保存・帰還�
     )
       break;
     if (s.battle) s.command("attack");
-    s.update(0.1, new Set(["up"]));
+    if (!s.world.transitioning && planned !== s.world.mapId) {
+      planned = s.world.mapId;
+      points = route(s, "up", s.world.mapId === "NORTH");
+    }
+    s.update(0.025, s.world.transitioning ? new Set() : follow(s, points));
     visited.add(s.world.mapId);
     assert.equal(s.screen, "field", `route ${s.world.mapId}, HP ${s.hp}`);
   }
@@ -263,9 +322,15 @@ test("村から主道を通り祭壇に到着して結末後に保存・帰還�
   s.life.end("silent");
   assert.equal(s.life.data.ending, "silent");
   validateSnapshot(s.snapshot());
-  for (let frame = 0; frame < 15000 && s.world.mapId !== "VIL"; frame++) {
+  planned = "";
+  points = [];
+  for (let frame = 0; frame < 30000 && s.world.mapId !== "VIL"; frame++) {
     if (s.battle) s.command("escape");
-    s.update(0.1, new Set(["down"]));
+    if (!s.world.transitioning && planned !== s.world.mapId) {
+      planned = s.world.mapId;
+      points = route(s, "down");
+    }
+    s.update(0.025, s.world.transitioning ? new Set() : follow(s, points));
     assert.equal(s.screen, "field");
   }
   assert.equal(s.world.mapId, "VIL");

@@ -38,6 +38,7 @@ export class DepthArt {
     c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
     c.fill();
   }
+  private peopleSprites = new Map<string, HTMLCanvasElement>();
   person(
     x: number,
     y: number,
@@ -46,9 +47,50 @@ export class DepthArt {
     step = 0,
     facing = "down",
   ) {
-    const r = this.rect.bind(this),
-      e = this.ellipse.bind(this),
-      look = appearances[seed] || {
+    const key = `${seed}:${color}:${step}:${facing}`;
+    let sprite = this.peopleSprites.get(key);
+    if (!sprite) {
+      sprite = document.createElement("canvas");
+      sprite.width = 40;
+      sprite.height = 44;
+      const context = sprite.getContext("2d")!;
+      context.imageSmoothingEnabled = false;
+      new DepthArt(context).paintPerson(20, 32, color, seed, step, facing);
+      this.peopleSprites.set(key, sprite);
+    }
+    this.c.drawImage(sprite, Math.round(x) - 20, Math.round(y) - 32);
+  }
+  private paintPerson(
+    x: number,
+    y: number,
+    color: string,
+    seed = 0,
+    step = 0,
+    facing = "down",
+  ) {
+    const bodyY = (yy: number) => (yy <= -8 ? yy + 4 : (yy + 8) * 0.6 - 4);
+    const r = (xx: number, yy: number, w: number, h: number, color: string) =>
+      this.rect(
+        yy > -8 ? xx * 0.8 : xx,
+        bodyY(yy),
+        yy > -8 ? w * 0.8 : w,
+        yy > -8 ? h * 0.6 : h,
+        color,
+      );
+    const e = (xx: number, yy: number, rx: number, ry: number, color: string) =>
+      this.ellipse(
+        yy > -8 ? xx * 0.8 : xx,
+        bodyY(yy),
+        yy > -8 ? rx * 0.8 : rx,
+        yy > -8 ? ry * 0.6 : ry,
+        color,
+      );
+    const shape = (points: number[][], color: string) =>
+      this.polygon(
+        points.map(([xx, yy]) => [yy > -8 ? xx * 0.8 : xx, bodyY(yy)]),
+        color,
+      );
+    const look = appearances[seed] || {
         ...appearances[4],
         outfit: color,
         detail: "monster",
@@ -70,7 +112,7 @@ export class DepthArt {
       e(3, -12, 2.6, 6, look.hair);
     }
     if (seed === 0) {
-      this.polygon(
+      shape(
         [
           [-4, -12],
           [-7, -8],
@@ -82,7 +124,7 @@ export class DepthArt {
         ],
         "#253d4a",
       );
-      this.polygon(
+      shape(
         [
           [-3, -11],
           [-6, -8],
@@ -96,7 +138,7 @@ export class DepthArt {
       );
       r(-5, -7, 0.5, 7, "#7aa0a0");
       r(3, -7, 1, 7, "#294b5b");
-      this.polygon(
+      shape(
         [
           [5, -9],
           [7, -9],
@@ -131,7 +173,7 @@ export class DepthArt {
     blob(2.6, 3 - walk, 2.2, 1.6, "#694c3f");
     r(-4, -1, 3, 3.5 + walk, "#4d536a");
     r(1, -1, 3, 3.5 - walk, "#4d536a");
-    this.polygon(
+    shape(
       [
         [-4, -11],
         [-6, -8],
@@ -142,7 +184,7 @@ export class DepthArt {
       ],
       ink,
     );
-    this.polygon(
+    shape(
       [
         [-3, -10],
         [-5, -7],
@@ -158,7 +200,7 @@ export class DepthArt {
     r(-3, -3, 6, 1.5, look.accent);
     r(-1, -8, 2, 1, "#e7dbad");
     if (feminine)
-      this.polygon(
+      shape(
         [
           [-3, -6],
           [-5, 2],
@@ -176,7 +218,7 @@ export class DepthArt {
     e(0, -14.7, 5.6, 6.1, "#f0c299");
     e(-5.7, -13.8, 1.1, 1.6, "#e5ac83");
     e(5.7, -13.8, 1.1, 1.6, "#e5ac83");
-    this.polygon(
+    shape(
       [
         [-5, -17],
         [-5, -19],
@@ -260,7 +302,7 @@ export class DepthArt {
       r(-2, -10, 0.5, 2, "#96775b");
     }
     if (look.age === "elder" && facing !== "up") {
-      this.polygon(
+      shape(
         [
           [-3, -11],
           [0, -12],
@@ -291,7 +333,7 @@ export class DepthArt {
       r(-3, -5, 6, 5, look.accent);
     }
     if (look.detail === "kerchief") {
-      this.polygon(
+      shape(
         [
           [-5, -18],
           [-2, -22],
@@ -305,7 +347,7 @@ export class DepthArt {
       r(-2, -3, 4, 0.5, "#f3dfb5");
     }
     if (["apron", "pinafore", "herbalist"].includes(look.detail)) {
-      this.polygon(
+      shape(
         [
           [-2, -8],
           [-3, 2],
@@ -340,7 +382,7 @@ export class DepthArt {
     }
     if (seed === 0) {
       // Wind-swept hair, scarf, leather cuirass, shoulder guard and travel boots.
-      this.polygon(
+      shape(
         [
           [-5, -17],
           [-4, -21],
@@ -357,7 +399,7 @@ export class DepthArt {
       );
       r(-3, -21, 1.5, 0.5, "#63545a");
       r(1, -21, 1, 0.5, "#817075");
-      this.polygon(
+      shape(
         [
           [-4, -10],
           [-2, -7],
@@ -367,7 +409,7 @@ export class DepthArt {
         look.accent,
       );
       r(-3, -9, 6, 0.7, "#9dc0ae");
-      this.polygon(
+      shape(
         [
           [-4, -7],
           [-5, -3],
@@ -380,7 +422,7 @@ export class DepthArt {
       r(-3, -6, 6, 6, "#6d523c");
       r(-2.5, -5, 1, 4, "#a5865b");
       r(1.5, -5, 1, 4, "#463d34");
-      this.polygon(
+      shape(
         [
           [-5, -10],
           [-7, -8],
@@ -396,7 +438,7 @@ export class DepthArt {
       r(-4, 2, 3, 2.5, "#4b3b30");
       r(1, 2, 3, 2.5, "#4b3b30");
       if (facing === "up") {
-        this.polygon(
+        shape(
           [
             [-4, -9],
             [-5, 1],

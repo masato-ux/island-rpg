@@ -84,11 +84,11 @@ export class World {
       this.facing = dir;
     }
     const norm = Math.hypot(dx, dy) || 1,
-      wet =
-        tileAt(this.map, Math.floor(this.x / 16), Math.floor(this.y / 16)) ===
-        "wet"
-          ? 0.7
-          : 1,
+      wet = ["wet", "shallow"].includes(
+        tileAt(this.map, Math.floor(this.x / 16), Math.floor(this.y / 16)),
+      )
+        ? 0.7
+        : 1,
       speed =
         SPEED *
         (this.mode === "run" ? 1.6 : this.mode === "sneak" ? 0.5 : 1) *

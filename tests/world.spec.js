@@ -1,5 +1,11 @@
 import { readFileSync } from "node:fs";
-import { maps, compactPoint, villagePoint, safePosition } from "../src/maps.ts";
+import {
+  maps,
+  compactPoint,
+  villagePoint,
+  safePosition,
+  tileAt,
+} from "../src/maps.ts";
 import { test, expect } from "@playwright/test";
 import { Session } from "../src/session.ts";
 import { SaveStore } from "../src/save.ts";
@@ -394,7 +400,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 08");
+  await expect(page.locator(".badge")).toContainText("FIELD 09");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
@@ -498,4 +504,46 @@ test("洞窟へ歩いて入り、岩壁に止まり、同じ入口から外へ�
     Number(await page.locator("canvas").getAttribute("data-player-y")),
   ).toBeGreaterThan(17 * 16);
   await expect(page.locator(".location")).not.toContainText("洞窟");
+});
+
+test("浅いぬかるみから深い沼へ進めず、沿岸の浅瀬は歩いて渡れる", async ({
+  page,
+}) => {
+  let mud, sea;
+  for (let y = 3; y < maps.EAST.height - 3 && !mud; y++)
+    for (let x = 3; x < maps.EAST.width - 3 && !mud; x++)
+      if (
+        tileAt(maps.EAST, x, y) === "wet" &&
+        tileAt(maps.EAST, x + 1, y) === "deepmud"
+      )
+        mud = { x: x * 16 + 8, y: y * 16 + 8 };
+  for (let y = 3; y < maps.WEST.height - 3 && !sea; y++)
+    for (let x = 3; x < maps.WEST.width - 3 && !sea; x++)
+      if ([0, 1, 2].every((dx) => tileAt(maps.WEST, x + dx, y) === "shallow"))
+        sea = { x: x * 16 + 8, y: y * 16 + 8 };
+  expect(mud).toBeTruthy();
+  expect(sea).toBeTruthy();
+  for (const [map, point] of [
+    ["EAST", mud],
+    ["WEST", sea],
+  ]) {
+    const s = fixture(map);
+    Object.assign(s.world, point);
+    for (const e of s.enemies.filter((e) => e.mapId === map)) {
+      e.hp = 0;
+      e.respawnAt = s.clock + 86400;
+    }
+    await load(page, s);
+    await page.keyboard.down("ArrowRight");
+    await page.waitForTimeout(400);
+    await page.keyboard.up("ArrowRight");
+    const delta =
+      Number(await page.locator("canvas").getAttribute("data-player-x")) -
+      point.x;
+    if (map === "EAST") expect(delta).toBeLessThan(5);
+    else {
+      expect(delta).toBeGreaterThan(8);
+      expect(delta).toBeLessThan(25);
+    }
+  }
 });

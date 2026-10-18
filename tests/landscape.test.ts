@@ -99,7 +99,12 @@ test("道は中央の直線から曲がり、ゲートと各建物の入口へ�
           : side === "down"
             ? map.height - 1
             : Math.floor(map.height / 2);
-      assert.equal(tileAt(map, x, y), "path");
+      assert.ok(
+        ["path", "wet", "shallow", "sand", "stairs"].includes(
+          tileAt(map, x, y),
+        ),
+        `${map.id}:${x},${y}`,
+      );
       assert.ok(seen.has(`${x},${y}`));
     }
   }

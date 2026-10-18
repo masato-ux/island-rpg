@@ -54,23 +54,35 @@ export class Terrain {
               : elevationAt(map, x, y) > 0
                 ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
                 : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+          deepmud: ["#3e615f", "#577a70", "#345552", "#74907a"],
+          shallow: ["#72aaad", "#92c4be", "#608e9c", "#bad4bf"],
           cavefloor: ["#505a66", "#747d80", "#414f5e", "#89908b"],
           cavewall: ["#3f4e5b", "#68747b", "#303e4b", "#8b9392"],
           cliff: ["#678982", "#83a49b", "#4d6f73", "#a8b7a0"],
           stairs: ["#99aa8b", "#b8bea0", "#667f79", "#ccd0ad"],
-          tree: ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+          tree:
+            biome === "森林"
+              ? ["#577951", "#688d5b", "#456747", "#859a64"]
+              : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
           rock: ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
           house: ["#b5a17a", "#c5b38c", "#a18d6b", "#cfbf97"],
-          path: ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
+          path:
+            biome === "森林"
+              ? ["#627d52", "#77935e", "#506e49", "#8e9c67"]
+              : ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
           sand: ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
-          wet: ["#6e9980", "#81aa8b", "#5c8876", "#a0b794"],
+          wet: ["#849480", "#9fab8d", "#6d8272", "#bac0a0"],
           water: ["#355678", "#3a5b7e", "#335476", "#426484"],
           floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
         };
         const colors = palette[tile];
         ctx.fillStyle = colors[0];
         ctx.fillRect(0, 0, 16, 16);
-        for (let i = 0; i < (tile === "water" ? 3 : 6); i++) {
+        for (
+          let i = 0;
+          i < (["water", "shallow", "deepmud"].includes(tile) ? 3 : 6);
+          i++
+        ) {
           const seed = hash(i, variant, tile.length),
             xx = seed % 16,
             yy = (seed >>> 8) % 16;
@@ -126,66 +138,81 @@ export class Terrain {
       },
     );
     c.drawImage(image, px, py);
-    if (map.id === "GRASS" && tile === "path" && biome === "沼地") {
-      c.fillStyle = "#685b42";
-      c.fillRect(px + 1, py, 14, 16);
-      for (let yy = 0; yy < 16; yy += 4) {
-        c.fillStyle = "#b4a078";
-        c.fillRect(px + 2, py + yy, 12, 3);
-        c.fillStyle = "#d5bc88";
-        c.fillRect(px + 2, py + yy, 12, 1);
+    if (tile === "path" && biome === "森林") {
+      c.fillStyle = "#a39970";
+      const path = (dx: number, dy: number) =>
+        tileAt(map, x + dx, y + dy) === "path";
+      let left = 0,
+        right = 0,
+        up = 0,
+        down = 0;
+      while (left < 3 && path(-left - 1, 0)) left++;
+      while (right < 3 && path(right + 1, 0)) right++;
+      while (up < 3 && path(0, -up - 1)) up++;
+      while (down < 3 && path(0, down + 1)) down++;
+      if (
+        (up || down) &&
+        left + right <= 3 &&
+        left === Math.floor((left + right + 1) / 2)
+      )
+        c.fillRect(px + 5 + (variant % 2), py, 6, 16);
+      if (
+        (left || right) &&
+        up + down <= 3 &&
+        up === Math.floor((up + down + 1) / 2)
+      )
+        c.fillRect(px, py + 5 + (variant % 2), 16, 6);
+      c.fillStyle = "#65784e";
+      for (let i = 0; i < 7; i++)
+        c.fillRect(px + ((i * 7) % 16), py + ((i * 5 + variant) % 16), 1, 2);
+    }
+    if (tile === "wet" || tile === "deepmud" || tile === "shallow") {
+      c.fillStyle =
+        tile === "deepmud" ? "#8da18a" : tile === "wet" ? "#b6bea0" : "#d1ded0";
+      for (let i = 0; i < 3; i++)
+        c.fillRect(px + ((i * 5 + variant) % 12), py + 3 + i * 5, 3, 1);
+      if (tile !== "shallow" && variant % 2 === 0) {
+        c.fillStyle = "#56724f";
+        c.fillRect(px + 3, py + 2, 1, 5);
+        c.fillRect(px + 5, py + 1, 1, 6);
+        c.fillStyle = "#bcab75";
+        c.fillRect(px + 5, py, 1, 2);
+      }
+    }
+    if (biome === "森林" && ["grass", "tree"].includes(tile)) {
+      for (let i = 0; i < 13; i++) {
+        const xx = (i * 7 + variant) % 16,
+          yy = (i * 5 + variant * 2) % 16;
+        c.fillStyle = i % 2 ? "#82975c" : "#406747";
+        c.fillRect(px + xx, py + yy, 1, 3);
+        c.fillRect(px + xx - 1, py + yy + 1, 3, 1);
       }
     }
     if (tile === "cliff") {
-      const level = elevationAt(map, x, y),
-        lower = (dx: number, dy: number) =>
-          elevationAt(map, x + dx, y + dy) < level;
-      const fill = (
-        xx: number,
-        yy: number,
-        w: number,
-        h: number,
-        color: string,
-      ) => {
-        c.fillStyle = color;
-        c.fillRect(px + xx, py + yy, w, h);
-      };
-      fill(0, 0, 16, 16, "#97b96e");
-      if (lower(0, 1)) {
-        fill(0, 3, 16, 13, "#466975");
-        // Connected uneven rock columns, without a rectangular frame around every tile.
-        for (let col = 0; col < 3; col++) {
-          const xx = col * 6 - 1,
-            n = hash(x, y, col),
-            top = 3 + (n % 3);
-          fill(xx, top, 6, 11 - top, "#789c96");
-          fill(xx + 1, top, 4, 2, "#a4b9a5");
-          fill(xx + 1, top + 2, 5, 5, "#86a69b");
-          fill(xx + 2, 12 - (n % 2), 4, 2, "#567e83");
-          fill(xx + 5, top + 4, 1, 5, "#3c6370");
-        }
-        fill(0, 0, 16, 2, "#4b7552");
-        fill(1, 0, 14, 1, "#c0d28d");
-        fill(0, 1, 16, 2, "#82a65e");
-        for (let n = 0; n < 4; n++)
-          fill(n * 4, 2 + ((n + variant) % 2), 2, 2, "#6f9658");
-      } else {
-        if (lower(0, -1)) {
-          fill(0, 0, 16, 2, "#456b56");
-          fill(1, 2, 14, 1, "#b5cd88");
-        }
-        if (lower(-1, 0)) {
-          fill(0, 0, 3, 16, "#4f7680");
-          fill(3, 1, 1, 14, "#b9ce8b");
-          fill(1, 3, 1, 9, "#90afa0");
-        }
-        if (lower(1, 0)) {
-          fill(12, 0, 4, 16, "#4d737b");
-          fill(12, 1, 1, 14, "#b4c98a");
-          fill(14, 2, 1, 10, "#86a79c");
-        }
-        fill(5, 7, 2, 1, "#adc57c");
-        fill(9, 12, 1, 2, "#82a565");
+      c.fillStyle = "#425e69";
+      c.fillRect(px, py, 16, 16);
+      for (let col = 0; col < 4; col++) {
+        const xx = col * 4,
+          n = hash(x, col, 3);
+        c.fillStyle = ["#648287", "#728f8c", "#587781", "#80988f"][n % 4];
+        c.fillRect(px + xx, py, 3, 16);
+        c.fillStyle = "#9eaca0";
+        c.fillRect(px + xx, py, 1, 16);
+        c.fillStyle = "#354f60";
+        c.fillRect(px + xx + 3, py, 1, 16);
+        c.fillRect(px + xx + 1, py + ((y * 7 + n) % 13), 2, 1);
+      }
+      const above = tileAt(map, x, y - 1);
+      if (
+        above !== "cliff" &&
+        above !== "stairs" &&
+        elevationAt(map, x, y - 1) >= elevationAt(map, x, y)
+      ) {
+        c.fillStyle = "#50774d";
+        c.fillRect(px, py, 16, 3);
+        c.fillStyle = "#a2bb79";
+        c.fillRect(px, py, 16, 1);
+        for (let i = 1; i < 16; i += 4) c.fillRect(px + i, py + 1, 2, 2);
       }
       return;
     }
@@ -202,7 +229,7 @@ export class Terrain {
       }
       return;
     }
-    if (tile === "water") {
+    if (["water", "shallow", "deepmud"].includes(tile)) {
       const phase = Math.floor(time / 6),
         n = hash(x, y, phase);
       if (n % 4 === 0) {
@@ -212,13 +239,13 @@ export class Terrain {
         c.fillRect(px + 4, py + 4 + (n % 6), 2, 1);
       }
       const land = (dx: number, dy: number) =>
-        tileAt(map, x + dx, y + dy) !== "water";
-      c.fillStyle = "#75a5ac";
+        !["water", "shallow", "deepmud"].includes(tileAt(map, x + dx, y + dy));
+      c.fillStyle = tile === "deepmud" ? "#566e5e" : "#75a5ac";
       if (land(0, -1)) c.fillRect(px, py, 16, 2);
       if (land(0, 1)) c.fillRect(px, py + 14, 16, 2);
       if (land(-1, 0)) c.fillRect(px, py, 2, 16);
       if (land(1, 0)) c.fillRect(px + 14, py, 2, 16);
-      c.fillStyle = "#d0e7cf";
+      c.fillStyle = tile === "deepmud" ? "#7b8d70" : "#d0e7cf";
       for (let i = 0; i < 4; i++) {
         const n = (i * 5 + phase) % 16;
         if (land(0, -1)) c.fillRect(px + n, py + 1, 2, 1);

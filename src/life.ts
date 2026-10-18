@@ -1237,7 +1237,11 @@ export class Life {
         x = (map === "VIL" ? 20 + i * 2 : cx - 3 - i * 3) * 16 + 8,
         y = (map === "VIL" ? 30 : m.height / 2 + 3) * 16 + 8;
       const point = map === "VIL" ? villagePoint(x, y) : { x, y };
-      return { id: `${map}:${index}`, ...point, def: resources[index] };
+      return {
+        id: `${map}:${index}`,
+        ...safePosition(m, point.x, point.y)!,
+        def: resources[index],
+      };
     });
   }
   nodeState(id: string) {

@@ -10,8 +10,9 @@ export type {
 } from "./legacy-maps.ts";
 import type { MapId, GameMap, Terrace } from "./legacy-maps.ts";
 
-export type Tile = previous.Tile | "cavefloor" | "cavewall";
-export const TERRAIN_VERSION = 8;
+export type Tile =
+  previous.Tile | "cavefloor" | "cavewall" | "deepmud" | "shallow";
+export const TERRAIN_VERSION = 9;
 const sizes: Partial<Record<MapId, [number, number]>> = {
   VIL: [40, 34],
   GRASS: [48, 38],
@@ -68,6 +69,11 @@ export function compactPoint(id: MapId, x: number, y: number) {
 }
 export const villagePoint = (x: number, y: number) => compactPoint("VIL", x, y);
 export function terracesFor(map: GameMap): Terrace[] {
+  if (map.id === "GRASS")
+    return [
+      { x: 3, y: 4, w: 17, h: 13, level: 1 },
+      { x: 6, y: 4, w: 11, h: 7, level: 2 },
+    ];
   const old = previous.maps[map.id],
     sx = map.width / old.width,
     sy = map.height / old.height;
@@ -150,7 +156,7 @@ export function roadAt(map: GameMap, x: number, y: number) {
   return terracesFor(map).some(
     (t) =>
       Math.abs(x - (t.x + Math.floor(t.w / 2))) <= 1 &&
-      y >= t.y + t.h - 3 &&
+      y >= t.y + t.h - (["GRASS", "MOUNT", "NORTH"].includes(map.id) ? 5 : 3) &&
       y <= t.y + t.h + 1,
   );
 }
@@ -189,11 +195,15 @@ export const biomeSites: { name: Biome; x: number; y: number }[] = [
   { name: "草原", x: 24, y: 31 },
   { name: "沿岸", x: 8, y: 28 },
   { name: "崖の高台", x: 10, y: 9 },
-  { name: "森林", x: 30, y: 25 },
+  { name: "森林", x: 33, y: 25 },
   { name: "沼地", x: 38, y: 32 },
   { name: "洞窟", x: 37, y: 9 },
 ];
 export function biomeAt(map: GameMap, x: number, y: number): Biome | undefined {
+  if (["SFOREST", "CFOREST"].includes(map.id)) return "森林";
+  if (map.id === "EAST") return "沼地";
+  if (map.id === "WEST") return "沿岸";
+  if (["MOUNT", "NORTH"].includes(map.id)) return "崖の高台";
   if (map.id !== "GRASS") return undefined;
   if (x >= 31 && y <= 17) return "洞窟";
   if (x >= 32 && y >= 29) return "沼地";
@@ -221,22 +231,23 @@ function northernTile(x: number, y: number): Tile | undefined {
     return "cavefloor";
   }
   if (x >= 36 && x <= 38 && y >= 16 && y <= 19) return "path";
-  // Branch trails reach the shore, forest, marsh and cave while keeping the main route.
   if (y >= 18 && y <= 19 && x >= 24 && x <= 38) return "path";
-  if (y >= 27 && y <= 28 && x >= 7 && x <= 39) return "path";
-  if (x >= 37 && x <= 39 && y >= 28 && y <= 34) return "path";
-  if (x >= 30 && x <= 31 && y >= 20 && y <= 28) return "path";
-  if (x >= 2 && x <= 14 && y >= 22 && y <= 35) {
-    const edge = 4 + Math.round(Math.sin(y * 0.65) * 2);
-    if (x < edge) return "water";
-    if (x <= edge + 3) return "sand";
+  const biome = biomeAt(maps.GRASS, x, y);
+  if (biome === "沿岸") {
+    const bank = 7 + Math.round(Math.sin(y * 0.4) * 2);
+    if (x < bank - 3) return "water";
+    if (x < bank) return "shallow";
+    return "sand";
   }
-  if (x >= 32 && x <= 44 && y >= 29 && y <= 35) {
-    if ((x * 5 + y * 3) % 19 === 0) return "water";
-    return "wet";
+  if (biome === "沼地") {
+    const bend = 38 + Math.round(Math.sin(y * 0.7) * 2);
+    return Math.abs(x - bend) <= 1 || y === 29 ? "wet" : "deepmud";
   }
-  if (x >= 29 && x <= 44 && y >= 20 && y <= 26 && (x + y) % 3 === 0)
-    return "tree";
+  if (biome === "森林") {
+    const bend = 31 + Math.round(Math.sin(y * 0.55) * 2);
+    if (Math.abs(x - bend) <= 1 || y === 27 || y === 28) return "path";
+    return (x * 7 + y * 11) % 10 < 8 ? "tree" : "grass";
+  }
   return undefined;
 }
 function raw(map: GameMap, x: number, y: number): Tile {
@@ -274,8 +285,50 @@ function raw(map: GameMap, x: number, y: number): Tile {
       [0, -1],
       [1, 0],
       [-1, 0],
-    ].some(([dx, dy]) => elevationAt(map, x + dx, y + dy) < level);
-    return rim ? (road ? "stairs" : "cliff") : road ? "path" : "grass";
+    ].some(
+      ([dx, dy]) =>
+        elevationAt(map, x + dx, y + dy) < level ||
+        (["MOUNT", "NORTH"].includes(map.id) &&
+          elevationAt(map, x + dx * 2, y + dy * 2) < level),
+    );
+    return rim
+      ? road
+        ? "stairs"
+        : "cliff"
+      : map.id === "EAST"
+        ? "wet"
+        : map.id === "WEST"
+          ? "sand"
+          : road
+            ? "path"
+            : "grass";
+  }
+  if (["SFOREST", "CFOREST"].includes(map.id)) {
+    if (road) return "path";
+    const edge = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ].some(([dx, dy]) => roadAt(map, x + dx, y + dy));
+    return (x * 17 + y * 29 + Math.floor(y / 3) * 7) % 10 < 8 || !edge
+      ? "tree"
+      : "grass";
+  }
+  if (map.id === "EAST") {
+    const edge = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ].some(([dx, dy]) => roadAt(map, x + dx, y + dy));
+    return road || (edge && (x * 7 + y * 11) % 13 < 2) ? "wet" : "deepmud";
+  }
+  if (map.id === "WEST") {
+    const shore =
+      Math.floor(map.width * 0.43) + Math.round(Math.sin(y * 0.17) * 6);
+    if (road) return x < shore ? "shallow" : "sand";
+    return x < shore - 5 ? "water" : x < shore ? "shallow" : "sand";
   }
   if (road) return "path";
   if (map.id === "VIL") {
@@ -338,9 +391,15 @@ export function legacyTileAt(map: GameMap, x: number, y: number): Tile {
   return previous.legacyTileAt(previous.maps[map.id], x, y);
 }
 export function isBlocked(map: GameMap, x: number, y: number) {
-  return ["water", "tree", "house", "rock", "cliff", "cavewall"].includes(
-    tileAt(map, x, y),
-  );
+  return [
+    "water",
+    "tree",
+    "house",
+    "rock",
+    "cliff",
+    "cavewall",
+    "deepmud",
+  ].includes(tileAt(map, x, y));
 }
 export function canStandOn(map: GameMap, x: number, y: number, legacy = false) {
   const at = legacy ? legacyTileAt : tileAt;
@@ -355,7 +414,15 @@ export function canStandOn(map: GameMap, x: number, y: number, legacy = false) {
       [5, 5],
     ].every(
       ([dx, dy]) =>
-        !["water", "tree", "house", "rock", "cliff", "cavewall"].includes(
+        ![
+          "water",
+          "tree",
+          "house",
+          "rock",
+          "cliff",
+          "cavewall",
+          "deepmud",
+        ].includes(
           at(map, Math.floor((x + dx) / 16), Math.floor((y + dy) / 16)),
         ),
     )
