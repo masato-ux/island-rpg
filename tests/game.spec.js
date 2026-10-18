@@ -116,8 +116,8 @@ test("北口で草原へ移動し南口から帰還する", async ({ page }) => 
   await page.getByRole("button", { name: "最初から", exact: true }).click();
   const canvas = page.locator("canvas");
   await expect(canvas).toHaveAttribute("data-map", "VIL");
-  await expect(canvas).toHaveAttribute("width", "640");
-  await expect(canvas).toHaveAttribute("height", "360");
+  await expect(canvas).toHaveAttribute("width", "1280");
+  await expect(canvas).toHaveAttribute("height", "720");
   await page.keyboard.down("Shift");
   // The central teleport stake now blocks the direct route: walk around it.
   for (const [key, attribute, target, forward] of [

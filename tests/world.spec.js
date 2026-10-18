@@ -400,7 +400,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 14");
+  await expect(page.locator(".badge")).toContainText("FIELD 15");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
@@ -462,8 +462,8 @@ test("室内の出口案内は常時表示され、奥からでも出口ボタ�
   await load(page, fixture("CHIEF", 88, 56));
   await expect(page.locator("#room-guide")).toBeVisible();
   await expect(page.locator("#room-guide")).toContainText("出口は南側");
-  await expect(page.locator("canvas")).toHaveAttribute("width", "640");
-  await expect(page.locator("canvas")).toHaveAttribute("height", "360");
+  await expect(page.locator("canvas")).toHaveAttribute("width", "1280");
+  await expect(page.locator("canvas")).toHaveAttribute("height", "720");
   await page
     .getByRole("button", { name: "外へ出る（出口）", exact: true })
     .click();

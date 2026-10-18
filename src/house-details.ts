@@ -1,11 +1,11 @@
 import type { Building } from "./maps.ts";
 
-/** Fixed half-pixel material detail, baked into each house's cached sprite. */
+/** Fixed quarter-pixel material detail, baked into each house's cached sprite. */
 export class HouseDetails {
   constructor(private c: CanvasRenderingContext2D) {}
   private r(x: number, y: number, w: number, h: number, color: string) {
     this.c.fillStyle = color;
-    this.c.fillRect(Math.round(x * 2) / 2, Math.round(y * 2) / 2, w, h);
+    this.c.fillRect(Math.round(x * 4) / 4, Math.round(y * 4) / 4, w, h);
   }
   private line(points: number[][], color: string, width = 0.5) {
     const c = this.c;
@@ -56,6 +56,17 @@ export class HouseDetails {
             ],
             n % 2 ? "#cfb376" : "#94814f",
           );
+        // Hairline splits and mineral specks at the finer house resolution.
+        line(
+          [
+            [x + xx + 0.75, y + yy + 0.25],
+            [x + xx + 1, y + yy + 0.75],
+            [x + xx + 0.75, y + yy + 1.25],
+          ],
+          "rgba(29,34,31,.24)",
+          0.25,
+        );
+        r(x + xx + 1.5, y + yy + 0.75, 0.25, 0.25, "rgba(246,230,190,.4)");
         if (n === 0)
           line(
             [
@@ -162,6 +173,35 @@ export class HouseDetails {
           n % 2 ? "rgba(37,29,22,.21)" : "rgba(249,224,177,.25)",
         );
       }
+    // Uneven, curved fibres follow the grain rather than making a regular grid.
+    const c = this.c;
+    c.lineWidth = 0.25;
+    for (let yy = eave + 5; yy < h - 8; yy += 3.75)
+      for (let xx = 12; xx < w - 12; xx += 9.5) {
+        const n = Math.floor(xx * 11 + yy * 7) % 13;
+        c.strokeStyle = n % 2 ? "rgba(41,31,24,.3)" : "rgba(249,223,175,.34)";
+        c.beginPath();
+        c.moveTo(x + xx, y + yy);
+        c.bezierCurveTo(
+          x + xx + 2,
+          y + yy - 0.75,
+          x + xx + 4,
+          y + yy + 0.75,
+          x + xx + 7,
+          y + yy,
+        );
+        c.stroke();
+        if (n < 2) {
+          this.oval(x + xx + 3, y + yy, 0.9, 0.4, "rgba(57,39,27,.5)");
+          this.oval(
+            x + xx + 2.75,
+            y + yy - 0.25,
+            0.4,
+            0.2,
+            "rgba(218,183,127,.65)",
+          );
+        }
+      }
   }
   facade(
     b: Building,
@@ -202,6 +242,49 @@ export class HouseDetails {
       oval(bx, by - 10, 5, 2, "#c1a075");
       oval(bx, by - 10, 3.5, 1, "#776043");
     };
+    // Fine frame bevels, glass scratches, cut nails and stone granules.
+    const windows: [number, number][] = [];
+    if (!["RANCH", "SMITH"].includes(b.interior)) windows.push([20, h - 31]);
+    if (w > 110) windows.push([w - 40, h - 31]);
+    if (b.interior === "CHIEF" || b.interior === "FARM")
+      windows.push(
+        [24, eave + 12],
+        [w - 43, eave + 12],
+        [w / 2 - 8, eave + 12],
+      );
+    for (const [wx, wy] of windows) {
+      line(
+        [
+          [x + wx + 0.75, y + wy + 13],
+          [x + wx + 0.75, y + wy + 0.75],
+          [x + wx + 15, y + wy + 0.75],
+        ],
+        "rgba(219,238,212,.55)",
+        0.25,
+      );
+      for (let i = 0; i < 4; i++)
+        r(x + wx + 2.25 + i * 3, y + wy + 14.75, 0.25, 0.5, "#79694b");
+      line(
+        [
+          [x + wx + 10, y + wy + 2],
+          [x + wx + 12.5, y + wy + 4.5],
+        ],
+        "rgba(234,244,220,.35)",
+        0.25,
+      );
+      line(
+        [
+          [x + wx + 10.5, y + wy + 2],
+          [x + wx + 13, y + wy + 4.5],
+        ],
+        "rgba(234,244,220,.22)",
+        0.25,
+      );
+    }
+    for (let xx = 7; xx < w - 8; xx += 2.75) {
+      r(x + xx, y + h - 5.25, 0.25, 0.5, "rgba(53,65,57,.45)");
+      r(x + xx + 0.5, y + h - 4.5, 0.5, 0.25, "rgba(234,225,193,.45)");
+    }
     if (b.interior === "CHIEF") {
       // Carved balcony and a pair of long village pennants.
       const by = y + eave + 34;

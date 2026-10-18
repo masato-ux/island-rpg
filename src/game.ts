@@ -15,8 +15,8 @@ function fail(error: unknown) {
   notice.textContent = `ゲームを起動できませんでした。ページを再読み込みしてください。 ${error instanceof Error ? error.message : String(error)}`;
 }
 try {
-  canvas.width = WIDTH * 2;
-  canvas.height = HEIGHT * 2;
+  canvas.width = WIDTH * 4;
+  canvas.height = HEIGHT * 4;
   function resize() {
     const available = canvas.parentElement!.clientWidth;
     const scale =

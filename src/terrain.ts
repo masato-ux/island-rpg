@@ -1,3 +1,4 @@
+import { roadCorners, roundRoad } from "./road-contours.ts";
 import { grassDensity } from "./surface-detail.ts";
 import {
   biomeAt,
@@ -68,8 +69,17 @@ export class Terrain {
         ].some(([dx, dy]) =>
           ["water", "shallow"].includes(tileAt(map, x + dx, y + dy)),
         );
+    const surround = [
+      [0, -1],
+      [1, 0],
+      [0, 1],
+      [-1, 0],
+    ]
+      .map(([dx, dy]) => tileAt(map, x + dx, y + dy))
+      .join(",");
+    const contour = tile === "path" ? roadCorners(map, x, y) : [];
     const image = this.sprite(
-      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}`,
+      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}:${surround}:${contour.join(",")}`,
       16,
       16,
       (ctx) => {
@@ -98,7 +108,7 @@ export class Terrain {
           house: ["#b5a17a", "#c5b38c", "#a18d6b", "#cfbf97"],
           path:
             biome === "森林"
-              ? ["#627d52", "#77935e", "#506e49", "#8e9c67"]
+              ? ["#889367", "#a7a576", "#77815b", "#b3b383"]
               : ["#c9bc88", "#d4c996", "#bdae7e", "#e0d4a1"],
           sand: damp
             ? ["#b9af89", "#d2c7a3", "#a99f7c", "#dcd0ad"]
@@ -107,6 +117,24 @@ export class Terrain {
           water: ["#355678", "#3a5b7e", "#335476", "#426484"],
           floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
         };
+        if (tile === "path") {
+          const neighboringGround =
+            [
+              [0, -1],
+              [1, 0],
+              [0, 1],
+              [-1, 0],
+            ]
+              .map(([dx, dy]) => tileAt(map, x + dx, y + dy))
+              .find(
+                (t) => t !== "path" && ["grass", "wet", "sand"].includes(t),
+              ) || "grass";
+          ctx.fillStyle = palette[neighboringGround][0];
+          ctx.fillRect(0, 0, 16, 16);
+          ctx.save();
+          roundRoad(ctx, contour);
+          ctx.clip();
+        }
         const colors = palette[tile];
         ctx.fillStyle = colors[0];
         ctx.fillRect(0, 0, 16, 16);
@@ -261,37 +289,53 @@ export class Terrain {
             ctx.fillRect(4, 11, 1, 1);
           }
         }
+        if (tile === "path") {
+          if (biome === "森林") {
+            for (let i = 0; i < 9; i++) {
+              const seed = hash(i, variant, 109),
+                xx = (seed % 30) / 2,
+                yy = ((seed >>> 8) % 30) / 2;
+              ctx.fillStyle =
+                i % 2 ? "rgba(70,94,58,.4)" : "rgba(191,184,126,.35)";
+              ctx.fillRect(xx, yy, 0.5, 1 + (i % 2));
+            }
+          }
+          ctx.restore();
+        }
       },
       2,
     );
     c.drawImage(image, px, py, 16, 16);
-    if (tile === "path" && biome === "森林") {
-      c.fillStyle = "#a39970";
-      const path = (dx: number, dy: number) =>
-        tileAt(map, x + dx, y + dy) === "path";
-      let left = 0,
-        right = 0,
-        up = 0,
-        down = 0;
-      while (left < 3 && path(-left - 1, 0)) left++;
-      while (right < 3 && path(right + 1, 0)) right++;
-      while (up < 3 && path(0, -up - 1)) up++;
-      while (down < 3 && path(0, down + 1)) down++;
-      if (
-        (up || down) &&
-        left + right <= 3 &&
-        left === Math.floor((left + right + 1) / 2)
-      )
-        c.fillRect(px + 5 + (variant % 2), py, 6, 16);
-      if (
-        (left || right) &&
-        up + down <= 3 &&
-        up === Math.floor((up + down + 1) / 2)
-      )
-        c.fillRect(px, py + 5 + (variant % 2), 16, 6);
-      c.fillStyle = "#65784e";
-      for (let i = 0; i < 7; i++)
-        c.fillRect(px + ((i * 7) % 16), py + ((i * 5 + variant) % 16), 1, 2);
+    if (tile === "grass") {
+      for (const [sx, sy] of [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ]) {
+        if (
+          tileAt(map, x + sx, y) !== "path" ||
+          tileAt(map, x, y + sy) !== "path"
+        )
+          continue;
+        const xx = px + (sx === 1 ? 16 : 0),
+          yy = py + (sy === 1 ? 16 : 0),
+          radius = 5;
+        c.fillStyle = biome === "森林" ? "#889367" : "#c9bc88";
+        c.beginPath();
+        c.moveTo(xx - sx * radius, yy);
+        c.quadraticCurveTo(xx, yy, xx, yy - sy * radius);
+        c.lineTo(xx, yy);
+        c.closePath();
+        c.fill();
+        c.strokeStyle =
+          biome === "森林" ? "rgba(95,117,75,.55)" : "rgba(153,153,97,.4)";
+        c.lineWidth = 0.5;
+        c.beginPath();
+        c.moveTo(xx - sx * radius, yy);
+        c.quadraticCurveTo(xx, yy, xx, yy - sy * radius);
+        c.stroke();
+      }
     }
     if (tile === "wet" || tile === "deepmud" || tile === "shallow") {
       c.fillStyle =

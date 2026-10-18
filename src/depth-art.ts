@@ -760,10 +760,10 @@ export class DepthArt {
     let sprite = this.buildingSprites.get(key);
     if (!sprite) {
       sprite = document.createElement("canvas");
-      sprite.width = (b.w * 16 + 64) * 2;
-      sprite.height = (b.h * 16 + 80) * 2;
+      sprite.width = (b.w * 16 + 64) * 4;
+      sprite.height = (b.h * 16 + 80) * 4;
       const context = sprite.getContext("2d")!;
-      context.scale(2, 2);
+      context.scale(4, 4);
       new DepthArt(context).paintBuilding(b, 24, 32);
       this.buildingSprites.set(key, sprite);
     }
@@ -771,8 +771,8 @@ export class DepthArt {
       sprite,
       x - 24,
       y - 32,
-      sprite.width / 2,
-      sprite.height / 2,
+      sprite.width / 4,
+      sprite.height / 4,
     );
   }
   private paintBuilding(b: Building, x: number, y: number) {

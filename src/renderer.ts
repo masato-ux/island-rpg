@@ -16,7 +16,7 @@ export class Renderer {
     { x: number; y: number } | undefined
   >();
   constructor(private ctx: CanvasRenderingContext2D) {
-    ctx.setTransform(2, 0, 0, 2, 0, 0);
+    ctx.setTransform(4, 0, 0, 4, 0, 0);
     ctx.imageSmoothingEnabled = false;
     this.art = new DepthArt(ctx);
     this.props = new WorldProps(ctx);
