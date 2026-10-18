@@ -112,3 +112,20 @@ test("FIELD 05からの家具変更も安全に引き継ぎ、旧家具内の不
   assert.ok(canStandOn(maps.APOTHECARY, previous.x, previous.y));
   assert.throws(() => validateSnapshot(previous), /保存位置/);
 });
+
+test("FIELD 06の村内保存と杭が拡張した家に重なっても、安全に移動して進行を保持する", () => {
+  const s = game();
+  s.world.x = 88;
+  s.world.y = 400;
+  const data = s.snapshot();
+  data.terrainVersion = 6;
+  data.life.stakes.VIL = { x: 88, y: 400 };
+  assert.equal(canStandOn(maps.VIL, 88, 400), false);
+  const result = validateSnapshot(data);
+  assert.ok(canStandOn(maps.VIL, result.x, result.y));
+  assert.ok(
+    canStandOn(maps.VIL, result.life.stakes.VIL.x, result.life.stakes.VIL.y),
+  );
+  assert.equal(result.story.wedge, true);
+  assert.deepEqual(result.inventory, data.inventory);
+});

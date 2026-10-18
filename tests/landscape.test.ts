@@ -181,3 +181,21 @@ test("村と各屋外の実寸を縮小し、地形版のない保存も引き�
   assert.equal(migrated.inventory["薬草"], 7);
   assert.equal(migrated.life.money, 123);
 });
+
+test("拡張した6軒は人物に対して十分な幅があり、導入の人物・草・釣り場を塞がない", () => {
+  for (const b of maps.VIL.buildings) {
+    assert.ok(b.w >= 5);
+    assert.ok(b.h >= 5);
+  }
+  for (const [x, y] of [
+    [392, 552],
+    [408, 552],
+    [264, 488],
+    [392, 488],
+    [472, 280],
+    [552, 568],
+  ]) {
+    const p = villagePoint(x, y);
+    assert.ok(canStandOn(maps.VIL, p.x, p.y), `${x},${y}`);
+  }
+});

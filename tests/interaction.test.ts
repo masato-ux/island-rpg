@@ -88,7 +88,11 @@ test("開いた入口の操作を離れた場所で再使用しても入室で�
   const s = game();
   s.life.enter("HOME");
   assert.equal(s.world.transitioning, false);
-  Object.assign(s.world, vp(200, 488));
+  const home = fieldMaps.VIL.buildings.find((b) => b.interior === "HOME")!;
+  Object.assign(s.world, {
+    x: (home.x + home.w / 2) * 16 + 8,
+    y: (home.y + home.h) * 16 + 8,
+  });
   s.life.enter("HOME");
   assert.equal(s.world.transitioning, true);
 });

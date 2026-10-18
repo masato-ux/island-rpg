@@ -11,7 +11,7 @@ export type {
 } from "./legacy-maps.ts";
 import type { MapId, Tile, GameMap, Terrace } from "./legacy-maps.ts";
 
-export const TERRAIN_VERSION = 6;
+export const TERRAIN_VERSION = 7;
 const sizes: Partial<Record<MapId, [number, number]>> = {
   VIL: [40, 34],
   GRASS: [48, 38],
@@ -43,6 +43,23 @@ export const maps = Object.fromEntries(
     ];
   }),
 ) as Record<MapId, GameMap>;
+// Freeze the compact FIELD 04–06 footprint for save validation.
+export const field06Village: GameMap = {
+  ...maps.VIL,
+  buildings: maps.VIL.buildings.map((b) => ({ ...b })),
+};
+const homes: Record<string, [number, number, number, number]> = {
+  CHIEF: [25, 6, 9, 7],
+  FARM: [29, 15, 9, 6],
+  RANCH: [3, 12, 9, 7],
+  HOME: [3, 22, 8, 6],
+  SMITH: [14, 14, 5, 6],
+  APOTHECARY: [22, 16, 6, 5],
+};
+for (const b of maps.VIL.buildings) {
+  const [x, y, w, h] = homes[b.interior];
+  Object.assign(b, { x, y, w, h });
+}
 export const outdoors = Object.values(maps).filter((m) => !m.interior);
 export function compactPoint(id: MapId, x: number, y: number) {
   const old = previous.maps[id],
@@ -116,6 +133,16 @@ export function roadAt(map: GameMap, x: number, y: number) {
   if (
     ((x < 3 && map.exits.left) || (x >= map.width - 3 && map.exits.right)) &&
     Math.abs(y - cy) <= 1
+  )
+    return true;
+  if (
+    map.id === "VIL" &&
+    map.buildings.some(
+      (b) =>
+        y === b.y + b.h &&
+        x >= Math.min(b.x + b.w / 2, 20) &&
+        x <= Math.max(b.x + b.w / 2, 20),
+    )
   )
     return true;
   if (previous.roadAt(old, p.x, p.y)) return true;

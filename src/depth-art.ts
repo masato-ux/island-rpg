@@ -1,3 +1,4 @@
+import { appearances } from "./appearance.ts";
 import type { Building } from "./maps.ts";
 import { rooms, type Furniture } from "./interiors.ts";
 export class DepthArt {
@@ -46,47 +47,72 @@ export class DepthArt {
   ) {
     const r = this.rect.bind(this),
       e = this.ellipse.bind(this),
-      child = [3, 6, 9].includes(seed);
+      look = appearances[seed] || {
+        ...appearances[4],
+        outfit: color,
+        detail: "monster",
+        height: 0.85,
+        build: 0.95,
+      },
+      child = look.age === "child",
+      feminine = look.gender === "woman" || look.gender === "girl";
     const c = this.c;
     c.save();
     c.translate(Math.round(x * 2) / 2, Math.round(y * 2) / 2);
-    if (child) c.scale(0.82, 0.82);
+    c.scale(look.build, look.height);
+    if (look.age === "elder") c.transform(1, 0, -0.055, 1, 0, 0);
+    if (
+      feminine &&
+      ["long", "braid", "ponytail", "twintails", "curls"].includes(look.style)
+    ) {
+      e(-3, -12, 2.6, 6, look.hair);
+      e(3, -12, 2.6, 6, look.hair);
+    }
+    if (seed === 0) {
+      this.polygon(
+        [
+          [-4, -12],
+          [-7, -8],
+          [-9, 3],
+          [-4, 1],
+          [-1, 4],
+          [5, 2],
+          [6, -9],
+        ],
+        "#253d4a",
+      );
+      this.polygon(
+        [
+          [-3, -11],
+          [-6, -8],
+          [-6, 1],
+          [-3, -1],
+          [0, 2],
+          [4, 1],
+          [4, -9],
+        ],
+        "#456b76",
+      );
+      r(-5, -7, 0.5, 7, "#7aa0a0");
+      r(3, -7, 1, 7, "#294b5b");
+      this.polygon(
+        [
+          [5, -9],
+          [7, -9],
+          [9, 7],
+          [7, 8],
+        ],
+        "#34424b",
+      );
+      r(6, -5, 1, 10, "#84959b");
+      r(5, -5, 5, 1, "#d2b773");
+    }
     x = 0;
     y = 0;
     this.shadow(0, 4, 12, 17);
     e(0, 3, 5, 1.8, "rgba(23,33,32,.32)");
-    const coats = [
-      color,
-      "#526885",
-      "#86617e",
-      "#9c7556",
-      "#775f45",
-      "#997d50",
-      "#8c9a68",
-      "#725846",
-      "#a57a65",
-      "#8b7165",
-      "#555b67",
-      "#658e8b",
-      "#536c73",
-    ];
-    const coat = coats[seed] || color,
-      hair =
-        [
-          "#5b3e2e",
-          "#a7a49a",
-          "#573b2b",
-          "#704a31",
-          "#66503b",
-          "#a77343",
-          "#694b30",
-          "#49392e",
-          "#6c3c28",
-          "#946a44",
-          "#493d37",
-          "#513c34",
-          "#9d9887",
-        ][seed] || "#695043";
+    const coat = look.outfit,
+      hair = look.hair;
     const walk = step ? 1 : -0.5;
     e(-2.8, 3 + walk, 2, 1.7, "#252e32");
     e(2.6, 3 - walk, 2, 1.7, "#263139");
@@ -132,6 +158,25 @@ export class DepthArt {
     r(-4, 0, 8, 1.5, "#584531");
     r(-0.5, 0, 2, 1.5, "#d3b87b");
     r(0, 0.4, 1, 0.5, "#68583b");
+    if (feminine) {
+      this.polygon(
+        [
+          [-3, -6],
+          [-5, 3],
+          [5, 3],
+          [3, -6],
+        ],
+        coat,
+      );
+      r(-3, 1, 6, 0.7, look.accent);
+      r(-2.5, -3, 0.5, 5, "rgba(255,242,212,.3)");
+    }
+    if (look.detail === "shorts") {
+      r(-4, -1, 3, 3, "#645a40");
+      r(1, -1, 3, 3, "#645a40");
+      r(-3, 2, 1, 1.5, "#d7ad80");
+      r(1.5, 2, 1, 1.5, "#d7ad80");
+    }
     e(-5, -5, 1.4, 3.8, coat);
     e(5, -4.5, 1.3, 3.4, coat);
     e(-5, -0.8, 1, 1.8, "#d6a47f");
@@ -184,27 +229,198 @@ export class DepthArt {
         r(-1.5, -9.5, 3, 0.7, hair);
       }
     }
-    if (seed === 0 || seed === 4 || seed === 7) {
-      e(0, -19, 5, 2, "#725037");
-      e(0, -20, 3.5, 3, "#a27a4f");
-      r(-2.5, -22, 4, 1, "#c1a06d");
-      r(-4, -19.5, 8, 1, "#604732");
-      r(-5, -18.5, 10, 0.7, "#c3a06a");
+    // Hairstyles change the silhouette, rather than just tinting the same head.
+    if (look.style === "bun") {
+      e(-1, -21, 3.4, 2.5, hair);
+      r(-3, -21, 4, 0.5, "#aca08d");
+      r(-4, -18, 8, 0.5, look.accent);
+    }
+    if (look.style === "twintails") {
+      for (const side of [-1, 1]) {
+        e(side * 5, -15, 1.8, 4.5, hair);
+        r(side * 5 - 1, -18, 2, 1.5, look.accent);
+      }
+      r(-2, -21, 4, 1.5, look.accent);
+    }
+    if (look.style === "ponytail") {
+      e(5, -15, 2, 4, hair);
+      e(6, -12, 1.5, 3, hair);
+      r(4, -18, 2, 1.5, look.accent);
+    }
+    if (look.style === "braid") {
+      for (let i = 0; i < 6; i++)
+        e(4 + (i % 2) * 0.6, -15 + i * 1.6, 1.3, 1.2, hair);
+      r(4, -6, 1.5, 1.5, "#bd9155");
+    }
+    if (look.style === "curls") {
+      for (let i = 0; i < 8; i++)
+        e(-4 + i * 1.2, -18 + Math.sin(i) * 2, 1.7, 1.7, hair);
+      e(-4, -14, 1.6, 3, hair);
+      e(4, -14, 1.6, 3, hair);
+      r(-2, -21, 4, 1, look.accent);
+    }
+    if (look.style === "long") {
+      r(-4, -16, 1.5, 8, hair);
+      r(3, -16, 2, 8, hair);
+      r(3.5, -17, 0.5, 7, "#756779");
+      r(-4, -18, 8, 1, "#9dab78");
+      r(2, -19, 1, 2, "#d4ca89");
+    }
+    if (look.style === "bald") {
+      e(0, -18, 3.6, 2.9, "#d5ac85");
+      r(-2, -19, 3, 0.5, "#e8c59e");
+      e(0, -10, 3, 2.3, hair);
+      r(-2, -10, 0.5, 2, "#96775b");
+    }
+    if (look.age === "elder" && facing !== "up") {
+      this.polygon(
+        [
+          [-3, -11],
+          [0, -12],
+          [3, -11],
+          [2, -7],
+          [0, -5],
+          [-2, -7],
+        ],
+        hair,
+      );
+      r(-3, -15.5, 2, 0.5, "#c5bba4");
+      r(1, -15.5, 2, 0.5, "#c5bba4");
+      r(-3, -12, 0.5, 1, "#a48068");
+      r(2.5, -12, 0.5, 1, "#a48068");
+    }
+    if (look.detail === "cane") {
+      r(7, -6, 1, 12, "#7d5e3b");
+      e(6.5, -6, 1.5, 1, "#be9c66");
+      r(7, 5, 2, 1, "#4d4d3d");
+      r(-3, -7, 6, 0.7, look.accent);
+      e(0, -7, 1, 1, "#d5bc7d");
+    }
+    if (look.detail === "straw" || look.detail === "rancher") {
+      e(0, -19, look.detail === "straw" ? 7 : 6, 2, hair);
+      e(0, -20, 4, 3.2, look.detail === "straw" ? "#c4a263" : "#8b6945");
+      r(-4, -19.5, 8, 1, "#674a32");
+      r(-6, -18.7, 12, 0.7, "#dbc28c");
+      r(-3, -5, 6, 5, look.accent);
+    }
+    if (look.detail === "kerchief") {
+      this.polygon(
+        [
+          [-5, -18],
+          [-2, -22],
+          [3, -21],
+          [5, -17],
+        ],
+        "#ad594f",
+      );
+      r(-4, -19, 7, 0.7, "#df9b7e");
+      r(-3, -6, 6, 8, look.accent);
+      r(-2, -3, 4, 0.5, "#f3dfb5");
+    }
+    if (["apron", "pinafore", "herbalist"].includes(look.detail)) {
+      this.polygon(
+        [
+          [-2, -8],
+          [-3, 2],
+          [3, 2],
+          [2, -8],
+        ],
+        look.accent,
+      );
+      r(-2, -1, 4, 1, "#98a58c");
+      r(-1.5, -6, 0.5, 6, "rgba(255,251,219,.4)");
+    }
+    if (look.detail === "brooch") {
+      e(0, -8, 1.2, 1.2, "#d0b778");
+      e(0, -8, 0.6, 0.7, "#6da3a0");
+    }
+    if (look.detail === "smith") {
+      r(-4, -7, 8, 9, look.accent);
+      r(-3, -8, 1, 7, "#c99c6c");
+      r(2, -8, 1, 7, "#5d4033");
+      r(-2, -1, 4, 2, "#684832");
+      r(6, -2, 1, 7, "#b09363");
+      r(4, -3, 5, 2, "#8f9c98");
+      e(-5, -5, 1.5, 2, "#d7ac86");
+      e(5, -5, 1.5, 2, "#ba8b69");
+    }
+    if (look.detail === "fisher") {
+      e(0, -21, 4, 2.5, "#597781");
+      r(-4, -19, 8, 1.5, "#a1b4a7");
+      r(7, -16, 0.7, 22, "#9c875e");
+      r(7.5, -15, 0.5, 12, "#c7d1c0");
+      e(3, -4, 1, 1, "#a6b6a7");
     }
     if (seed === 0) {
-      r(-3, -7, 7, 1.5, "#d1c4a2");
-      r(-4, -6, 2, 4, "#98a79b");
-      r(4, -1, 1.5, 5, "#807654");
-      r(4, 0, 0.5, 4, "#c3c7b1");
-    }
-    if (seed === 10 || seed === 11) {
-      r(-3, -7, 6, 7, seed === 10 ? "#76513d" : "#d6d7bc");
-      r(-2.5, -6, 1, 5, "rgba(255,240,201,.2)");
-      r(-1, -2, 2, 1, "#555c53");
-    }
-    if (seed === 2 || seed === 5 || seed === 8) {
-      r(-3, -5, 6, 5, "#d2b99b");
-      r(-2, -4, 4, 0.5, "#f1dbc0");
+      // Wind-swept hair, scarf, leather cuirass, shoulder guard and travel boots.
+      this.polygon(
+        [
+          [-5, -17],
+          [-4, -21],
+          [-1, -22],
+          [1, -21],
+          [3, -21.5],
+          [5, -20],
+          [4, -17],
+          [2, -19],
+          [1, -17],
+          [-1, -19],
+        ],
+        hair,
+      );
+      r(-3, -21, 1.5, 0.5, "#63545a");
+      r(1, -21, 1, 0.5, "#817075");
+      this.polygon(
+        [
+          [-4, -10],
+          [-2, -7],
+          [3, -8],
+          [4, -11],
+        ],
+        look.accent,
+      );
+      r(-3, -9, 6, 0.7, "#9dc0ae");
+      this.polygon(
+        [
+          [-4, -7],
+          [-5, -3],
+          [-8, -1],
+          [-7, -6],
+        ],
+        "#548b91",
+      );
+      r(-6, -5, 0.5, 3, "#9ab3aa");
+      r(-3, -6, 6, 6, "#6d523c");
+      r(-2.5, -5, 1, 4, "#a5865b");
+      r(1.5, -5, 1, 4, "#463d34");
+      this.polygon(
+        [
+          [-5, -10],
+          [-7, -8],
+          [-6, -5],
+          [-3, -6],
+          [-3, -9],
+        ],
+        "#778f97",
+      );
+      r(-5, -9, 2, 0.7, "#c6d0b8");
+      r(4, -3, 2, 3, "#6b5039");
+      r(-6, -3, 2, 3, "#6b5039");
+      r(-4, 2, 3, 2.5, "#4b3b30");
+      r(1, 2, 3, 2.5, "#4b3b30");
+      if (facing === "up") {
+        this.polygon(
+          [
+            [-4, -9],
+            [-5, 1],
+            [0, 3],
+            [4, 1],
+            [3, -9],
+          ],
+          "#3f6876",
+        );
+        r(-3, -8, 0.5, 8, "#8fa7a2");
+      }
     }
     c.restore();
   }
@@ -248,7 +464,7 @@ export class DepthArt {
       r(2.8, -4, 0.6, 0.6, "#ebf4d6");
       r(-1, 0, 2, 0.5, "#306a77");
     } else if (kind === "goblin") {
-      this.person(0, 0, "#685d47", 2);
+      this.person(0, 0, "#685d47", 13);
       e(0, -14, 4, 4, "#759259");
       e(-1, -15, 2.7, 2.6, "#a5b77c");
       this.polygon(
@@ -529,6 +745,10 @@ export class DepthArt {
         "#786045",
       );
     }
+    this.c.save();
+    this.c.translate(0, y);
+    this.c.scale(1, 1.4);
+    this.c.translate(0, -y);
     p(
       [
         [x - 4, y + 24],
@@ -567,11 +787,12 @@ export class DepthArt {
     r(x - 4, y + 24, w + 8, 0.5, "#d3b98a");
     r(x + 2, y + 27, w - 4, 3, "rgba(35,36,31,.29)");
     for (let xx = 5; xx < w - 5; xx += 8) r(x + xx, y + 26, 1, 3, "#736045");
-    r(x + door - 7, y + h - 21, 14, 21, "#423e34");
-    r(x + door - 5, y + h - 19, 10, 19, "#8e6944");
+    this.c.restore();
+    r(x + door - 7, y + h - 31, 16, 31, "#423e34");
+    r(x + door - 5, y + h - 29, 12, 29, "#8e6944");
     for (let xx = 0; xx < 10; xx += 2) {
-      r(x + door - 5 + xx, y + h - 18, 0.5, 17, "#b9915b");
-      r(x + door - 4 + xx, y + h - 17, 0.5, 15, "#6f5137");
+      r(x + door - 5 + xx, y + h - 28, 0.5, 27, "#b9915b");
+      r(x + door - 4 + xx, y + h - 27, 0.5, 25, "#6f5137");
     }
     r(x + door - 5, y + h - 15, 10, 1, "#66563c");
     r(x + door - 5, y + h - 5, 10, 1, "#66563c");
@@ -622,9 +843,9 @@ export class DepthArt {
       for (let i = 0; i < 7; i++) r(x + 8 + i, y + h - 6, 0.5, 5, "#d7bc73");
     }
     // Hanging sign identifies the building without relying on roof colour.
-    r(x + door - 15, y + h - 25, 1, 9, "#4e493a");
-    r(x + door - 20, y + h - 23, 11, 7, "#c3a77a");
-    r(x + door - 19, y + h - 22, 9, 5, "#6b7055");
+    r(x + door - 15, y + h - 35, 1, 9, "#4e493a");
+    r(x + door - 20, y + h - 33, 11, 7, "#c3a77a");
+    r(x + door - 19, y + h - 32, 9, 5, "#6b7055");
     const symbol = forge
       ? "⚒"
       : herbal
@@ -639,7 +860,7 @@ export class DepthArt {
     this.c.font = "5px sans-serif";
     this.c.textAlign = "center";
     this.c.fillStyle = "#f5dfaa";
-    this.c.fillText(symbol, x + door - 14.5, y + h - 18);
+    this.c.fillText(symbol, x + door - 14.5, y + h - 28);
   }
   room(id: keyof typeof rooms, cx: number, cy: number) {
     const room = rooms[id];

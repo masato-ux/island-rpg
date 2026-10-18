@@ -72,7 +72,9 @@ test("導入を操作で完走し、楔で保存→再読込→JSON書出し", a
   await expect(page.locator("#action-info")).toContainText("魂の楔");
   await walk(page, "x", 392);
   await walk(page, "y", 488);
-  await walk(page, "x", 200);
+  const home = maps.VIL.buildings.find((b) => b.interior === "HOME");
+  await walk(page, "y", (((home.y + home.h) * 16 + 8) * 40) / 34);
+  await walk(page, "x", (((home.x + home.w / 2) * 16 + 8) * 48) / 40);
   await inspect(page);
   await expect(page.locator("canvas")).toHaveAttribute("data-map", "HOME");
   await walk(page, "y", 56);
