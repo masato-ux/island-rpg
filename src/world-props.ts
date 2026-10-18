@@ -128,9 +128,9 @@ export class WorldProps {
         const c = this.c;
         c.fillStyle = ["#36573d", "#4e7445", "#71904e"][i % 3];
         c.beginPath();
-        c.moveTo(x + base - 1, y + 1);
+        c.moveTo(x + base - 0.5, y + 1);
         c.quadraticCurveTo(x + base - 2, y + top / 2, x + tip, y + top);
-        c.quadraticCurveTo(x + base + 3, y + top / 2, x + base + 1, y + 1);
+        c.quadraticCurveTo(x + base + 3, y + top / 2, x + base + 0.5, y + 1);
         c.fill();
         c.strokeStyle = i % 2 ? "#a5b56b" : "#819d58";
         c.lineWidth = 0.5;
@@ -148,6 +148,30 @@ export class WorldProps {
           r(x + dx - 1, y + top + j * 1.5, 1.5, 0.5, "#c0b77c");
           r(x + dx + 0.5, y + top + j * 1.5 + 0.5, 1, 0.5, "#8c9557");
         }
+      }
+      // Fine secondary leaves and dry, curled litter around the living crown.
+      for (let i = 0; i < 21; i++) {
+        const bx = x - 5 + ((i * 7) % 21) / 2,
+          height = 3 + ((i * 11) % 20) / 2;
+        const lean = ((i * 5) % 11) - 5;
+        const c = this.c;
+        c.lineWidth = 0.5;
+        c.strokeStyle = ["#8da965", "#547846", "#afbd7b", "#607943"][i % 4];
+        c.beginPath();
+        c.moveTo(bx, y + 1);
+        c.quadraticCurveTo(
+          bx + lean * 0.25,
+          y - height * 0.7,
+          bx + lean,
+          y - height,
+        );
+        c.stroke();
+      }
+      for (let i = 0; i < 9; i++) {
+        const dx = -6 + i * 1.5,
+          dy = (i * 3) % 4;
+        r(x + dx, y + dy, 0.5, 1, "#455c39");
+        r(x + dx + 0.5, y + dy, 1, 0.5, i % 2 ? "#b3aa77" : "#849157");
       }
       r(x - 5, y + 1, 2, 0.5, "#b0a574");
       r(x + 3, y + 2, 3, 0.5, "#81965c");
@@ -322,6 +346,43 @@ export class WorldProps {
       r(x + dx, y - 30, 1, 1, "#e2d6ae");
     }
     r(x - 4, y - 25, 8, 1, "#b7b291");
+    // Hairline fibres, chipped edges, iron rivets and mineral inclusions.
+    for (let i = 0; i < 17; i++) {
+      const dx = -3.5 + ((i * 7) % 14) / 2,
+        yy = -22 + ((i * 11) % 38) / 2;
+      r(
+        x + dx,
+        y + yy,
+        0.5,
+        1 + (i % 4) * 0.5,
+        i % 3 ? "rgba(54,41,30,.3)" : "rgba(226,192,132,.38)",
+      );
+    }
+    for (const yy of [-22, -4])
+      for (const dx of [-4, 3.5]) {
+        e(x + dx, y + yy, 0.65, 0.65, "#283f43");
+        r(x + dx - 0.5, y + yy - 0.5, 0.5, 0.5, "#d5d7bc");
+      }
+    for (let i = 0; i < 16; i++) {
+      const dx = -6 + ((i * 7) % 25) / 2,
+        dy = 1 + ((i * 3) % 7) / 2;
+      r(x + dx, y + dy, 0.5, 0.5, i % 2 ? "#c1bea0" : "#77835d");
+    }
+    const c = this.c;
+    c.lineWidth = 0.5;
+    c.strokeStyle = "#536959";
+    c.beginPath();
+    c.moveTo(x - 5, y + 2);
+    c.lineTo(x - 2, y);
+    c.lineTo(x - 1, y - 2);
+    c.stroke();
+    c.strokeStyle = "rgba(222,247,217,.65)";
+    c.beginPath();
+    c.moveTo(x, y - 36);
+    c.lineTo(x + 1, y - 32);
+    c.lineTo(x - 1, y - 29);
+    c.stroke();
+    r(x + 2, y - 31, 0.5, 0.5, "#d9f3d4");
   }
 
   fishing(

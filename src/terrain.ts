@@ -20,13 +20,16 @@ export class Terrain {
     width: number,
     height: number,
     paint: (c: CanvasRenderingContext2D) => void,
+    resolution = 1,
   ) {
     let canvas = this.tiles.get(key);
     if (!canvas) {
       canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      paint(canvas.getContext("2d")!);
+      canvas.width = width * resolution;
+      canvas.height = height * resolution;
+      const context = canvas.getContext("2d")!;
+      context.scale(resolution, resolution);
+      paint(context);
       this.tiles.set(key, canvas);
     }
     return canvas;
@@ -41,7 +44,7 @@ export class Terrain {
     time: number,
   ) {
     const tile = tileAt(map, x, y),
-      variant = hash(x, y) % 8,
+      variant = hash(x, y) % (map.id === "VIL" ? 32 : 8),
       biome = biomeAt(map, x, y),
       density = biome === "森林" ? 2 : grassDensity(map.id, x, y),
       corners =
@@ -66,7 +69,7 @@ export class Terrain {
           ["water", "shallow"].includes(tileAt(map, x + dx, y + dy)),
         );
     const image = this.sprite(
-      `${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}`,
+      `${map.id === "VIL" ? "village" : "field"}:${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}:${corners.join(",")}:${density}:${damp}`,
       16,
       16,
       (ctx) => {
@@ -117,6 +120,67 @@ export class Terrain {
             yy = (seed >>> 8) % 16;
           ctx.fillStyle = colors[1 + ((seed >>> 16) % 3)];
           ctx.fillRect(xx, yy, 1 + (seed % 2), 1);
+        }
+        if (
+          map.id === "VIL" &&
+          ["grass", "path", "sand", "tree", "house"].includes(tile)
+        ) {
+          // Half-unit grains survive the 2× backing canvas. No per-frame noise.
+          const earth = ["path", "house", "sand"].includes(tile);
+          for (let i = 0; i < 95; i++) {
+            const seed = hash(i, variant, 81);
+            const xx = (seed % 32) / 2,
+              yy = ((seed >>> 9) % 32) / 2;
+            ctx.fillStyle = earth
+              ? [
+                  "rgba(108,94,64,.19)",
+                  "rgba(248,230,179,.25)",
+                  "rgba(152,134,87,.16)",
+                ][i % 3]
+              : [
+                  "rgba(48,80,43,.17)",
+                  "rgba(199,211,145,.22)",
+                  "rgba(106,131,72,.18)",
+                ][i % 3];
+            ctx.fillRect(xx, yy, i % 7 ? 0.5 : 1, 0.5);
+          }
+          for (let i = 0; i < (earth ? 3 : 13); i++) {
+            const seed = hash(i, variant, 93),
+              xx = 1 + (seed % 28) / 2,
+              yy = 2 + ((seed >>> 8) % 24) / 2;
+            if (earth) {
+              ctx.fillStyle = "#a69b79";
+              ctx.fillRect(xx, yy, 1.5, 0.5);
+              ctx.fillStyle = "#e1d2a4";
+              ctx.fillRect(xx, yy - 0.5, 1, 0.5);
+            } else {
+              ctx.strokeStyle = i % 2 ? "#75985c" : "#aac17b";
+              ctx.lineWidth = 0.5;
+              ctx.beginPath();
+              ctx.moveTo(xx, yy + 1);
+              ctx.quadraticCurveTo(
+                xx + 0.5,
+                yy,
+                xx + (i % 2 ? 1 : -1),
+                yy - 1.5,
+              );
+              ctx.stroke();
+            }
+          }
+          // Thin roots and shallow scuffs interrupt the otherwise uniform dirt.
+          if (earth && variant % 3 === 0) {
+            ctx.strokeStyle = "rgba(125,109,76,.25)";
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(2, 11);
+            ctx.bezierCurveTo(5, 10, 7, 12, 11, 9);
+            ctx.stroke();
+            ctx.strokeStyle = "rgba(237,222,176,.4)";
+            ctx.beginPath();
+            ctx.moveTo(3, 11.5);
+            ctx.quadraticCurveTo(7, 12, 10, 10);
+            ctx.stroke();
+          }
         }
         if (tile === "sand") {
           for (let i = 0; i < 18; i++) {
@@ -198,8 +262,9 @@ export class Terrain {
           }
         }
       },
+      2,
     );
-    c.drawImage(image, px, py);
+    c.drawImage(image, px, py, 16, 16);
     if (tile === "path" && biome === "森林") {
       c.fillStyle = "#a39970";
       const path = (dx: number, dy: number) =>
