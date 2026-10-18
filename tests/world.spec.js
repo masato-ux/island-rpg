@@ -400,7 +400,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 13");
+  await expect(page.locator(".badge")).toContainText("FIELD 14");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,

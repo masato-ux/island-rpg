@@ -1,3 +1,4 @@
+import { HouseDetails } from "./house-details.ts";
 import { paintHero } from "./hero-art.ts";
 import { houseStyles } from "./architecture.ts";
 import { appearances } from "./appearance.ts";
@@ -839,35 +840,39 @@ export class DepthArt {
       ],
       "#493e35",
     );
-    for (let row = 0; row < Math.ceil((eave + 8) / 4); row++) {
-      const yy = -7 + row * 4,
+    const roofTone = (amount: number) => {
+      const mix = (offset: number) =>
+        Math.round(
+          parseInt(style.roof.slice(offset, offset + 2), 16) * (1 - amount) +
+            parseInt(style.roofLight.slice(offset, offset + 2), 16) * amount,
+        )
+          .toString(16)
+          .padStart(2, "0");
+      return `#${mix(1)}${mix(3)}${mix(5)}`;
+    };
+    for (let row = 0; row < Math.ceil((eave + 8) / 3); row++) {
+      const yy = -7 + row * 3,
         t = (yy + 8) / (eave + 8),
         left = 12 - 17 * t,
         right = w - 15 + 20 * t;
-      for (let xx = left; xx < right - 2; xx += 6) {
-        const width = Math.min(5.6, right - xx);
-        r(
-          x + xx,
-          y + yy,
-          width,
-          3.7,
-          (Math.floor(xx) + row) % 4 ? style.roof : style.roofLight,
-        );
-        r(x + xx, y + yy, width, 0.5, style.roofLight);
-        r(x + xx + width - 0.5, y + yy + 0.5, 0.5, 3, "rgba(26,34,35,.28)");
-        r(x + xx + 1, y + yy + 1, 0.5, 1.7, "rgba(245,227,183,.22)");
-        r(x + xx + 2, y + yy + 2, 0.5, 0.5, "rgba(30,34,31,.4)");
-        r(x + xx + 3, y + yy + 1.5, 1, 0.5, "rgba(234,217,177,.2)");
-        if ((Math.floor(xx) * 3 + row) % 9 === 0) {
-          r(x + xx + 1.5, y + yy + 2.5, 2, 0.5, "rgba(91,116,76,.5)");
-          r(x + xx + 2, y + yy + 2, 1, 0.5, "rgba(165,168,114,.35)");
-        }
+      for (let xx = left; xx < right - 1; xx += 4) {
+        const width = Math.min(3.7, right - xx),
+          n = (Math.floor(xx * 13) + row * 19) % 11;
+        r(x + xx, y + yy, width, 2.7, roofTone(0.04 + (n % 4) * 0.045));
+        r(x + xx, y + yy, width, 0.5, roofTone(0.28));
+        r(x + xx + width - 0.5, y + yy + 0.5, 0.5, 2, "rgba(26,34,35,.2)");
+        r(x + xx + 1, y + yy + 1, 0.5, 0.5 + (n % 2), "rgba(245,227,183,.13)");
+        if (n === 0)
+          r(x + xx + 0.5, y + yy + 2, 1.5, 0.5, "rgba(82,105,72,.3)");
       }
     }
     r(x + 12, y - 9, w - 27, 2, style.roofLight);
     r(x - 5, y + eave, w + 10, 3, "#4d4031");
     r(x - 5, y + eave, w + 10, 0.5, "#d3b17c");
     r(x + 4, y + eave + 3, w - 8, 3, "rgba(34,30,28,.3)");
+    const details = new HouseDetails(c);
+    details.roof(b, x, y, w, eave);
+    details.wall(x, y, w, h, eave);
     const window = (xx: number, yy: number, shutters = true) => {
       r(x + xx - 2, y + yy - 2, 20, 19, "#5b4533");
       r(x + xx, y + yy, 16, 14, "#4d7c87");
@@ -963,7 +968,7 @@ export class DepthArt {
         : b.interior === "APOTHECARY"
           ? "薬"
           : b.interior === "HOME"
-            ? "宿"
+            ? "畜"
             : "";
     if (sign) {
       r(x + door - 23, y + h - 26, 12, 10, "#d6b984");
@@ -972,6 +977,7 @@ export class DepthArt {
       c.textAlign = "center";
       c.fillText(sign, x + door - 17, y + h - 18);
     }
+    details.facade(b, x, y, w, h, eave, door);
   }
   caveEntry(x: number, y: number) {
     const r = this.rect.bind(this),
