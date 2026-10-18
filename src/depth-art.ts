@@ -1,3 +1,4 @@
+import { houseStyles } from "./architecture.ts";
 import { appearances } from "./appearance.ts";
 import type { Building } from "./maps.ts";
 import { rooms, type Furniture } from "./interiors.ts";
@@ -112,122 +113,108 @@ export class DepthArt {
     this.shadow(0, 4, 12, 17);
     e(0, 3, 5, 1.8, "rgba(23,33,32,.32)");
     const coat = look.outfit,
-      hair = look.hair;
-    const walk = step ? 1 : -0.5;
-    e(-2.8, 3 + walk, 2, 1.7, "#252e32");
-    e(2.6, 3 - walk, 2, 1.7, "#263139");
-    r(-4, -1, 3, 4 + walk, "#414d53");
-    r(1, -1, 3, 4 - walk, "#333d48");
-    r(-3.5, 0, 1, 3, "#697279");
-    r(1.5, 0, 0.5, 3, "#74757a");
+      hair = look.hair,
+      ink = "#35313c",
+      walk = step ? 1 : -0.5;
+    // Rounded, boldly outlined silhouettes and a restrained palette.
+    const blob = (
+      xx: number,
+      yy: number,
+      rx: number,
+      ry: number,
+      fill: string,
+    ) => {
+      e(xx, yy, rx + 0.7, ry + 0.7, ink);
+      e(xx, yy - 0.2, rx, ry, fill);
+    };
+    blob(-2.8, 3 + walk, 2.2, 1.6, "#694c3f");
+    blob(2.6, 3 - walk, 2.2, 1.6, "#694c3f");
+    r(-4, -1, 3, 3.5 + walk, "#4d536a");
+    r(1, -1, 3, 3.5 - walk, "#4d536a");
     this.polygon(
       [
         [-4, -11],
         [-6, -8],
-        [-5, 0],
-        [-2, 2],
-        [4, 1],
-        [5, -8],
-        [3, -11],
+        [-5, 1],
+        [5, 1],
+        [6, -8],
+        [4, -11],
       ],
-      "#303c3c",
+      ink,
     );
     this.polygon(
       [
-        [-3.5, -10.5],
+        [-3, -10],
         [-5, -7],
         [-4, 0],
-        [3, 0],
-        [4, -7],
-        [2.5, -10.5],
+        [4, 0],
+        [5, -7],
+        [3, -10],
       ],
       coat,
     );
-    r(-3.5, -8, 1, 7, "rgba(255,237,199,.23)");
-    r(2.5, -8, 1, 8, "rgba(20,27,40,.25)");
-    this.polygon(
-      [
-        [-2, -10],
-        [0, -7],
-        [2, -10],
-      ],
-      "#ded1ad",
-    );
-    r(-0.5, -7, 0.5, 7, "#504d43");
-    for (let j = -6; j < 0; j += 2) r(0.3, j, 0.6, 0.7, "#d3b781");
-    r(-4, 0, 8, 1.5, "#584531");
-    r(-0.5, 0, 2, 1.5, "#d3b87b");
-    r(0, 0.4, 1, 0.5, "#68583b");
-    if (feminine) {
+    r(-3, -8, 1, 6, "rgba(255,255,220,.22)");
+    r(3, -7, 1, 6, "rgba(32,28,47,.2)");
+    r(-3, -3, 6, 1.5, look.accent);
+    r(-1, -8, 2, 1, "#e7dbad");
+    if (feminine)
       this.polygon(
         [
           [-3, -6],
-          [-5, 3],
-          [5, 3],
+          [-5, 2],
+          [5, 2],
           [3, -6],
         ],
         coat,
       );
-      r(-3, 1, 6, 0.7, look.accent);
-      r(-2.5, -3, 0.5, 5, "rgba(255,242,212,.3)");
-    }
-    if (look.detail === "shorts") {
-      r(-4, -1, 3, 3, "#645a40");
-      r(1, -1, 3, 3, "#645a40");
-      r(-3, 2, 1, 1.5, "#d7ad80");
-      r(1.5, 2, 1, 1.5, "#d7ad80");
-    }
-    e(-5, -5, 1.4, 3.8, coat);
-    e(5, -4.5, 1.3, 3.4, coat);
-    e(-5, -0.8, 1, 1.8, "#d6a47f");
-    e(5, -0.8, 1, 1.8, "#bb896b");
-    r(-5.5, -1.5, 0.5, 1.5, "#efc7a0");
-    r(4.5, -1, 0.5, 1.5, "#e3b28b");
-    e(0, -15, 4.8, 5.9, "#3f3530");
-    e(0, -14, 4.1, 5, "#c28d6e");
-    e(-0.8, -14.6, 3.6, 4.3, "#e2b48e");
-    e(-1.7, -15.1, 2.2, 3.2, "#ecc49e");
-    e(-4.2, -13, 1, 1.7, "#c89678");
-    e(4.2, -13, 1, 1.7, "#bc876a");
+    blob(-5.1, -3.5, 1.3, 3, coat);
+    blob(5.1, -3.5, 1.3, 3, coat);
+    blob(-5, -0.2, 1.3, 1.5, "#efbe91");
+    blob(5, -0.2, 1.3, 1.5, "#efbe91");
+    // A broad round face and two clear eyes stay readable on a phone.
+    e(0, -15, 6.3, 6.8, ink);
+    e(0, -14.7, 5.6, 6.1, "#f0c299");
+    e(-5.7, -13.8, 1.1, 1.6, "#e5ac83");
+    e(5.7, -13.8, 1.1, 1.6, "#e5ac83");
     this.polygon(
       [
-        [-4, -17],
-        [-3, -20],
-        [-1, -21],
-        [2, -20.5],
-        [4, -18],
-        [4.5, -15],
-        [2, -16],
-        [1, -18],
-        [-1, -16],
-        [-4, -15],
+        [-5, -17],
+        [-5, -19],
+        [-3, -21],
+        [1, -22],
+        [4, -20],
+        [5, -17],
+        [2, -17],
+        [1, -19],
+        [-1, -17],
       ],
       hair,
     );
-    for (let i = -3; i < 3; i++)
-      r(i, -19 + (i % 2) * 0.5, 0.5, 2, "rgba(239,214,165,.23)");
     if (facing === "up") {
-      e(0, -14.5, 4.1, 4, hair);
-      r(-3, -15, 1, 3, "rgba(235,215,173,.14)");
+      e(0, -15.5, 5.5, 5.5, hair);
+      r(-4, -15, 0.8, 4, "rgba(255,232,179,.16)");
     } else {
       const side = facing === "left" ? -1 : facing === "right" ? 1 : 0;
       if (side !== 1) {
-        r(-2.7, -14.8, 1.7, 0.6, "#6b4d3b");
-        r(-2.4, -14, 1, 1.2, "#32434a");
-        r(-2.1, -14, 0.4, 0.5, "#fff0cf");
+        r(-2.8, -14.8, 1.4, 2.4, ink);
+        r(-2.5, -14.5, 0.5, 0.5, "#f9f1ce");
       }
       if (side !== -1) {
-        r(1.1, -14.8, 1.7, 0.6, "#6b4d3b");
-        r(1.4, -14, 1, 1.2, "#32434a");
-        r(1.5, -14, 0.4, 0.5, "#fff0cf");
+        r(1.8, -14.8, 1.4, 2.4, ink);
+        r(2.1, -14.5, 0.5, 0.5, "#f9f1ce");
       }
-      r(side - 0.4, -13, 0.8, 1.5, "#b57d60");
-      r(side - 1, -10.8, 2, 0.5, "#956450");
-      r(-2.7, -12, 1, 0.5, "#d99a80");
-      if ([1, 7, 10, 12].includes(seed)) {
-        r(-2, -10.5, 4, 1.3, seed === 1 || seed === 12 ? "#b1ada2" : hair);
-        r(-1.5, -9.5, 3, 0.7, hair);
+      e(side * 3, -12.1, 1, 0.7, "#c58e6e");
+      r(-0.7 + side, -10, 2, 0.7, "#966653");
+      e(-3.7, -11.6, 1.1, 0.5, "#e6a88a");
+      e(3.7, -11.6, 1.1, 0.5, "#e6a88a");
+      if (look.age === "elder") {
+        r(-4, -15.7, 2.5, 0.7, hair);
+        r(1.7, -15.7, 2.5, 0.7, hair);
       }
+    }
+    if (look.detail === "shorts") {
+      r(-4, -1, 3, 3, "#6e6543");
+      r(1, -1, 3, 3, "#6e6543");
     }
     // Hairstyles change the silhouette, rather than just tinting the same head.
     if (look.style === "bun") {
@@ -358,8 +345,8 @@ export class DepthArt {
           [-5, -17],
           [-4, -21],
           [-1, -22],
-          [1, -21],
-          [3, -21.5],
+          [1, -22],
+          [3, -20.5],
           [5, -20],
           [4, -17],
           [2, -19],
@@ -691,176 +678,189 @@ export class DepthArt {
   }
   building(b: Building, x: number, y: number) {
     const r = this.rect.bind(this),
-      p = this.polygon.bind(this),
       e = this.ellipse.bind(this),
+      p = this.polygon.bind(this),
+      c = this.c;
+    const style = houseStyles[b.interior]!,
       w = b.w * 16,
       h = b.h * 16,
+      wall = style.stories === 2 ? 82 : 46,
+      eave = h - wall,
       door = w / 2 + 8;
-    const forge = b.interior === "SMITH",
-      herbal = b.interior === "APOTHECARY",
-      hall = b.interior === "CHIEF",
-      farm = b.interior === "FARM",
-      ranch = b.interior === "RANCH";
-    const roof = forge
-      ? ["#485965", "#83918f", "#354550"]
-      : herbal
-        ? ["#456f6c", "#83a397", "#304e53"]
-        : hall
-          ? ["#7b4c45", "#b87d65", "#513a39"]
-          : farm || ranch
-            ? ["#9b804a", "#ceb46e", "#705b3a"]
-            : ["#806043", "#bda174", "#564737"];
     this.shadow(x + w / 2, y + h - 3, w, 36);
-    r(x + 2, y + 17, w - 4, h - 17, forge ? "#a0a59b" : "#cbb99a");
-    r(x + w - 10, y + 18, 8, h - 18, forge ? "#697774" : "#917f66");
-    for (let yy = 24; yy < h; yy += 5)
-      for (let xx = 4; xx < w - 5; xx += 8) {
-        const off = yy % 10 ? 4 : 0;
+    // Stone foundation and round horizontal logs, including the cut ends.
+    r(x + 4, y + eave, w - 8, wall, "#5a4938");
+    r(x + 4, y + h - 7, w - 8, 7, "#747566");
+    for (let xx = 5; xx < w - 7; xx += 10) {
+      r(x + xx, y + h - 6, 9, 4, "#a3a08a");
+      r(x + xx + 0.5, y + h - 6, 8, 0.5, "#c8bea1");
+    }
+    for (let yy = eave; yy < h - 7; yy += 5) {
+      r(x + 3, y + yy, w - 6, 4.5, style.log);
+      r(x + 4, y + yy + 0.5, w - 8, 1, style.light);
+      r(x + 4, y + yy + 4, w - 8, 0.5, "#5b4535");
+      for (let xx = 10; xx < w - 10; xx += 19) {
+        r(x + xx, y + yy + 2, 12, 0.5, "rgba(239,209,158,.28)");
+        r(x + xx + 3, y + yy + 3, 7, 0.5, "rgba(53,35,27,.20)");
+      }
+      for (const xx of [6, w - 7]) {
+        e(x + xx, y + yy + 2, 3, 2.2, "#674a35");
+        e(x + xx - 0.4, y + yy + 1.7, 2.3, 1.7, style.light);
+        e(x + xx - 0.4, y + yy + 1.7, 1.3, 0.9, style.log);
+        r(x + xx - 0.5, y + yy + 1.5, 0.5, 0.5, "#d2b281");
+      }
+    }
+    // Roof pitch follows the depth of the house; one-storey homes have low walls.
+    p(
+      [
+        [x - 5, y + eave],
+        [x + 12, y - 8],
+        [x + w - 15, y - 8],
+        [x + w + 5, y + eave],
+      ],
+      "#493e35",
+    );
+    for (let row = 0; row < Math.ceil((eave + 8) / 4); row++) {
+      const yy = -7 + row * 4,
+        t = (yy + 8) / (eave + 8),
+        left = 12 - 17 * t,
+        right = w - 15 + 20 * t;
+      for (let xx = left; xx < right - 2; xx += 6) {
+        const width = Math.min(5.6, right - xx);
         r(
-          x + xx + off,
+          x + xx,
           y + yy,
-          6,
-          3.5,
-          (xx + yy) % 3 ? "rgba(63,53,42,.09)" : "rgba(255,246,210,.15)",
+          width,
+          3.7,
+          (Math.floor(xx) + row) % 4 ? style.roof : style.roofLight,
         );
-        r(x + xx + off, y + yy + 3.5, 6, 0.5, "rgba(66,58,45,.17)");
-      }
-    r(x + 2, y + h - 6, w - 4, 6, "#6b7266");
-    for (let xx = 3; xx < w - 5; xx += 9) {
-      r(x + xx, y + h - 5, 8, 2.5, "#9b9e86");
-      r(x + xx + 1, y + h - 2, 7, 0.5, "#bdbaa0");
-    }
-    for (const xx of [5, w - 13]) {
-      r(x + xx, y + 24, 3, h - 30, "#5c4b38");
-      r(x + xx + 0.5, y + 25, 0.5, h - 32, "#ad8c60");
-    }
-    if (hall || ranch) {
-      p(
-        [
-          [x + 7, y + 29],
-          [x + w / 2, y + h - 9],
-          [x + w / 2 + 2, y + h - 9],
-          [x + 9, y + 29],
-        ],
-        "#786045",
-      );
-    }
-    this.c.save();
-    this.c.translate(0, y);
-    this.c.scale(1, 1.4);
-    this.c.translate(0, -y);
-    p(
-      [
-        [x - 4, y + 24],
-        [x + 10, y - 8],
-        [x + w - 13, y - 8],
-        [x + w + 4, y + 24],
-      ],
-      roof[2],
-    );
-    p(
-      [
-        [x - 3, y + 22],
-        [x + 10, y - 9],
-        [x + w - 15, y - 9],
-        [x + w - 6, y + 22],
-      ],
-      roof[0],
-    );
-    // Individual overlapping shingles, each with a bevel and grain.
-    for (let row = 0; row < 8; row++) {
-      const yy = -6 + row * 3.7,
-        left = 10 - (row + 1) * 1.65,
-        right = w - 15 + row * 1.15;
-      for (let xx = left; xx < right - 3; xx += 5) {
-        const tw = Math.min(4.6, right - xx),
-          shade = (row + Math.floor(xx)) % 3;
-        r(x + xx, y + yy, tw, 3.5, shade ? roof[0] : roof[1]);
-        r(x + xx, y + yy, tw, 0.5, roof[1]);
-        r(x + xx + tw - 0.5, y + yy + 0.5, 0.5, 3, roof[2]);
-        r(x + xx + 0.7, y + yy + 1, 0.5, 1.5, "rgba(255,241,197,.22)");
+        r(x + xx, y + yy, width, 0.5, style.roofLight);
+        r(x + xx + width - 0.5, y + yy + 0.5, 0.5, 3, "rgba(26,34,35,.28)");
+        r(x + xx + 1, y + yy + 1, 0.5, 1.7, "rgba(245,227,183,.22)");
       }
     }
-    r(x + 10, y - 10, w - 25, 2, roof[2]);
-    r(x + 10, y - 10, w - 25, 0.5, roof[1]);
-    r(x - 4, y + 24, w + 8, 3, "#453f35");
-    r(x - 4, y + 24, w + 8, 0.5, "#d3b98a");
-    r(x + 2, y + 27, w - 4, 3, "rgba(35,36,31,.29)");
-    for (let xx = 5; xx < w - 5; xx += 8) r(x + xx, y + 26, 1, 3, "#736045");
-    this.c.restore();
-    r(x + door - 7, y + h - 31, 16, 31, "#423e34");
-    r(x + door - 5, y + h - 29, 12, 29, "#8e6944");
-    for (let xx = 0; xx < 10; xx += 2) {
-      r(x + door - 5 + xx, y + h - 28, 0.5, 27, "#b9915b");
-      r(x + door - 4 + xx, y + h - 27, 0.5, 25, "#6f5137");
-    }
-    r(x + door - 5, y + h - 15, 10, 1, "#66563c");
-    r(x + door - 5, y + h - 5, 10, 1, "#66563c");
-    e(x + door + 2.5, y + h - 10, 0.9, 0.9, "#edd48a");
-    r(x + door - 9, y + h, 18, 2, "#c7c4a7");
-    r(x + door - 10, y + h + 2, 20, 2, "#929c85");
-    r(x + door - 10, y + h + 2, 20, 0.5, "#e6dbb4");
-    for (const xx of w >= 70 ? [12, w - 27] : [9]) {
-      if (Math.abs(xx + 5 - door) < 12) continue;
-      r(x + xx - 2, y + h - 20, 14, 11, "#5c5140");
-      r(x + xx, y + h - 19, 10, 8, "#3f646f");
+    r(x + 12, y - 9, w - 27, 2, style.roofLight);
+    r(x - 5, y + eave, w + 10, 3, "#4d4031");
+    r(x - 5, y + eave, w + 10, 0.5, "#d3b17c");
+    r(x + 4, y + eave + 3, w - 8, 3, "rgba(34,30,28,.3)");
+    const window = (xx: number, yy: number, shutters = true) => {
+      r(x + xx - 2, y + yy - 2, 20, 19, "#5b4533");
+      r(x + xx, y + yy, 16, 14, "#4d7c87");
       p(
         [
-          [x + xx, y + h - 19],
-          [x + xx + 8, y + h - 19],
-          [x + xx, y + h - 13],
+          [x + xx, y + yy],
+          [x + xx + 13, y + yy],
+          [x + xx, y + yy + 11],
         ],
-        "#9fbeb4",
+        "#a6c8bc",
       );
-      r(x + xx + 4.5, y + h - 19, 1, 8, "#d1c6a3");
-      r(x + xx, y + h - 15, 10, 0.5, "#e5d6ac");
-      r(x + xx - 3, y + h - 21, 2, 11, "#8b7153");
-      r(x + xx + 12, y + h - 21, 2, 11, "#8b7153");
-      r(x + xx - 2, y + h - 10, 14, 1.5, "#c1b18b");
-      if (herbal || hall) {
-        r(x + xx - 1, y + h - 7, 12, 3, "#835c41");
-        for (let i = 0; i < 5; i++) {
-          e(x + xx + i * 2, y + h - 8, 1.8, 2, "#668557");
-          r(x + xx + i * 2, y + h - 9, 0.8, 0.8, i % 2 ? "#d5b3a0" : "#dfce79");
+      r(x + xx + 7.5, y + yy, 1, 14, "#e5c88e");
+      r(x + xx, y + yy + 7, 16, 0.7, "#e5c88e");
+      r(x + xx - 3, y + yy + 15, 22, 2, "#d4b07c");
+      if (shutters)
+        for (const sx of [-7, 19]) {
+          r(x + xx + sx, y + yy - 1, 5, 15, style.roof);
+          for (let i = 2; i < 14; i += 3)
+            r(x + xx + sx + 0.5, y + yy + i, 4, 0.5, style.roofLight);
         }
+    };
+    if (style.stories === 2) {
+      r(x + 7, y + eave + 39, w - 14, 3, "#63492f");
+      r(x + 7, y + eave + 39, w - 14, 0.5, "#d2ae73");
+      window(24, eave + 12);
+      window(w - 43, eave + 12);
+      window(w / 2 - 8, eave + 12, false);
+    }
+    window(20, h - 31);
+    if (w > 110) window(w - 40, h - 31);
+    r(x + door - 9, y + h - 34, 18, 34, "#483c30");
+    r(x + door - 7, y + h - 32, 14, 32, "#9b754c");
+    for (let xx = 0; xx < 14; xx += 3) {
+      r(x + door - 7 + xx, y + h - 31, 0.5, 30, "#d5ae70");
+      r(x + door - 6 + xx, y + h - 30, 0.5, 29, "#765332");
+    }
+    r(x + door - 7, y + h - 27, 14, 1, "#5c4b34");
+    r(x + door - 7, y + h - 7, 14, 1, "#5c4b34");
+    e(x + door + 4, y + h - 15, 1, 1, "#f1d284");
+    if (style.porch) {
+      r(x + door - 25, y + h - 42, 50, 5, "#70543a");
+      r(x + door - 25, y + h - 42, 50, 1, style.light);
+      for (const xx of [-23, 21]) {
+        r(x + door + xx, y + h - 37, 3, 37, "#725337");
+        r(x + door + xx + 0.5, y + h - 37, 0.5, 36, "#c3a16b");
       }
+      r(x + door - 26, y + h, 52, 3, "#a88b60");
+      for (let xx = -23; xx < 25; xx += 7)
+        r(x + door + xx, y + h, 0.5, 3, "#6b573c");
     }
-    if (forge || b.interior === "HOME") {
-      r(x + w - 23, y - 17, 8, 20, "#68716c");
-      for (let yy = -16; yy < 1; yy += 3) {
-        r(x + w - 22, y + yy, 6, 2, "#9b9a85");
-        r(x + w - 18 + (yy % 2), y + yy, 0.5, 2, "#636a60");
+    r(x + door - 11, y + h + 3, 22, 2, "#b9b69a");
+    r(x + door - 13, y + h + 5, 26, 2, "#879581");
+    if (b.interior === "SMITH" || b.interior === "HOME") {
+      r(x + w - 29, y - 16, 10, 24, "#737a70");
+      for (let yy = -15; yy < 6; yy += 4) {
+        r(x + w - 28, y + yy, 8, 3, "#a2a18c");
+        r(x + w - 25 + (yy % 2), y + yy, 1, 3, "#5b665d");
       }
-      r(x + w - 24, y - 18, 10, 2, "#c5bf9f");
-      r(x + w - 22, y - 17, 6, 1, "#454e4c");
+      r(x + w - 30, y - 17, 12, 2, "#c1bda2");
     }
-    if (forge) {
-      r(x + 6, y + h - 8, 7, 6, "#525a56");
-      r(x + 5, y + h - 10, 10, 3, "#8a9790");
+    const sign =
+      b.interior === "SMITH"
+        ? "鍛"
+        : b.interior === "APOTHECARY"
+          ? "薬"
+          : b.interior === "HOME"
+            ? "宿"
+            : "";
+    if (sign) {
+      r(x + door - 23, y + h - 26, 12, 10, "#d6b984");
+      c.fillStyle = "#4b5947";
+      c.font = "7px sans-serif";
+      c.textAlign = "center";
+      c.fillText(sign, x + door - 17, y + h - 18);
     }
-    if (farm || ranch) {
-      r(x + 7, y + h - 5, 9, 5, "#967d45");
-      for (let i = 0; i < 7; i++) r(x + 8 + i, y + h - 6, 0.5, 5, "#d7bc73");
+  }
+  caveEntry(x: number, y: number) {
+    const r = this.rect.bind(this),
+      e = this.ellipse.bind(this),
+      p = this.polygon.bind(this);
+    p(
+      [
+        [x - 34, y],
+        [x - 32, y - 22],
+        [x - 22, y - 43],
+        [x - 9, y - 48],
+        [x + 14, y - 45],
+        [x + 31, y - 27],
+        [x + 34, y],
+      ],
+      "#344958",
+    );
+    for (let i = 0; i < 7; i++) {
+      const angle = Math.PI + (i / 6) * Math.PI,
+        xx = x + Math.cos(angle) * 27,
+        yy = y - 8 + Math.sin(angle) * 30;
+      e(xx, yy, 7, 9, i % 2 ? "#71858b" : "#5c7280");
+      r(xx - 3, yy - 5, 5, 1, "#a4b0a4");
     }
-    // Hanging sign identifies the building without relying on roof colour.
-    r(x + door - 15, y + h - 35, 1, 9, "#4e493a");
-    r(x + door - 20, y + h - 33, 11, 7, "#c3a77a");
-    r(x + door - 19, y + h - 32, 9, 5, "#6b7055");
-    const symbol = forge
-      ? "⚒"
-      : herbal
-        ? "✚"
-        : hall
-          ? "◆"
-          : farm
-            ? "麦"
-            : ranch
-              ? "牧"
-              : "宿";
-    this.c.font = "5px sans-serif";
+    this.c.fillStyle = "#263846";
+    this.c.beginPath();
+    this.c.arc(x, y - 13, 22, Math.PI, 0);
+    this.c.lineTo(x + 22, y);
+    this.c.lineTo(x - 22, y);
+    this.c.closePath();
+    this.c.fill();
+    r(x - 22, y - 13, 44, 13, "#3f505b");
+    r(x - 24, y - 12, 4, 12, "#84938c");
+    r(x + 20, y - 12, 4, 12, "#60777e");
+    for (const side of [-1, 1]) {
+      r(x + side * 31 - 1, y - 13, 2, 9, "#71593d");
+      e(x + side * 31, y - 17, 2.5, 4, "#deb16b");
+      e(x + side * 31 - 0.5, y - 18, 1.2, 2, "#ffe0a0");
+    }
+    this.c.fillStyle = "#f4dfaa";
+    this.c.font = "7px sans-serif";
     this.c.textAlign = "center";
-    this.c.fillStyle = "#f5dfaa";
-    this.c.fillText(symbol, x + door - 14.5, y + h - 28);
+    this.c.fillText("洞窟", x, y - 53);
   }
   room(id: keyof typeof rooms, cx: number, cy: number) {
     const room = rooms[id];

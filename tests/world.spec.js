@@ -394,7 +394,7 @@ test("階段で村の高台に上り、保存と再読込後も上に立てる",
   expect(
     Number(await page.locator("#world").getAttribute("data-player-y")),
   ).toBeCloseTo(y, 1);
-  await expect(page.locator(".badge")).toContainText("FIELD 07");
+  await expect(page.locator(".badge")).toContainText("FIELD 08");
 });
 test("旧セーブを縮小した村へ移しても進行を保って読込できる", async ({
   page,
@@ -463,4 +463,39 @@ test("室内の出口案内は常時表示され、奥からでも出口ボタ�
     .click();
   await expect(page.locator("canvas")).toHaveAttribute("data-map", "VIL");
   await expect(page.locator("#room-guide")).toBeHidden();
+});
+
+test("洞窟へ歩いて入り、岩壁に止まり、同じ入口から外へ戻れる", async ({
+  page,
+}) => {
+  const s = fixture("GRASS");
+  Object.assign(s.world, { x: 37 * 16 + 8, y: 18 * 16 + 8 });
+  for (const e of s.enemies.filter((e) => !e.mapId || e.mapId === "GRASS")) {
+    e.hp = 0;
+    e.respawnAt = s.clock + 86400;
+  }
+  await load(page, s);
+  await page.keyboard.down("ArrowUp");
+  await page.waitForTimeout(1500);
+  await page.keyboard.up("ArrowUp");
+  await expect(page.locator(".location")).toContainText("洞窟");
+  expect(
+    Number(await page.locator("canvas").getAttribute("data-player-y")),
+  ).toBeLessThan(240);
+  await page.keyboard.down("ArrowRight");
+  await page.waitForTimeout(2000);
+  await page.keyboard.up("ArrowRight");
+  expect(
+    Number(await page.locator("canvas").getAttribute("data-player-x")),
+  ).toBeLessThan(44 * 16 - 4);
+  await page.keyboard.down("ArrowLeft");
+  await page.waitForTimeout(1550);
+  await page.keyboard.up("ArrowLeft");
+  await page.keyboard.down("ArrowDown");
+  await page.waitForTimeout(2000);
+  await page.keyboard.up("ArrowDown");
+  expect(
+    Number(await page.locator("canvas").getAttribute("data-player-y")),
+  ).toBeGreaterThan(17 * 16);
+  await expect(page.locator(".location")).not.toContainText("洞窟");
 });

@@ -2,6 +2,7 @@ import { Life, defaults, type Activity, type LifeData } from "./life.ts";
 import { World } from "./state.ts";
 import {
   maps,
+  biomeSites,
   outdoors,
   isBlocked,
   TERRAIN_VERSION,
@@ -140,8 +141,10 @@ const initialEnemies = (): Enemy[] =>
   Array.from({ length: 6 }, (_, i) => ({
     id: `enemy-${i}`,
     kind: i % 2 ? "slime" : "rat",
-    x: (maps.GRASS.width / 2 + (i % 2 ? 2 : -2)) * 16 + 8,
-    y: (maps.GRASS.height - 6 - i * 4) * 16 + 8,
+    x: biomeSites[i].x * 16 + 8,
+    y: biomeSites[i].y * 16 + 8,
+    spawnX: biomeSites[i].x * 16 + 8,
+    spawnY: biomeSites[i].y * 16 + 8,
     hp: i % 2 ? 24 : 18,
     respawnAt: 0,
     heading: 0,

@@ -3,15 +3,15 @@ import * as previous from "./legacy-maps.ts";
 export type {
   MapId,
   OutdoorId,
-  Tile,
   GameMap,
   Building,
   Exit,
   Terrace,
 } from "./legacy-maps.ts";
-import type { MapId, Tile, GameMap, Terrace } from "./legacy-maps.ts";
+import type { MapId, GameMap, Terrace } from "./legacy-maps.ts";
 
-export const TERRAIN_VERSION = 7;
+export type Tile = previous.Tile | "cavefloor" | "cavewall";
+export const TERRAIN_VERSION = 8;
 const sizes: Partial<Record<MapId, [number, number]>> = {
   VIL: [40, 34],
   GRASS: [48, 38],
@@ -49,12 +49,12 @@ export const field06Village: GameMap = {
   buildings: maps.VIL.buildings.map((b) => ({ ...b })),
 };
 const homes: Record<string, [number, number, number, number]> = {
-  CHIEF: [25, 6, 9, 7],
-  FARM: [29, 15, 9, 6],
-  RANCH: [3, 12, 9, 7],
-  HOME: [3, 22, 8, 6],
-  SMITH: [14, 14, 5, 6],
-  APOTHECARY: [22, 16, 6, 5],
+  CHIEF: [26, 3, 10, 8],
+  FARM: [30, 16, 9, 7],
+  RANCH: [2, 11, 10, 7],
+  HOME: [2, 22, 9, 6],
+  SMITH: [13, 14, 6, 6],
+  APOTHECARY: [22, 16, 7, 5],
 };
 for (const b of maps.VIL.buildings) {
   const [x, y, w, h] = homes[b.interior];
@@ -184,11 +184,82 @@ function protectedVillage(x: number, y: number) {
       Math.abs(y - Math.floor(p.y / 16)) <= 1,
   );
 }
+export type Biome = "草原" | "沿岸" | "崖の高台" | "森林" | "沼地" | "洞窟";
+export const biomeSites: { name: Biome; x: number; y: number }[] = [
+  { name: "草原", x: 24, y: 31 },
+  { name: "沿岸", x: 8, y: 28 },
+  { name: "崖の高台", x: 10, y: 9 },
+  { name: "森林", x: 30, y: 25 },
+  { name: "沼地", x: 38, y: 32 },
+  { name: "洞窟", x: 37, y: 9 },
+];
+export function biomeAt(map: GameMap, x: number, y: number): Biome | undefined {
+  if (map.id !== "GRASS") return undefined;
+  if (x >= 31 && y <= 17) return "洞窟";
+  if (x >= 32 && y >= 29) return "沼地";
+  if (x >= 29 && y >= 19) return "森林";
+  if (x <= 14 && y >= 22) return "沿岸";
+  if (elevationAt(map, x, y) > 0 || (x <= 16 && y <= 16)) return "崖の高台";
+  return "草原";
+}
+function northernTile(x: number, y: number): Tile | undefined {
+  // A real cave room and passage on the same map: no loading screen or hidden teleport.
+  if (x >= 31 && x <= 44 && y >= 3 && y <= 15) {
+    const doorway = x >= 36 && x <= 38 && y >= 13;
+    if (doorway) return "cavefloor";
+    const left = 31 + (y <= 6 || y >= 12 ? 1 : 0) + (y === 8 ? 1 : 0),
+      right = 44 - (y <= 6 ? 2 : y >= 12 ? 1 : 0);
+    if (
+      x <= left ||
+      x >= right ||
+      y <= 4 ||
+      y >= 14 ||
+      (x === 34 && y === 7) ||
+      (x === 41 && y === 11)
+    )
+      return "cavewall";
+    return "cavefloor";
+  }
+  if (x >= 36 && x <= 38 && y >= 16 && y <= 19) return "path";
+  // Branch trails reach the shore, forest, marsh and cave while keeping the main route.
+  if (y >= 18 && y <= 19 && x >= 24 && x <= 38) return "path";
+  if (y >= 27 && y <= 28 && x >= 7 && x <= 39) return "path";
+  if (x >= 37 && x <= 39 && y >= 28 && y <= 34) return "path";
+  if (x >= 30 && x <= 31 && y >= 20 && y <= 28) return "path";
+  if (x >= 2 && x <= 14 && y >= 22 && y <= 35) {
+    const edge = 4 + Math.round(Math.sin(y * 0.65) * 2);
+    if (x < edge) return "water";
+    if (x <= edge + 3) return "sand";
+  }
+  if (x >= 32 && x <= 44 && y >= 29 && y <= 35) {
+    if ((x * 5 + y * 3) % 19 === 0) return "water";
+    return "wet";
+  }
+  if (x >= 29 && x <= 44 && y >= 20 && y <= 26 && (x + y) % 3 === 0)
+    return "tree";
+  return undefined;
+}
 function raw(map: GameMap, x: number, y: number): Tile {
   const old = previous.maps[map.id],
     p = source(map, x, y),
     base = previous.tileAt(old, p.x, p.y);
   if (map.interior) return base;
+  if (map.id === "VIL" && !protectedVillage(x, y)) {
+    const left = 1 + Math.round((Math.sin(y * 0.62) + 1) * 1.3),
+      right = map.width - 2 - Math.round((Math.sin(y * 0.47 + 1) + 1) * 1.2);
+    if (
+      (x < left || x > right) &&
+      !map.buildings.some(
+        (b) =>
+          x >= b.x - 1 && x <= b.x + b.w && y >= b.y - 1 && y <= b.y + b.h + 1,
+      )
+    )
+      return "water";
+  }
+  if (map.id === "GRASS") {
+    const special = northernTile(x, y);
+    if (special) return special;
+  }
   if (
     map.buildings.some(
       (b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h,
@@ -267,7 +338,7 @@ export function legacyTileAt(map: GameMap, x: number, y: number): Tile {
   return previous.legacyTileAt(previous.maps[map.id], x, y);
 }
 export function isBlocked(map: GameMap, x: number, y: number) {
-  return ["water", "tree", "house", "rock", "cliff"].includes(
+  return ["water", "tree", "house", "rock", "cliff", "cavewall"].includes(
     tileAt(map, x, y),
   );
 }
@@ -284,7 +355,7 @@ export function canStandOn(map: GameMap, x: number, y: number, legacy = false) {
       [5, 5],
     ].every(
       ([dx, dy]) =>
-        !["water", "tree", "house", "rock", "cliff"].includes(
+        !["water", "tree", "house", "rock", "cliff", "cavewall"].includes(
           at(map, Math.floor((x + dx) / 16), Math.floor((y + dy) / 16)),
         ),
     )

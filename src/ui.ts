@@ -687,7 +687,7 @@ export class Interface {
             const tile = tileAt(m, x, y);
             c.fillStyle = ["water"].includes(tile)
               ? "#4c9ba9"
-              : ["tree", "rock", "house", "cliff"].includes(tile)
+              : ["tree", "rock", "house", "cliff", "cavewall"].includes(tile)
                 ? "#47634e"
                 : "#9bb073";
             c.fillRect(x * 2, y * 2, 2, 2);

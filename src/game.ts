@@ -1,3 +1,4 @@
+import { biomeAt } from "./maps.ts";
 import { readController } from "./controller.ts";
 import { Interface } from "./ui.ts";
 import { WIDTH, HEIGHT, type Direction } from "./constants.ts";
@@ -325,7 +326,10 @@ try {
     text("#map-name", world.map.name);
     $("#room-guide").hidden = !world.map.interior || session.screen !== "field";
     $("#room-exit").toggleAttribute("disabled", !session.life.canInteract());
-    text(".location", `${world.mapId} / ${world.map.name}`);
+    text(
+      ".location",
+      `${world.mapId} / ${world.map.name}${biomeAt(world.map, Math.floor(world.x / 16), Math.floor(world.y / 16)) ? " · " + biomeAt(world.map, Math.floor(world.x / 16), Math.floor(world.y / 16)) : ""}`,
+    );
     text(
       "#clock",
       `${session.timeLabel} · ${{ clear: "晴", rain: "雨", fog: "霧" }[session.life.data.weather]}`,

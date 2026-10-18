@@ -1,15 +1,9 @@
+import * as field07 from "./field07-maps.ts";
 import { field05FurnitureBlocks } from "./interiors.ts";
 import * as oldField from "./legacy-maps.ts";
 import { people, items, recipes, resourceIndices, fishByMap } from "./data.ts";
 import { defaults } from "./life.ts";
-import {
-  maps,
-  TERRAIN_VERSION,
-  safePosition,
-  compactPoint,
-  canStandOn,
-  field06Village,
-} from "./maps.ts";
+import { maps, TERRAIN_VERSION, safePosition, compactPoint } from "./maps.ts";
 import type { Snapshot } from "./session.ts";
 import { Session, species } from "./session.ts";
 import { World } from "./state.ts";
@@ -162,7 +156,7 @@ export function validateSnapshot(v: unknown): Snapshot {
   )
     throw new Error("地形バージョンが不正です。");
   const oldVillage =
-    Number(v.terrainVersion) >= 4 && Number(v.terrainVersion) <= 6;
+    Number(v.terrainVersion) >= 4 && Number(v.terrainVersion) <= 7;
   const oldTerrain =
     v.terrainVersion === undefined || Number(v.terrainVersion) < 4;
   const life = v.version === 1 ? defaults() : v.life;
@@ -327,8 +321,16 @@ export function validateSnapshot(v: unknown): Snapshot {
             v.terrainVersion !== 3,
           )
         : oldVillage && map === "VIL"
-          ? canStandOn(field06Village, stake.x, stake.y)
-          : w.canStand(stake.x, stake.y))
+          ? field07.canStandOn(
+              v.terrainVersion === 7
+                ? field07.maps.VIL
+                : field07.field06Village,
+              stake.x,
+              stake.y,
+            )
+          : oldVillage && map === "GRASS"
+            ? field07.canStandOn(field07.maps.GRASS, stake.x, stake.y)
+            : w.canStand(stake.x, stake.y))
     )
       throw new Error("転移杭の位置が不正です。");
   }
@@ -506,13 +508,48 @@ export function validateSnapshot(v: unknown): Snapshot {
   )
     throw new Error("旧室内の保存位置が不正です。");
   if (oldVillage && result.mapId === "VIL") {
-    if (!canStandOn(field06Village, result.x, result.y))
+    if (
+      !field07.canStandOn(
+        v.terrainVersion === 7 ? field07.maps.VIL : field07.field06Village,
+        result.x,
+        result.y,
+      )
+    )
       throw new Error("旧村の保存位置が不正です。");
     const pos = safePosition(maps.VIL, result.x, result.y);
     if (!pos) throw new Error("安全な保存位置が見つかりません。");
     Object.assign(result, pos);
     result.activity.interaction = null;
     result.activity.action = null;
+  }
+  if (oldVillage && result.mapId === "GRASS") {
+    if (!field07.canStandOn(field07.maps.GRASS, result.x, result.y))
+      throw new Error("旧草原の保存位置が不正です。");
+    const pos = safePosition(maps.GRASS, result.x, result.y);
+    if (!pos) throw new Error("安全な保存位置が見つかりません。");
+    Object.assign(result, pos);
+    result.activity.interaction = null;
+    result.activity.action = null;
+  }
+  if (oldVillage) {
+    const stake = result.life.stakes.GRASS;
+    if (stake) {
+      const pos = safePosition(maps.GRASS, stake.x, stake.y);
+      if (pos) Object.assign(stake, pos);
+      else throw new Error("転移杭の安全な位置が見つかりません。");
+    }
+    for (const e of result.enemies)
+      if ((e.mapId || "GRASS") === "GRASS") {
+        const pos = safePosition(maps.GRASS, e.x, e.y);
+        if (pos) Object.assign(e, pos);
+        if (e.spawnX !== undefined) {
+          const spawn = safePosition(maps.GRASS, e.spawnX, e.spawnY!);
+          if (spawn) {
+            e.spawnX = spawn.x;
+            e.spawnY = spawn.y;
+          }
+        }
+      }
   }
   if (oldVillage) {
     const stake = result.life.stakes.VIL;

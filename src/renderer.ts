@@ -122,6 +122,8 @@ export class Renderer {
         ctx.fillText(b.name, (b.x + b.w / 2) * 16 - camX, b.y * 16 - 9 - camY);
       });
     }
+    if (world.mapId === "GRASS")
+      add(16 * 16, () => this.art.caveEntry(37.5 * 16 - camX, 16 * 16 - camY));
     for (const p of rooms[world.mapId]?.furniture || [])
       add(p.y + p.h, () => this.art.furniture(p, camX, camY));
     if (session) {

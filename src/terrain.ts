@@ -1,4 +1,10 @@
-import { elevationAt, tileAt, type GameMap, type Tile } from "./maps.ts";
+import {
+  biomeAt,
+  elevationAt,
+  tileAt,
+  type GameMap,
+  type Tile,
+} from "./maps.ts";
 
 // Small original pixel tiles are painted once and reused. Decoration never changes collision.
 const hash = (x: number, y: number, salt = 0) =>
@@ -34,17 +40,22 @@ export class Terrain {
     time: number,
   ) {
     const tile = tileAt(map, x, y),
-      variant = hash(x, y) % 8;
+      variant = hash(x, y) % 8,
+      biome = biomeAt(map, x, y);
     const image = this.sprite(
-      `${tile}:${variant}:${elevationAt(map, x, y)}`,
+      `${tile}:${variant}:${elevationAt(map, x, y)}:${biome || ""}`,
       16,
       16,
       (ctx) => {
         const palette: Record<Tile, string[]> = {
           grass:
-            elevationAt(map, x, y) > 0
-              ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
-              : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+            biome === "森林"
+              ? ["#698f65", "#82a16b", "#5c805e", "#a5b67c"]
+              : elevationAt(map, x, y) > 0
+                ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
+                : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+          cavefloor: ["#505a66", "#747d80", "#414f5e", "#89908b"],
+          cavewall: ["#3f4e5b", "#68747b", "#303e4b", "#8b9392"],
           cliff: ["#678982", "#83a49b", "#4d6f73", "#a8b7a0"],
           stairs: ["#99aa8b", "#b8bea0", "#667f79", "#ccd0ad"],
           tree: ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
@@ -65,6 +76,30 @@ export class Terrain {
             yy = (seed >>> 8) % 16;
           ctx.fillStyle = colors[1 + ((seed >>> 16) % 3)];
           ctx.fillRect(xx, yy, 1 + (seed % 2), 1);
+        }
+        if (tile === "cavefloor") {
+          ctx.fillStyle = "#4c545f";
+          ctx.fillRect(2, 9, 9, 1);
+          ctx.fillRect(10, 3, 1, 5);
+          ctx.fillStyle = "#aaa28c";
+          ctx.fillRect(4, 3, 2, 1);
+          ctx.fillRect(12, 13, 2, 1);
+        }
+        if (tile === "cavewall") {
+          ctx.fillStyle = "#283946";
+          ctx.fillRect(0, 10, 16, 6);
+          for (let i = 0; i < 3; i++) {
+            ctx.fillStyle = i % 2 ? "#687b85" : "#536874";
+            ctx.fillRect(i * 6, 1, 5, 10 + i);
+            ctx.fillStyle = "#95a09a";
+            ctx.fillRect(i * 6, 1, 4, 1);
+          }
+          if (variant % 3 === 0) {
+            ctx.fillStyle = "#769fba";
+            ctx.fillRect(5, 5, 2, 5);
+            ctx.fillStyle = "#b7d5d0";
+            ctx.fillRect(5, 5, 1, 3);
+          }
         }
         if (tile === "floor") {
           ctx.fillStyle = colors[2];
@@ -91,6 +126,16 @@ export class Terrain {
       },
     );
     c.drawImage(image, px, py);
+    if (map.id === "GRASS" && tile === "path" && biome === "沼地") {
+      c.fillStyle = "#685b42";
+      c.fillRect(px + 1, py, 14, 16);
+      for (let yy = 0; yy < 16; yy += 4) {
+        c.fillStyle = "#b4a078";
+        c.fillRect(px + 2, py + yy, 12, 3);
+        c.fillStyle = "#d5bc88";
+        c.fillRect(px + 2, py + yy, 12, 1);
+      }
+    }
     if (tile === "cliff") {
       const level = elevationAt(map, x, y),
         lower = (dx: number, dy: number) =>
