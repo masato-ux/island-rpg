@@ -10,10 +10,24 @@ export function paintNature(
     c.fillRect(x, y, w, h);
   };
   const e = (x: number, y: number, rx: number, ry: number, color: string) => {
-    c.fillStyle = color;
-    c.beginPath();
-    c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
-    c.fill();
+    const outlined = rx > 5 && ry > 5;
+    for (let row = -Math.floor(ry); row <= Math.floor(ry); row++) {
+      const width = Math.floor(
+        rx * Math.sqrt(Math.max(0, 1 - (row * row) / (ry * ry))),
+      );
+      if (!width) continue;
+      c.fillStyle = outlined ? "#294b39" : color;
+      c.fillRect(Math.round(x) - width, Math.round(y) + row, width * 2 + 1, 1);
+      if (outlined && Math.abs(row) < Math.floor(ry) - 1) {
+        c.fillStyle = color;
+        c.fillRect(
+          Math.round(x) - width + 1,
+          Math.round(y) + row,
+          Math.max(1, width * 2 - 1),
+          1,
+        );
+      }
+    }
   };
   const p = (points: number[][], color: string) => {
     c.fillStyle = color;
@@ -21,6 +35,9 @@ export function paintNature(
     points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
     c.closePath();
     c.fill();
+    c.strokeStyle = "#354b36";
+    c.lineWidth = 1;
+    c.stroke();
   };
   const rand = (i: number) => {
     let n = Math.imul(seed + 71, 374761393) ^ Math.imul(i + 41, 668265263);

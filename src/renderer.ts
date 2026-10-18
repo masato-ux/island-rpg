@@ -47,7 +47,7 @@ export class Renderer {
             Math.round(world.y - HEIGHT / 2),
           ),
         );
-    rect(0, 0, WIDTH, HEIGHT, world.map.interior ? "#283a32" : "#355678");
+    rect(0, 0, WIDTH, HEIGHT, world.map.interior ? "#283a32" : "#6054da");
     // Only visible tiles are drawn, including one row above for tree crowns.
     for (
       let y = Math.floor(camY / TILE);

@@ -1,3 +1,4 @@
+import { meadow, ocean, escarpment } from "./retro-landscape.ts";
 import { paintNature, groundMood } from "./nature-art.ts";
 import { roundedBox } from "./rounded-box.ts";
 import { RoadContours } from "./road-contours.ts";
@@ -115,9 +116,9 @@ export class Terrain {
                   ? ["#92af70", "#a5bd7e", "#86a466", "#b1c486"]
                   : elevationAt(map, x, y) > 0
                     ? ["#97b96e", "#a5c47b", "#8aac68", "#b6ca86"]
-                    : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+                    : ["#64b783", "#83c68c", "#4c9e6f", "#96ce92"],
           deepmud: ["#3e615f", "#577a70", "#345552", "#74907a"],
-          shallow: ["#72aaad", "#92c4be", "#608e9c", "#bad4bf"],
+          shallow: ["#8586df", "#bdcfeb", "#7476cd", "#dad9ef"],
           cavefloor: ["#505a66", "#747d80", "#414f5e", "#89908b"],
           cavewall: ["#3f4e5b", "#68747b", "#303e4b", "#8b9392"],
           cliff: ["#678982", "#83a49b", "#4d6f73", "#a8b7a0"],
@@ -125,8 +126,8 @@ export class Terrain {
           tree:
             biome === "森林"
               ? ["#577951", "#688d5b", "#456747", "#859a64"]
-              : ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
-          rock: ["#84ad68", "#90b571", "#7ea662", "#9dbb78"],
+              : ["#64b783", "#83c68c", "#4c9e6f", "#96ce92"],
+          rock: ["#64b783", "#83c68c", "#4c9e6f", "#96ce92"],
           house: ["#b5a17a", "#c5b38c", "#a18d6b", "#cfbf97"],
           path:
             biome === "森林"
@@ -136,7 +137,7 @@ export class Terrain {
             ? ["#b9af89", "#d2c7a3", "#a99f7c", "#dcd0ad"]
             : ["#d8cb93", "#e9dba7", "#c4b984", "#f2e3b0"],
           wet: ["#849480", "#9fab8d", "#6d8272", "#bac0a0"],
-          water: ["#355678", "#3a5b7e", "#335476", "#426484"],
+          water: ["#6054da", "#879eeb", "#7770df", "#aaa9ef"],
           floor: ["#ad9270", "#bda17b", "#927a5c", "#ccb18a"],
         };
         const clipSurface = (path: Path2D) => {
@@ -194,7 +195,7 @@ export class Terrain {
               const t = level / 2,
                 blend = (a: number, b: number) =>
                   Math.round(a * (1 - t) + b * t);
-              ctx.fillStyle = `rgb(${blend(146, 126)},${blend(175, 159)},${blend(112, 96)})`;
+              ctx.fillStyle = `rgb(${blend(100, 90)},${blend(183, 171)},${blend(131, 116)})`;
               ctx.fillRect(sx, sy, 1, 1);
             }
         }
@@ -349,6 +350,9 @@ export class Terrain {
             ctx.fillRect(4, 11, 1, 1);
           }
         }
+        if (tile === "water") ocean(ctx, x, y, 0, 0, 0);
+        if (["grass", "tree", "rock"].includes(tile))
+          meadow(ctx, x, y, biome === "森林", density);
         if (tile === "path") {
           if (biome === "森林") {
             for (let i = 0; i < 9; i++) {
@@ -382,7 +386,7 @@ export class Terrain {
           for (let sy = 0; sy < 16; sy += 4)
             for (let sx = 0; sx < 16; sx += 4) {
               const mood = groundMood(map.id, x * 16 + sx, y * 16 + sy),
-                alpha = Math.abs(mood) * 0.32;
+                alpha = Math.abs(mood) * 0.12;
               ctx.fillStyle =
                 mood > 0
                   ? `rgba(173,137,73,${alpha})`
@@ -418,11 +422,20 @@ export class Terrain {
           ctx.translate(-x * 16, -y * 16);
           ctx.lineJoin = "round";
           ctx.lineCap = "round";
-          ctx.lineWidth = 2.25;
-          ctx.strokeStyle = "#78adb0";
+          ctx.save();
+          ctx.translate(0, 3);
+          ctx.lineWidth = 5;
+          ctx.strokeStyle = "#414c37";
           ctx.stroke(shoreline);
-          ctx.lineWidth = 0.65;
-          ctx.strokeStyle = "#d4e6ca";
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "#d5cc96";
+          ctx.stroke(shoreline);
+          ctx.restore();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#314d37";
+          ctx.stroke(shoreline);
+          ctx.lineWidth = 0.75;
+          ctx.strokeStyle = "#9bcc8e";
           ctx.stroke(shoreline);
           ctx.restore();
         }
@@ -453,38 +466,18 @@ export class Terrain {
       }
     }
     if (tile === "cliff") {
-      c.fillStyle = coastal ? "#355678" : "#84a071";
+      c.fillStyle = coastal ? "#6054da" : "#64b783";
       c.fillRect(px, py, 16, 16);
       c.save();
       c.translate(px - x * 16, py - y * 16);
       c.clip(this.roads.path(map, "cliff"));
       c.translate(x * 16 - px, y * 16 - py);
-      c.fillStyle = "#425e69";
-      c.fillRect(px, py, 16, 16);
-      for (let col = 0; col < 4; col++) {
-        const xx = col * 4,
-          n = hash(x, col, 3);
-        c.fillStyle = ["#648287", "#728f8c", "#587781", "#80988f"][n % 4];
-        roundedBox(c, px + xx, py, 3, 16, c.fillStyle as string, 1);
-        c.fillStyle = "#9eaca0";
-        c.fillRect(px + xx, py, 1, 16);
-        c.fillStyle = "#354f60";
-        c.fillRect(px + xx + 3, py, 1, 16);
-        c.fillRect(px + xx + 1, py + ((y * 7 + n) % 13), 2, 1);
-      }
-      const above = tileAt(map, x, y - 1);
-      if (
-        above !== "cliff" &&
-        above !== "stairs" &&
-        elevationAt(map, x, y - 1) >= elevationAt(map, x, y)
-      ) {
-        c.fillStyle = "#50774d";
-        c.fillRect(px, py, 16, 3);
-        c.fillStyle = "#a2bb79";
-        c.fillRect(px, py, 16, 1);
-        for (let i = 1; i < 16; i += 4) c.fillRect(px + i, py + 1, 2, 2);
-      }
+      escarpment(c, map, x, y, px, py);
       c.restore();
+      return;
+    }
+    if (tile === "water" && !coastal) {
+      ocean(c, x, y, px, py, time);
       return;
     }
     if (tile === "stairs") {
@@ -644,7 +637,7 @@ export class Terrain {
       40,
       48,
       (ctx) => paintNature(ctx, tile, variant, forest),
-      2,
+      1,
     );
     c.drawImage(image, px - 12, py - 30, 40, 48);
   }
